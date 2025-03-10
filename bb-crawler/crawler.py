@@ -96,7 +96,8 @@ class BlackboardCrawler:
                         print(f"      - {ann_text}: {ann_url}")
 
     def parse_vault(self):
-        """获取课程列表（从 AJAX 加载）"""
+        """从bb主页获取课程列表（从 AJAX 加载）"""
+
         print("📡 正在获取课程列表...")
         payload = {
             "action": "refreshAjaxModule",
@@ -205,7 +206,8 @@ class BlackboardCrawler:
             return None
 
     def parse_course(self, url):
-        """抓取页面 HTML 并提取侧边栏的课程链接"""
+        """从课程主页抓取页面 HTML 并提取侧边栏的session链接"""
+
         try:
             # 发送请求并跟随重定向
             response = self.session.get(url, allow_redirects=True)
@@ -244,7 +246,8 @@ class BlackboardCrawler:
             return None
 
     def extract_sidebar_links(self, soup):
-        """解析 Blackboard 课程侧边栏并提取结构化菜单"""
+        """session HTML -> page url & name"""
+
         sidebar_menu = {}
 
         # 找到课程菜单 ul 标签
@@ -287,6 +290,8 @@ class BlackboardCrawler:
         return sidebar_menu
 
     def parse_page(self, url):
+        '''从page中提取entries的name和内容'''
+
         try:
             # 发送请求并跟随重定向
             response = self.session.get(url, allow_redirects=True)
@@ -482,6 +487,8 @@ class BlackboardCrawler:
                                 file_url = file['url']
                                 file_path = os.path.join(entry_path, file_name)
                                 self.download_file(file_url, file_path)
+
+            print(f'📥 {term}的课程资料爬取完毕！')
 
 
 if __name__ == "__main__":

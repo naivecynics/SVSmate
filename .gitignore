@@ -1,5 +1,18 @@
+# vscode
 out
 dist
 node_modules
 .vscode-test/
 *.vsix
+
+# mac
+.DS_Store
+
+# private info
+login.yaml
+
+# debug cache
+bb-crawler/cache
+
+# personal bb vault
+bb-crawler/bb-vault
