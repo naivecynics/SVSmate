@@ -16,6 +16,10 @@
       {
         "command": "svsmate.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "svsmate.crawlBB",
+        "title": "SVSmate: Crawl Blackboard PDFs"
       }
     ]
   },
@@ -27,15 +31,22 @@
     "lint": "eslint src",
     "test": "vscode-test"
   },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "axios-cookiejar-support": "^5.0.5",
+    "cheerio": "^1.0.0-rc.12",
+    "tough-cookie": "^5.1.2"
+  },
   "devDependencies": {
-    "@types/vscode": "^1.98.0",
+    "@types/cheerio": "^0.22.35",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/vscode": "^1.98.0",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
-    "eslint": "^9.21.0",
-    "typescript": "^5.7.3",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.21.0",
+    "typescript": "^5.7.3"
   }
 }
