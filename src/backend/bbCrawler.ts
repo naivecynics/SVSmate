@@ -6,7 +6,7 @@ import * as os from 'os';
 import axios from 'axios';
 import { CookieJar } from 'tough-cookie';
 import { wrapper } from 'axios-cookiejar-support';
-import { outputChannel } from '../extension';
+// import { outputChannel } from '../extension';
 
 interface Course {
     name: string;
@@ -300,7 +300,7 @@ export class BlackboardCrawler {
             // Verify login success
             const responseData = casLoginResponse.data as string;
 
-            outputChannel.appendLine("cas login response: " + responseData);
+            // outputChannel.appendLine("cas login response: " + responseData);
 
             if (responseData.includes("登出") || responseData.toLowerCase().includes("logout")) {
                 vscode.window.showInformationMessage("✅ CAS authentication successful, logged into Blackboard!");
@@ -347,10 +347,10 @@ export class BlackboardCrawler {
                 }
             );
 
-            if (this.debug) {
-                outputChannel.appendLine("courseLIstUrl: " + this.courseListUrl);
-                outputChannel.appendLine("responese: " + response.data);
-            }
+            // if (this.debug) {
+            //     outputChannel.appendLine("courseLIstUrl: " + this.courseListUrl);
+            //     outputChannel.appendLine("responese: " + response.data);
+            // }
 
             if (response.status !== 200) {
                 vscode.window.showErrorMessage("❌ Failed to load course list");
