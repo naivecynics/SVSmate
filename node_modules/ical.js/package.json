@@ -1,0 +1,104 @@
+{
+  "name": "ical.js",
+  "version": "2.1.0",
+  "author": "Philipp Kewisch",
+  "contributors": [
+    "Github Contributors (https://github.com/kewisch/ical.js/graphs/contributors)"
+  ],
+  "description": "Javascript parser for ics (rfc5545) and vcard (rfc6350) data",
+  "main": "dist/ical.js",
+  "types": "dist/types/module.d.ts",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kewisch/ical.js.git"
+  },
+  "keywords": [
+    "calendar",
+    "iCalendar",
+    "jCal",
+    "vCard",
+    "jCard",
+    "parser"
+  ],
+  "devDependencies": {
+    "@babel/preset-env": "^7.24.3",
+    "@eslint/js": "^9.0.0",
+    "@octokit/core": "^6.0.1",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@stylistic/eslint-plugin": "^2.1.0",
+    "benchmark": "^2.1.4",
+    "c8": "^10.1.2",
+    "chai": "^5.1.0",
+    "clean-jsdoc-theme": "^4.2.18",
+    "eslint": "^9.0.0",
+    "eslint-plugin-html": "^8.1.1",
+    "globals": "^15.0.0",
+    "jsdoc": "^4.0.2",
+    "jsdoc-tsimport-plugin": "^1.0.5",
+    "karma": "^6.4.3",
+    "karma-chai": "^0.1.0",
+    "karma-mocha": "^2.0.1",
+    "karma-sauce-launcher": "^4.3.6",
+    "karma-spec-reporter": "^0.0.36",
+    "mocha": "^10.3.0",
+    "node-fetch": "^3.3.2",
+    "yauzl-promise": "^4.0.0"
+  },
+  "license": "MPL-2.0",
+  "engine": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "test": "npm run test-unit && npm run test-acceptance",
+    "test-unit": "c8 mocha",
+    "test-acceptance": "mocha test/acceptance/*_test.js",
+    "test-performance": "mocha --reporter test/support/perfReporter.cjs test/performance/*_test.js",
+    "test-browser": "karma start karma.conf.cjs",
+    "test-all": "npm run test-unit && npm run test-acceptance && npm run test-performance && npm run test-browser",
+    "build": "rollup -c",
+    "lint": "eslint",
+    "jsdoc": "rm -rf docs/api && jsdoc --configure jsdoc-prepare.json && rm -rf docs/api && jsdoc --configure jsdoc.json --verbose",
+    "validator": "node tools/scriptutils.js replace-unpkg tools/validator.html docs/validator.html",
+    "recurtester": "node tools/scriptutils.js replace-unpkg tools/recur-tester.html docs/recur-tester.html",
+    "ghpages": "npm run jsdoc && npm run validator && npm run recurtester"
+  },
+  "exports": {
+    "import": "./dist/ical.js",
+    "require": "./dist/ical.es5.cjs",
+    "types": "./dist/types/module.d.ts"
+  },
+  "files": [
+    "dist/ical.js",
+    "dist/ical.min.js",
+    "dist/ical.es5.cjs",
+    "dist/ical.es5.min.cjs",
+    "dist/types/*",
+    "lib/ical/*.js"
+  ],
+  "mocha": {
+    "ui": "tdd",
+    "require": "test/support/helper.js",
+    "reporter": "spec"
+  },
+  "c8": {
+    "include": "lib/ical",
+    "reporter": [
+      "text",
+      "html",
+      "lcov"
+    ]
+  },
+  "saucelabs": {
+    "SL_Chrome": {
+      "base": "SauceLabs",
+      "browserName": "chrome"
+    },
+    "SL_Firefox": {
+      "base": "SauceLabs",
+      "browserName": "firefox"
+    }
+  }
+}

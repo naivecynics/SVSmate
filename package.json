@@ -1,0 +1,220 @@
+{
+  "name": "svsmate",
+  "displayName": "svsmate",
+  "description": "A to-do list extension with support for JSON file management",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:todoListView",
+    "onCommand:todoListView.addItem"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "keybindings": [
+      {
+        "command": "todoListView.addItem",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mySidebar",
+          "title": "My Sidebar",
+          "icon": "src/resource/pig.svg"
+        }
+      ]
+    },
+    "views": {
+      "mySidebar": [
+        {
+          "id": "folderView",
+          "name": "File Explorer"
+        },
+        {
+          "id": "todoListView",
+          "name": "To-Do List"
+        },
+        {
+          "id": "notesView",
+          "name": "Notes"
+        },
+        {
+          "id": "bbMaterialView",
+          "name": "BB Materials"
+        },
+        {
+          "id": "copilotView",
+          "name": "Copilot"
+        }
+      ]
+    },
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "todoListView.editTask",
+          "when": "view == todoListView",
+          "group": "inline"
+        },
+        {
+          "command": "todoListView.deleteTask",
+          "when": "view == todoListView",
+          "group": "inline"
+        },
+        {
+          "command": "bbMaterialView.copyToWorkspace",
+          "when": "view == bbMaterialView",
+          "group": "inline"
+        },
+        {
+          "command": "bbMaterialView.updateSemester",
+          "when": "view == bbMaterialView && viewItem =~ /semesterFolder/",
+          "group": "inline"
+        },
+        {
+          "command": "bbMaterialView.updateCourse",
+          "when": "view == bbMaterialView && viewItem =~ /courseFolder/",
+          "group": "inline"
+        },
+        {
+          "command": "notesView.deleteNote",
+          "when": "view == notesView",
+          "group": "inline"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "todoListView.addItem",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Add Item"
+        },
+        {
+          "command": "todoListView.sortByEndTime",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Sort By End Time"
+        },
+        {
+          "command": "todoListView.sortByKinds",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Sort By Kinds"
+        },
+        {
+          "command": "todoListView.searchTasks",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Search Tasks"
+        },
+        {
+          "command": "todoListView.clearSearch",
+          "when": "view == todoListView ",
+          "group": "navigation",
+          "title": "Clear Search"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "todoListView.addItem",
+        "title": "Add Item"
+      },
+      {
+        "command": "todoListView.loadJsonFile",
+        "title": "Load JSON File"
+      },
+      {
+        "command": "todoListView.editTask",
+        "title": "Edit Task"
+      },
+      {
+        "command": "todoListView.deleteTask",
+        "title": "Delete Task"
+      },
+      {
+        "command": "todoListView.toggleTaskCheckbox",
+        "title": "Toggle Task Checkbox"
+      },
+      {
+        "command": "todoListView.sortByEndTime",
+        "title": "Sort By DDL"
+      },
+      {
+        "command": "todoListView.sortByKinds",
+        "title": "Sort By Kinds"
+      },
+      {
+        "command": "todoListView.searchTasks",
+        "title": "Search Tasks"
+      },
+      {
+        "command": "todoListView.clearSearch",
+        "title": "Clear Search"
+      },
+      {
+        "command": "notesView.createNote",
+        "title": "Create Note"
+      },
+      {
+        "command": "bbMaterialView.copyToWorkspace",
+        "title": "复制到工作区"
+      },
+      {
+        "command": "bbMaterialView.setReadOnly",
+        "title": "Set Read Only"
+      },
+      {
+        "command": "bbMaterialView.openReadOnly",
+        "title": "Open Read Only"
+      },
+      {
+        "command": "bbMaterialView.openPDF",
+        "title": "Open PDF"
+      },
+      {
+        "command": "bbMaterialView.updateSemester",
+        "title": "更新学期"
+      },
+      {
+        "command": "bbMaterialView.updateCourse",
+        "title": "更新课程"
+      },
+      {
+        "command": "notesView.deleteNote",
+        "title": "删除笔记"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.84.0",
+    "@typescript-eslint/eslint-plugin": "^8.25.0",
+    "@typescript-eslint/parser": "^8.25.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.21.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "fs-extra": "^11.3.0",
+    "ical.js": "^2.1.0",
+    "node-ical": "^0.20.1"
+  }
+}

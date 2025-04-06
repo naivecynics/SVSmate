@@ -1,0 +1,246 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.activate = activate;
+const vscode = __importStar(require("vscode"));
+const folderView_1 = require("./folderView");
+const path = __importStar(require("path"));
+const todoListView_1 = require("./todoListView");
+const copilotView_1 = require("./copilotView");
+const notesView_1 = require("./notesView");
+const bbMaterialView_1 = require("./bbMaterialView");
+const fs = __importStar(require("fs"));
+const fse = __importStar(require("fs-extra"));
+function activate(context) {
+    const global_storage_path = context.globalStorageUri.fsPath;
+    const crawled_courses_path = path.join(global_storage_path, "crawled_courses");
+    if (!fs.existsSync(crawled_courses_path)) {
+        fs.mkdirSync(crawled_courses_path, { recursive: true });
+    }
+    const notes_path = path.join(global_storage_path, "notes");
+    if (!fs.existsSync(notes_path)) {
+        fs.mkdirSync(notes_path, { recursive: true });
+    }
+    const crawled_courses_notes_path = path.join(notes_path, "crawled_courses_notes");
+    if (!fs.existsSync(crawled_courses_notes_path)) {
+        fs.mkdirSync(crawled_courses_notes_path, { recursive: true });
+    }
+    const personal_notes_path = path.join(notes_path, "personal_notes");
+    if (!fs.existsSync(personal_notes_path)) {
+        fs.mkdirSync(personal_notes_path, { recursive: true });
+    }
+    const tasks_path = path.join(global_storage_path, "tasks.json");
+    if (!fs.existsSync(tasks_path)) {
+        fs.mkdirSync(tasks_path, { recursive: true });
+    }
+    vscode.window.showInformationMessage("global_storage_path: " + global_storage_path);
+    vscode.window.showInformationMessage("crawled_courses_path: " + crawled_courses_path);
+    // vscode.window.showInformationMessage("crawled_courses_notes_path: " + crawled_courses_notes_path);
+    // vscode.window.showInformationMessage("personal_notes_path: " + personal_notes_path);
+    // vscode.window.showInformationMessage("tasks_path: " + tasks_path);
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+        vscode.window.showWarningMessage("No workspace folder is open.");
+        return;
+    }
+    const folderViewProvider = new folderView_1.FolderViewProvider(workspaceFolders[0].uri.fsPath);
+    vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
+    // 注册视图提供者的销毁方法
+    context.subscriptions.push(folderViewProvider);
+    const todoListViewProvider = new todoListView_1.TodoListViewProvider();
+    vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider);
+    vscode.window.registerWebviewViewProvider("copilotView", new copilotView_1.CopilotViewProvider());
+    const notesViewProvider = new notesView_1.NotesViewProvider(notes_path);
+    vscode.window.registerTreeDataProvider("notesView", notesViewProvider);
+    const bbVaultPath = path.join(crawled_courses_path, "bb-vault");
+    const bbMaterialViewProvider = new bbMaterialView_1.BBMaterialViewProvider(bbVaultPath);
+    vscode.window.registerTreeDataProvider("bbMaterialView", bbMaterialViewProvider);
+    // 直接加载本地 `tasks.json` 文件
+    const localJsonPath = path.join(workspaceFolders[0].uri.fsPath, "tasks.json");
+    todoListViewProvider.loadJsonFile(localJsonPath);
+    context.subscriptions.push(vscode.commands.registerCommand("todoListView.addItem", async () => {
+        const input = await vscode.window.showInputBox({ prompt: "输入任务名称" });
+        if (input) {
+            const endDate = await vscode.window.showInputBox({ prompt: "输入截止日期 (格式: YYYY-MM-DD)" });
+            const category = await vscode.window.showInputBox({ prompt: "输入任务分类" });
+            if (endDate) {
+                todoListViewProvider.addItem(input, endDate, category || "无分类");
+            }
+        }
+    }), vscode.commands.registerCommand("todoListView.loadJsonFile", async () => {
+        const fileUri = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+            openLabel: "选择 JSON 文件",
+            filters: { "JSON 文件": ["json"] }
+        });
+        if (fileUri && fileUri[0]) {
+            await todoListViewProvider.loadJsonFile(fileUri[0].fsPath);
+        }
+    }), vscode.commands.registerCommand("todoListView.editTask", async (task) => {
+        todoListViewProvider.editTask(task);
+    }), vscode.commands.registerCommand("todoListView.deleteTask", (task) => {
+        todoListViewProvider.deleteTask(task);
+    }), vscode.commands.registerCommand("todoListView.toggleTaskCheckbox", (task) => {
+        task.checked = !task.checked;
+        todoListViewProvider._onDidChangeTreeData.fire(undefined);
+        todoListViewProvider.saveJsonFile();
+    }), vscode.commands.registerCommand("todoListView.sortByEndTime", () => {
+        todoListViewProvider.sortBy("endTime");
+    }), vscode.commands.registerCommand("todoListView.sortByKinds", () => {
+        todoListViewProvider.sortBy("category");
+    }), vscode.commands.registerCommand('todoListView.searchTasks', async () => {
+        const searchTerm = await vscode.window.showInputBox({
+            prompt: '输入任务名称（支持模糊搜索）',
+            placeHolder: '例如：开发功能'
+        });
+        if (searchTerm !== undefined) {
+            // provider.setSearchTerm(searchTerm);
+            todoListViewProvider.setSearchTerm(searchTerm);
+        }
+    }), 
+    // 注册清除命令
+    vscode.commands.registerCommand('todoListView.clearSearch', () => {
+        todoListViewProvider.clearSearch();
+    }), vscode.commands.registerCommand('notesView.createNote', async (folderPath) => {
+        await notesViewProvider.createNote(folderPath);
+    }), 
+    // 添加删除笔记命令
+    vscode.commands.registerCommand('notesView.deleteNote', async (item) => {
+        try {
+            const answer = await vscode.window.showWarningMessage(`确定要删除笔记 "${item.label}" 吗？`, '是', '否');
+            if (answer === '是') {
+                await notesViewProvider.deleteNote(item.resourceUri.fsPath);
+                vscode.window.showInformationMessage(`笔记 "${item.label}" 已删除`);
+            }
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`删除笔记失败: ${error}`);
+        }
+    }), vscode.commands.registerCommand('bbMaterialView.copyToWorkspace', async (item) => {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) {
+            vscode.window.showErrorMessage('没有打开的工作区！');
+            return;
+        }
+        const sourcePath = item.resourceUri.fsPath;
+        const fileName = path.basename(sourcePath);
+        const targetPath = path.join(workspaceFolders[0].uri.fsPath, fileName);
+        try {
+            if (fs.statSync(sourcePath).isDirectory()) {
+                // 如果是文件夹，先检查目标路径是否存在
+                if (fs.existsSync(targetPath)) {
+                    const answer = await vscode.window.showWarningMessage(`目标路径 ${fileName} 已存在，是否覆盖？`, '是', '否');
+                    if (answer !== '是') {
+                        return;
+                    }
+                }
+                // 使用fs-extra复制整个目录
+                await fse.copy(sourcePath, targetPath, { overwrite: true });
+                vscode.window.showInformationMessage(`文件夹 ${fileName} 已复制到工作区`);
+            }
+            else {
+                // 如果是文件，先检查目标路径是否存在
+                if (fs.existsSync(targetPath)) {
+                    const answer = await vscode.window.showWarningMessage(`目标文件 ${fileName} 已存在，是否覆盖？`, '是', '否');
+                    if (answer !== '是') {
+                        return;
+                    }
+                }
+                // 使用fs-extra复制文件
+                await fse.copyFile(sourcePath, targetPath);
+                vscode.window.showInformationMessage(`文件 ${fileName} 已复制到工作区`);
+            }
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`复制失败: ${error}`);
+        }
+    }), 
+    // 添加设置文件只读状态的命令
+    vscode.commands.registerCommand('bbMaterialView.setReadOnly', async (uri) => {
+        const document = await vscode.workspace.openTextDocument(uri);
+        if (document) {
+            // 设置文档为只读
+            vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
+        }
+    }), vscode.commands.registerCommand('bbMaterialView.openReadOnly', async (uri) => {
+        try {
+            // 打开文档
+            const document = await vscode.workspace.openTextDocument(uri);
+            // 显示文档
+            await vscode.window.showTextDocument(document, {
+                preview: true,
+                preserveFocus: true
+            });
+            // 设置文档为只读
+            await vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`打开文件失败: ${error}`);
+        }
+    }), vscode.commands.registerCommand('bbMaterialView.openPDF', async (uri) => {
+        try {
+            // 使用vscode.open命令打开PDF
+            await vscode.commands.executeCommand('vscode.open', uri);
+            // 等待文档打开
+            await new Promise(resolve => setTimeout(resolve, 100));
+            // 设置文档为只读
+            await vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`打开PDF失败: ${error}`);
+        }
+    }), 
+    // 更新学期命令
+    vscode.commands.registerCommand('bbMaterialView.updateSemester', async (item) => {
+        try {
+            // TODO: 实现更新学期的逻辑
+            vscode.window.showInformationMessage(`正在更新学期: ${item.label}...`);
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`更新学期失败: ${error}`);
+        }
+    }), 
+    // 更新课程命令
+    vscode.commands.registerCommand('bbMaterialView.updateCourse', async (item) => {
+        try {
+            // TODO: 实现更新课程的逻辑
+            vscode.window.showInformationMessage(`正在更新课程: ${item.label}...`);
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`更新课程失败: ${error}`);
+        }
+    }));
+}
+//# sourceMappingURL=extension.js.map
