@@ -15,13 +15,6 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "keybindings": [
-      {
-        "command": "todoListView.addItem",
-        "key": "ctrl+shift+t",
-        "mac": "cmd+shift+t"
-      }
-    ],
     "viewsContainers": {
       "activitybar": [
         {
