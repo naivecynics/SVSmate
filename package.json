@@ -1,17 +1,14 @@
 {
   "name": "svsmate",
   "displayName": "svsmate",
+  "publisher": "se-8",
   "description": "A to-do list extension with support for JSON file management",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.84.0"
+    "vscode": "^1.99.0"
   },
   "categories": [
     "Other"
-  ],
-  "activationEvents": [
-    "onView:todoListView",
-    "onCommand:todoListView.addItem"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -117,7 +114,11 @@
     "commands": [
       {
         "command": "todoListView.addItem",
-        "title": "Add Item"
+        "title": "Add Item",
+        "icon": {
+          "dark": "./src/icons/addItem_dark.svg",
+          "light": "./src/icons/addItem_light.svg"
+        }
       },
       {
         "command": "todoListView.loadJsonFile",
@@ -125,11 +126,19 @@
       },
       {
         "command": "todoListView.editTask",
-        "title": "Edit Task"
+        "title": "Edit Task",
+        "icon": {
+          "dark": "./src/icons/editTask_dark.svg",
+          "light": "./src/icons/editTask_light.svg"
+        }
       },
       {
         "command": "todoListView.deleteTask",
-        "title": "Delete Task"
+        "title": "Delete Task",
+        "icon": {
+          "dark": "./src/icons/deleteTask_dark.svg",
+          "light": "./src/icons/deleteTask_light.svg"
+        }
       },
       {
         "command": "todoListView.toggleTaskCheckbox",
@@ -137,19 +146,35 @@
       },
       {
         "command": "todoListView.sortByEndTime",
-        "title": "Sort By DDL"
+        "title": "Sort By DDL",
+        "icon": {
+          "dark": "./src/icons/sortByDDL-dark.svg",
+          "light": "./src/icons/sortByDDL-light.svg"
+        }
       },
       {
         "command": "todoListView.sortByKinds",
-        "title": "Sort By Kinds"
+        "title": "Sort By Kinds",
+        "icon": {
+          "dark": "./src/icons/sortByKinds-dark.svg",
+          "light": "./src/icons/sortByKinds-light.svg"
+        }
       },
       {
         "command": "todoListView.searchTasks",
-        "title": "Search Tasks"
+        "title": "Search Tasks",
+        "icon": {
+          "dark": "./src/icons/search-dark.svg",
+          "light": "./src/icons/search-light.svg"
+        }
       },
       {
         "command": "todoListView.clearSearch",
-        "title": "Clear Search"
+        "title": "Clear Search",
+        "icon": {
+          "dark": "./src/icons/clear-2.svg",
+          "light": "./src/icons/clear.svg"
+        }
       },
       {
         "command": "notesView.createNote",

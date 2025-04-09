@@ -36,12 +36,6 @@ export function activate(context: vscode.ExtensionContext) {
     fs.mkdirSync(personal_notes_path, { recursive: true });
   }
 
-  const tasks_path = path.join(global_storage_path, "tasks.json");
-
-  if (!fs.existsSync(tasks_path)) {
-    fs.mkdirSync(tasks_path, { recursive: true });
-  }
-
   vscode.window.showInformationMessage("global_storage_path: " + global_storage_path);
   vscode.window.showInformationMessage("crawled_courses_path: " + crawled_courses_path);
   // vscode.window.showInformationMessage("crawled_courses_notes_path: " + crawled_courses_notes_path);
@@ -58,9 +52,12 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
 
   // 注册视图提供者的销毁方法
-  context.subscriptions.push(folderViewProvider);
+  // context.subscriptions.push(folderViewProvider);
 
-  const todoListViewProvider = new TodoListViewProvider();
+  const todoListViewProvider = new TodoListViewProvider(context);
+  vscode.window.registerTreeDataProvider('todoListView', todoListViewProvider);
+  todoListViewProvider.loadJsonFile();
+  
   vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider);
 
   vscode.window.registerWebviewViewProvider("copilotView", new CopilotViewProvider());
@@ -72,9 +69,9 @@ export function activate(context: vscode.ExtensionContext) {
   const bbMaterialViewProvider = new BBMaterialViewProvider(bbVaultPath);
   vscode.window.registerTreeDataProvider("bbMaterialView", bbMaterialViewProvider);
 
-  // 直接加载本地 `tasks.json` 文件
-  const localJsonPath = path.join(workspaceFolders[0].uri.fsPath, "tasks.json");
-  todoListViewProvider.loadJsonFile(localJsonPath);
+  // // 直接加载本地 `tasks.json` 文件
+  // const localJsonPath = path.join(workspaceFolders[0].uri.fsPath, "tasks.json");
+  // todoListViewProvider.loadJsonFile();
 
   context.subscriptions.push(
     vscode.commands.registerCommand("todoListView.addItem", async () => {
@@ -97,7 +94,7 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       if (fileUri && fileUri[0]) {
-        await todoListViewProvider.loadJsonFile(fileUri[0].fsPath);
+        await todoListViewProvider.loadJsonFile();
       }
     }),
 

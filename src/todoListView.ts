@@ -18,12 +18,12 @@ interface TodoItem {
 }
 
 export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem> {
+  constructor(private context: vscode.ExtensionContext) {}
   public _onDidChangeTreeData = new vscode.EventEmitter<TodoItem | undefined>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private items: TodoItem[] = [];
-  private jsonFilePath: string = path.join(vscode.workspace.rootPath || '', 'data', 'tasks.json');  // Default path
-
+  
   getTreeItem(element: TodoItem): vscode.TreeItem {
 
     const treeItem = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None);
@@ -31,13 +31,13 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem> {
     // 实现搜索关键词高亮
     if (this._searchTerm && element.label.toLowerCase().includes(this._searchTerm)) {
       treeItem.label = this.highlightSearchTerm(element.label, this._searchTerm);
-      treeItem.description = `[${element.category}] 🔍`; // 添加搜索标记
+      treeItem.description = `[${element.category}] 🔍 ❗${element.endTime}`;
     } else {
       treeItem.label = element.label;
-      treeItem.description = `[${element.category}]`;
+      treeItem.description = `[${element.category}] ❗${element.endTime}`;
     }
 
-  
+
     treeItem.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");
     treeItem.label = element.label;
     treeItem.description = `[${element.category}] ❗${element.endTime}`; 
@@ -54,7 +54,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem> {
       command: "todoListView.toggleTaskCheckbox",
       title: "Toggle Task Checkbox",
       arguments: [element]
-    }
+    };
     
     
     return treeItem;
@@ -84,16 +84,12 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem> {
     return this._searchTerm ? this._filteredItems : this.items;
   }
 
-  // 去除搜索状态
+  // remove the search state
   clearSearch() {
     this._searchTerm = '';
     this._filteredItems = [];
     this._onDidChangeTreeData.fire(undefined);
   }
-
-  // getChildren(): TodoItem[] {
-  //   return this.items;
-  // }
 
   addItem(label: string, endTime: string, category: string) {
     if(!/^\d{4}-\d{2}-\d{2}$/.test(endTime)) {
@@ -119,54 +115,57 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem> {
 
   async deleteTask(item: TodoItem) {
     const index = this.items.indexOf(item);
-    this.items.splice(index, 1);
-    this._onDidChangeTreeData.fire(undefined);
-    this.saveJsonFile();  // Save after deleting
+    if (index !== -1) {
+      this.items.splice(index, 1);
+      this._onDidChangeTreeData.fire(undefined);
+      this.saveJsonFile();
+    }
   }
 
   // Load data from a JSON file
-  async loadJsonFile(filePath: string) {
+  async loadJsonFile() {
+    const dirPath = this.getJsonFilePath();
+    const filePath = path.join(dirPath, 'tasks.json');
     if (!fs.existsSync(filePath)) {
-      vscode.window.showErrorMessage(`文件不存在: ${filePath}`);
+      vscode.window.showErrorMessage("未找到 tasks.json 文件，将创建一个空文件。");
+      this.saveJsonFile();
       return;
     }
-
-    // const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    let data;
     try {
-      data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      const raw = fs.readFileSync(filePath, "utf8");
+      const data = JSON.parse(raw);
+      this.items = data.map((task: any) => ({
+        label: task.Name || "未命名任务",
+        endTime: task.DDL || "无截止日期",
+        category: task.Variety || "无分类",
+        checked: task.Finish || false,
+      }));
+      this._onDidChangeTreeData.fire(undefined);
+      vscode.window.showInformationMessage("任务列表已从 JSON 文件加载");
+    } catch (error) {
+      vscode.window.showErrorMessage(`${filePath}`);
     }
-    catch (error) {
-      vscode.window.showErrorMessage(`无法解析 JSON 文件: ${filePath}`);
-      return;
-    }
-    this.items = data.map((task: any) => ({
-      label: task.Name || "未命名任务",
-      endTime: task.DDL || "无截止日期",
-      category: task.Variety || "无分类",
-      checked: task.Finish || false, // Automatically check tasks with Finish: true
-    }));
-
-    this._onDidChangeTreeData.fire(undefined);
-    vscode.window.showInformationMessage("任务列表已从 JSON 文件加载");
   }
 
   // Save data to a JSON file
   saveJsonFile() {
-    const dataFolder = path.join(vscode.workspace.rootPath || '');
-    if (!fs.existsSync(dataFolder)) {
-      fs.mkdirSync(dataFolder);
-    }
-
-    const dataFilePath = path.join(dataFolder, 'tasks.json');
+    const dirPath = this.getJsonFilePath();
+    const filePath = path.join(dirPath, 'tasks.json');
     const data = this.items.map(item => ({
       Name: item.label,
       DDL: item.endTime,
       Variety: item.category,
-      Finish: item.checked, // Store the checkbox state (checked: true/false)
+      Finish: item.checked,
     }));
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+  }
 
-    fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2), "utf8");
+  private getJsonFilePath(): string {
+    const folderPath = this.context.globalStorageUri.fsPath;
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, { recursive: true });
+    }
+    return path.join(folderPath);
   }
 
   // Toggle task checkbox
@@ -185,5 +184,4 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem> {
 
     this._onDidChangeTreeData.fire(undefined);
   }
-  
 }
