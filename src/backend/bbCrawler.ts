@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import { CookieJar } from 'tough-cookie';
 import { wrapper } from 'axios-cookiejar-support';
-import { outputChannel1 } from '../extension';
+import { outputChannel } from '../extension';
 import fetchCookie from 'fetch-cookie';
 import * as tough from 'tough-cookie';
 import { promisify } from 'util';
@@ -74,24 +74,56 @@ export async function updateCourseJson(context: vscode.ExtensionContext) {
     }
     */
     const courseJsonPath = globalConfig.ConfigFilePath.BlackboardFolderMapping;
-    const courseJsonDir = path.dirname(courseJsonPath);
+    const courseJsonDir = globalConfig.ConfigFolderPath.BlackboardSaveFolder;
     var courseJsonNew: { [key: string]: any } = {};
     var courseJsonOld: { [key: string]: any } = {};
+    const crawler = new BlackboardCrawler(true);
 
-    const crawler = new BlackboardCrawler();
-
-    if (!fs.existsSync(courseJsonDir) || !fs.existsSync(courseJsonPath)) {
+    await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Blackboard Crawler',
+        cancellable: true
+    }, async (progress, token) => {
         if (!fs.existsSync(courseJsonDir)) {
             fs.mkdirSync(courseJsonDir, { recursive: true });
         }
 
-    }
-    else {
-        courseJsonOld = JSON.parse(fs.readFileSync(courseJsonPath, 'utf-8'));
-        const loginSuccess = await crawler.login(context);
-    }
+        outputChannel.info('crawlBB', 'Logging in...');
+        let loginSuccess = await crawler.login(context);
+        if (!loginSuccess) {
+            vscode.window.showErrorMessage('❌ Failed to login to Blackboard');
+            outputChannel.error('crawlBB', 'Login failed');
+            return;
+        }
 
+        vscode.window.showInformationMessage('✅ Successfully logged in to Blackboard');
+        outputChannel.info('crawlBB', 'Login successful');
 
+        // Get course list
+        progress.report({ message: 'Getting course list...' });
+        outputChannel.info('crawlBB', 'Getting course list...');
+        const courses = await crawler.getCoursesByTerm();
+
+        if (!courses || Object.keys(courses).length === 0) {
+            vscode.window.showWarningMessage('No courses found');
+            outputChannel.warn('crawlBB', 'No courses found');
+            return;
+        }
+
+        outputChannel.info('crawlBB', `✅ Retrieved ${Object.keys(courses).length} terms with courses`);
+
+        // Check if the courseJson file exists
+        if (fs.existsSync(courseJsonPath)) {
+            // Read the existing courseJson file
+            const fileContent = fs.readFileSync(courseJsonPath, 'utf8');
+            try {
+                courseJsonOld = JSON.parse(fileContent);
+            } catch (error) {
+                outputChannel.error('crawlBB', `Failed to parse existing courseJson: ${error}`);
+                return;
+            }
+        }
+    });
 };
 
 export async function crawlBB(context: vscode.ExtensionContext) {
@@ -102,53 +134,35 @@ export async function crawlBB(context: vscode.ExtensionContext) {
         title: 'Blackboard Crawler',
         cancellable: true
     }, async (progress, token) => {
-        // Try to load cookies first
-        outputChannel1.info('crawlBB', 'Loading cookies...');
-        let loginSuccess = false;
-
-        outputChannel1.info('crawlBB', 'Logging in...');
-        loginSuccess = await crawler.login(context);
+        outputChannel.info('crawlBB', 'Logging in...');
+        let loginSuccess = await crawler.login(context);
 
         if (!loginSuccess) {
             vscode.window.showErrorMessage('❌ Failed to login to Blackboard');
-            outputChannel1.error('crawlBB', 'Login failed');
+            outputChannel.error('crawlBB', 'Login failed');
             return;
         }
 
         vscode.window.showInformationMessage('✅ Successfully logged in to Blackboard');
-        outputChannel1.info('crawlBB', 'Login successful');
+        outputChannel.info('crawlBB', 'Login successful');
 
         // Get course list
         progress.report({ message: 'Getting course list...' });
-        outputChannel1.info('crawlBB', 'Getting course list...');
+        outputChannel.info('crawlBB', 'Getting course list...');
         const courses = await crawler.getCoursesByTerm();
 
         if (!courses || Object.keys(courses).length === 0) {
             vscode.window.showWarningMessage('No courses found');
-            outputChannel1.warn('crawlBB', 'No courses found');
+            outputChannel.warn('crawlBB', 'No courses found');
             return;
         }
 
-        // outputChannel.info('crawlBB', '✅ Retrieved ${Object.keys(courses).length} terms with courses');
+        outputChannel.info('crawlBB', '✅ Retrieved ${Object.keys(courses).length} terms with courses');
 
-        // Ask user to select download location
-        const downloadFolder = await vscode.window.showOpenDialog({
-            canSelectMany: false,
-            canSelectFolders: true,
-            canSelectFiles: false,
-            openLabel: 'Select Download Location'
-        });
-
-        if (!downloadFolder || downloadFolder.length === 0) {
-            vscode.window.showInformationMessage('Download cancelled');
-            return;
-        }
-
-        const baseDownloadPath = globalConfig.ConfigFilePath.BlackboardSaveFolder;
+        const baseDownloadPath = globalConfig.ConfigFolderPath.BlackboardSaveFolder;
 
         // Process each term and course
         for (const [termId, termCourses] of Object.entries(courses)) {
-            // outputChannel.appendLine(`\n📚 Processing term: ${termId}`);
             progress.report({ message: `Processing term: ${termId}` });
 
             // Create term directory
@@ -338,7 +352,7 @@ export class BlackboardCrawler {
                     ]);
                 }
             } catch (error) {
-                outputChannel1.error('login', `Failed to save credentials: ${error}`);
+                outputChannel.error('login', `Failed to save credentials: ${error}`);
             }
         }
 
@@ -357,11 +371,10 @@ export class BlackboardCrawler {
                 headers: this.headers,
             });
             const casHtml = await casResponse.text();
-            // outputChannel.appendLine("Getting the execution token");
             const $ = cheerio.load(casHtml);
             const execution = $('input[name="execution"]').val();
             if (!execution) {
-                outputChannel1.error('login', 'Cannot find execution parameter for CAS authentication');
+                outputChannel.error('login', 'Cannot find execution parameter for CAS authentication');
                 return false;
             }
 
@@ -374,7 +387,6 @@ export class BlackboardCrawler {
             formData.append('geolocation', "");
             formData.append('submit', "登录");
 
-            // outputChannel.appendLine("Submitting CAS login form");
             const casLoginResponse = await this.fetch(casLoginUrl, {
                 method: 'POST',
                 headers: {
@@ -388,7 +400,6 @@ export class BlackboardCrawler {
 
             // 从响应头中获取重定向地址（ticket URL）
             const ticketUrl = casLoginResponse.headers.get('location');
-            // outputChannel.appendLine("CAS login response ticket: " + ticketUrl);
 
             if (!ticketUrl) {
                 vscode.window.showErrorMessage("❌ Wrong username or password!");
@@ -396,11 +407,9 @@ export class BlackboardCrawler {
             }
 
             if (!ticketUrl.includes('https://bb.sustech.edu.cn')) {
-                // outputChannel.appendLine("❌ Still redirected to CAS after login");
                 vscode.window.showErrorMessage("❌ Login verification failed!");
                 return false;
             } else {
-                // outputChannel.appendLine("✅ Successfully logged into BB");
                 vscode.window.showInformationMessage("✅ CAS 认证成功，已登录到 Blackboard！");
                 return true;
             }
@@ -414,8 +423,6 @@ export class BlackboardCrawler {
      * Get courses organized by term
      */
     public async getCoursesByTerm(): Promise<CoursesByTerm> {
-        // outputChannel.appendLine("📡 Getting course list...");
-
         // Prepare request payload for course list
         const payload = new URLSearchParams({
             "action": "refreshAjaxModule",
@@ -435,7 +442,6 @@ export class BlackboardCrawler {
             });
 
             if (response.status !== 200) {
-                // outputChannel.appendLine(`❌ Course list request failed with status: ${response.status}`);
                 return {};
             }
 
@@ -448,6 +454,13 @@ export class BlackboardCrawler {
                 explicitCharkey: true,
                 explicitRoot: true
             });
+
+            if (this.debug) {
+                //save the xmlData to a file in the debug folder
+                const debugFilePath = path.join(globalConfig.ConfigFolderPath.DebugFolder, 'courseList.xml');
+                fs.writeFileSync(debugFilePath, xmlData);
+                outputChannel.info('getCoursesByTerm', `XML data saved to ${debugFilePath}`);
+            }
 
             const result = await parser.parseStringPromise(xmlData);
 
@@ -546,7 +559,7 @@ export class BlackboardCrawler {
             return courses;
 
         } catch (error) {
-            // outputChannel.appendLine(`❌ Error parsing courses: ${error}`);
+            outputChannel.error('getCoursesByTerm', `Failed to get courses: ${error}`);
             return {};
         }
     }

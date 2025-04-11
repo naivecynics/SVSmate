@@ -20,8 +20,22 @@
       {
         "command": "svsmate.crawlBB",
         "title": "SVSmate: Crawl Blackboard PDFs"
+      },
+      {
+        "command": "svsmate.updateCourseJson",
+        "title": "SVSmate: Update Course JSON"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "SVSmate",
+      "properties": {
+        "svsmate.root": {
+          "type": "string",
+          "default": "~/",
+          "description": "The root directory for SVSmate where SVSmate will store all files."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

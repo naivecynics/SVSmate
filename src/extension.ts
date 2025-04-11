@@ -1,13 +1,22 @@
 import * as vscode from 'vscode';
-import { BlackboardCrawler, crawlBB } from './backend/bbCrawler';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
+import { globalConfig } from './globalConfig';
+import { BlackboardCrawler, crawlBB, updateCourseJson } from './backend/bbCrawler';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "svsmate" is now active!');
+
+	// Create the config folders if they do not exist
+	const configFolders = globalConfig.ConfigFolderPath;
+	for (const folder of Object.keys(configFolders) as Array<keyof typeof configFolders>) {
+		if (!fs.existsSync(configFolders[folder])) {
+			fs.mkdirSync(configFolders[folder], { recursive: true });
+		}
+	}
 
 	const disposable = vscode.commands.registerCommand('svsmate.helloWorld', () => {
 		vscode.window.showInformationMessage('Hello World from SVSmate!');
@@ -16,12 +25,16 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);
 
 	// Advanced structured Blackboard crawler
-	const crawl_bb_disposable = vscode.commands.registerCommand('svsmate.crawlBB', async () => await crawlBB(context));
+	const crawlBBDisposable = vscode.commands.registerCommand('svsmate.crawlBB', async () => await crawlBB(context));
 
-	context.subscriptions.push(crawl_bb_disposable);
+	context.subscriptions.push(crawlBBDisposable);
+
+	const crawlBBCourseListDisposable = vscode.commands.registerCommand('svsmate.updateCourseJson', async () => await updateCourseJson(context));
+	context.subscriptions.push(crawlBBCourseListDisposable);
+
 }
 
-class outputChannel {
+class stdOutputChannel {
 	private output: any;
 	constructor(name: string = 'SVSmate') {
 		this.output = vscode.window.createOutputChannel(name);
@@ -47,7 +60,7 @@ class outputChannel {
 	}
 }
 
-export const outputChannel1 = new outputChannel();
+export const outputChannel = new stdOutputChannel();
 
 
 // This method is called when your extension is deactivated
