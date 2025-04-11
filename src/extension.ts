@@ -16,12 +16,39 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);
 
 	// Advanced structured Blackboard crawler
-	const crawl_bb_disposable = vscode.commands.registerCommand('svsmate.crawlBB', crawlBB);
+	const crawl_bb_disposable = vscode.commands.registerCommand('svsmate.crawlBB', async () => await crawlBB(context));
 
 	context.subscriptions.push(crawl_bb_disposable);
 }
 
-export const outputChannel = vscode.window.createOutputChannel('SVSmate');
+class outputChannel {
+	private output: any;
+	constructor(name: string = 'SVSmate') {
+		this.output = vscode.window.createOutputChannel(name);
+		this.output.show();
+	}
+
+	public async info(module: string, msg: string) {
+		const timestamp = new Date().toISOString();
+		const log = `[${timestamp}] [INFO] [${module}] ${msg}`;
+		this.output.appendLine(log);
+	}
+
+	public async warn(module: string, msg: string) {
+		const timestamp = new Date().toISOString();
+		const log = `[${timestamp}] [WARN] [${module}] ${msg}`;
+		this.output.appendLine(log);
+	}
+
+	public async error(module: string, msg: string) {
+		const timestamp = new Date().toISOString();
+		const log = `[${timestamp}] [ERROR] [${module}] ${msg}`;
+		this.output.appendLine(log);
+	}
+}
+
+export const outputChannel1 = new outputChannel();
+
 
 // This method is called when your extension is deactivated
 export function deactivate() { }
