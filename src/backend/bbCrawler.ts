@@ -10,6 +10,7 @@ import fetchCookie from 'fetch-cookie';
 import * as tough from 'tough-cookie';
 import { promisify } from 'util';
 import { pipeline } from 'stream';
+import { globalConfig } from '../globalConfig';
 
 const fetch = require('node-fetch');
 const yaml = require('js-yaml');
@@ -110,7 +111,7 @@ export async function crawlBB() {
             return;
         }
 
-        const baseDownloadPath = downloadFolder[0].fsPath;
+        const baseDownloadPath = globalConfig.ConfigFilePath.BlackboardSaveFolder;
 
         // Process each term and course
         for (const [termId, termCourses] of Object.entries(courses)) {
@@ -180,7 +181,7 @@ export async function crawlBB() {
 
                             // Get page content
                             const pageContent = await crawler.getPageContent(page.url);
-                            if (!pageContent || Object.keys(pageContent).length === 0) continue;
+                            if (!pageContent || Object.keys(pageContent).length === 0) { continue; }
 
                             // Create page directory
                             const pageName = page.title.replace(/[<>:"/\\|?*]/g, '_');
