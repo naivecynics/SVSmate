@@ -34,13 +34,18 @@
   "dependencies": {
     "axios": "^1.6.7",
     "axios-cookiejar-support": "^5.0.5",
-    "cheerio": "^1.0.0-rc.12",
-    "tough-cookie": "^5.1.2"
+    "cheerio": "^1.0.0",
+    "fetch-cookie": "^3.1.0",
+    "js-yaml": "^4.1.0",
+    "node-fetch": "^2.7.0",
+    "tough-cookie": "^5.1.2",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.35",
     "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
+    "@types/node": "^20.17.28",
+    "@types/node-fetch": "^2.6.12",
     "@types/vscode": "^1.98.0",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
