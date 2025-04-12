@@ -24,6 +24,6 @@ export function createChatParticipantAPI(): void {
     }
     return;
   };
-	const mateParticipantAPI = vscode.chat.createChatParticipant("SVSmate.ChatBot-API", handler);
+	const mateParticipantAPI = vscode.chat.createChatParticipant("svsmate.ChatBot-API", handler);
   // mateParticipantAPI.iconPath = vscode.Uri.joinPath(context.extensionUri, 'tutor.jpeg');
 }

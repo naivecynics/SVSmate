@@ -8,10 +8,10 @@ export class ChatBot {
   constructor(
     baseURL: string = "https://api.deepseek.com"
   ) {
-    const apiKey = vscode.workspace.getConfiguration('SVSmate').get<string>('apiKey');
+    const apiKey = vscode.workspace.getConfiguration('svsmate').get<string>('apikey');
     if (!apiKey) {
-      vscode.window.showErrorMessage("API Key missing, please config SVSmate.apiKey");
-      throw new Error("Missing API Key: SVSmate.apiKey");
+      vscode.window.showErrorMessage("API Key missing, please config svsmate.apikey");
+      throw new Error("Missing API Key: svsmate.apikey");
     }
     this.openai = new OpenAI({ apiKey, baseURL });
   }

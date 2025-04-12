@@ -37,6 +37,6 @@ export function createChatParticipant(): void {
     }
     return;
   };
-	const mateParticipant = vscode.chat.createChatParticipant("SVSmate.ChatBot", handler);
+	const mateParticipant = vscode.chat.createChatParticipant("svsmate.ChatBot", handler);
   // mateParticipant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'tutor.jpeg');
 }

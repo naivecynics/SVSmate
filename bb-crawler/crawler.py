@@ -16,10 +16,10 @@ class BlackboardCrawler:
         """initialize cravler"""
 
         # personal username & password
-        self.user_info_path = './login.yaml'
+        self.user_info_path = "./login.yaml"
 
         # bb-vault bath path
-        self.base_path = './bb-vault/'
+        self.base_path = "./bb-vault/"
 
         self.session = requests.Session()
         self.base_url = "https://bb.sustech.edu.cn"
@@ -38,14 +38,18 @@ class BlackboardCrawler:
         """登录 Blackboard 系统通过 CAS 认证"""
         with open(self.user_info_path, "r", encoding="utf-8") as file:
             info = yaml.safe_load(file)
-            username = info['username']
-            password = info['password']
+            username = info["username"]
+            password = info["password"]
 
         # 访问 Blackboard 登录页获取 CAS 重定向
         bb_response = self.session.get(self.login_url, headers=self.headers)
 
         # 检查是否被重定向到 CAS 登录页面
-        cas_login_url = bb_response.url if "cas.sustech.edu.cn" in bb_response.url else f"{self.cas_url}?service={urllib.parse.quote(self.login_url)}"
+        cas_login_url = (
+            bb_response.url
+            if "cas.sustech.edu.cn" in bb_response.url
+            else f"{self.cas_url}?service={urllib.parse.quote(self.login_url)}"
+        )
 
         cas_response = self.session.get(cas_login_url, headers=self.headers)
         cas_soup = BeautifulSoup(cas_response.text, "xml")
@@ -65,16 +69,19 @@ class BlackboardCrawler:
             "username": username,
             "password": password,
             "execution": execution_value,
+<<<<<<< HEAD
             "_eventId": "submit"
             # "geolocation": "",
             # "submit": "登录"
+=======
+            "_eventId": "submit",
+            "geolocation": "",
+            "submit": "登录",
+>>>>>>> origin/feat-bb-crawler
         }
 
         cas_login_response = self.session.post(
-            cas_login_url,
-            data=cas_login_data,
-            headers=self.headers,
-            allow_redirects=True
+            cas_login_url, data=cas_login_data, headers=self.headers, allow_redirects=True
         )
 
         # print(cas_login_response.text)
@@ -103,14 +110,8 @@ class BlackboardCrawler:
         """从bb主页获取课程列表（从 AJAX 加载）"""
 
         print("📡 正在获取课程列表...")
-        payload = {
-            "action": "refreshAjaxModule",
-            "modId": "_3_1",
-            "tabId": "_1_1",
-            "tab_tab_group_id": "_1_1"
-        }
-        response = self.session.post(
-            self.course_list_url, headers=self.headers, data=payload)
+        payload = {"action": "refreshAjaxModule", "modId": "_3_1", "tabId": "_1_1", "tab_tab_group_id": "_1_1"}
+        response = self.session.post(self.course_list_url, headers=self.headers, data=payload)
 
         if response.status_code != 200:
             print("❌ 课程列表加载失败")
@@ -135,8 +136,7 @@ class BlackboardCrawler:
             # **遍历所有学期**
             for term in soup.find_all("h3", class_="termHeading-coursefakeclass"):
                 term_name = term.get_text(strip=True)  # 获取学期名称
-                match = re.search(
-                    r"（(Spring|Fall|Summer|Winter) (\d{4})）", term_name)
+                match = re.search(r"（(Spring|Fall|Summer|Winter) (\d{4})）", term_name)
                 if match:
                     season = match.group(1).lower()  # 转小写
                     year = match.group(2)[-2:]  # 获取年份后两位
@@ -149,8 +149,7 @@ class BlackboardCrawler:
                 # 🔹 获取学期对应的课程列表 `<div>`
                 a_tag = term.find("a", id=True)
                 if a_tag:
-                    term_id_match = re.search(
-                        r"termCourses__\d+_\d+", a_tag["id"])
+                    term_id_match = re.search(r"termCourses__\d+_\d+", a_tag["id"])
                     if term_id_match:
                         term_id = "_3_1" + term_id_match.group()  # 确保 ID 结构完整
                         course_list_div = soup.find("div", id=term_id)
@@ -171,27 +170,26 @@ class BlackboardCrawler:
 
                                 # **查找公告信息**
                                 announcements = {}
-                                course_data_block = course_li.find(
-                                    "div", class_="courseDataBlock")
+                                course_data_block = course_li.find("div", class_="courseDataBlock")
                                 if course_data_block:
                                     # **移除 "公告: " 标签**
-                                    span_label = course_data_block.find(
-                                        "span", class_="dataBlockLabel")
+                                    span_label = course_data_block.find("span", class_="dataBlockLabel")
                                     if span_label:
                                         span_label.extract()  # 删除 "公告: " 这个标签
 
                                     # **遍历公告信息**
                                     for ann in course_data_block.find_all("a", href=True):
-                                        announcements['content'] = ann.get_text(
-                                            strip=True)
-                                        announcements['url'] = f"https://bb.sustech.edu.cn{ann['href'].strip()}"
+                                        announcements["content"] = ann.get_text(strip=True)
+                                        announcements["url"] = f"https://bb.sustech.edu.cn{ann['href'].strip()}"
 
                                 # ✅ **存储课程数据**
-                                courses[term_name].append({
-                                    "name": course_name,
-                                    "url": full_course_url,
-                                    "announcement": announcements  # 这里不再包含错误的课程
-                                })
+                                courses[term_name].append(
+                                    {
+                                        "name": course_name,
+                                        "url": full_course_url,
+                                        "announcement": announcements,  # 这里不再包含错误的课程
+                                    }
+                                )
 
             if self.DEBUG:
                 # **保存 HTML 以便调试**
@@ -224,10 +222,10 @@ class BlackboardCrawler:
             soup = BeautifulSoup(response.text, "html.parser")
 
             # 确保缓存目录存在
-            os.makedirs('cache', exist_ok=True)
+            os.makedirs("cache", exist_ok=True)
 
             # 保存完整的 HTML 页面
-            html_path = 'cache/debug-site-page.html'
+            html_path = "cache/debug-site-page.html"
             with open(html_path, "w", encoding="utf-8") as file:
                 file.write(response.text)
             print(f"✅ 页面已保存到 {html_path}")
@@ -237,10 +235,9 @@ class BlackboardCrawler:
 
             if self.DEBUG:
                 # 保存解析后的 JSON
-                json_path = 'cache/sidebar_links.json'
+                json_path = "cache/sidebar_links.json"
                 with open(json_path, "w", encoding="utf-8") as json_file:
-                    json.dump(sidebar_structure, json_file,
-                              indent=4, ensure_ascii=False)
+                    json.dump(sidebar_structure, json_file, indent=4, ensure_ascii=False)
                 print(f"✅ 侧边栏链接已解析并保存到 {json_path}")
 
             return sidebar_structure
@@ -285,8 +282,7 @@ class BlackboardCrawler:
 
                 # 添加到当前分类
                 if current_category:
-                    sidebar_menu[current_category].append(
-                        {"title": link_text, "url": link_url})
+                    sidebar_menu[current_category].append({"title": link_text, "url": link_url})
                 else:
                     # 如果没有分类，直接存入根结构
                     sidebar_menu[link_text] = link_url
@@ -294,7 +290,7 @@ class BlackboardCrawler:
         return sidebar_menu
 
     def parse_page(self, url):
-        '''从page中提取entries的name和内容'''
+        """从page中提取entries的name和内容"""
 
         try:
             # 发送请求并跟随重定向
@@ -311,14 +307,13 @@ class BlackboardCrawler:
 
             if self.DEBUG:
                 # ** 保存 JSON**
-                output_path = 'cache/extracted_files.json'
+                output_path = "cache/extracted_files.json"
                 with open(output_path, "w", encoding="utf-8") as json_file:
-                    json.dump(file_structure, json_file,
-                              ensure_ascii=False, indent=4)
+                    json.dump(file_structure, json_file, ensure_ascii=False, indent=4)
                 print(f"✅ 提取的文件结构已保存到 {output_path}")
 
                 # 保存完整的 HTML 页面
-                html_path = 'cache/debug-page-page.html'
+                html_path = "cache/debug-page-page.html"
                 with open(html_path, "w", encoding="utf-8") as file:
                     file.write(response.text)
                 print(f"✅ 页面已保存到 {html_path}")
@@ -373,10 +368,7 @@ class BlackboardCrawler:
                         files.append({"name": file_name, "url": file_url})
 
             # **3️⃣ 组织数据结构**
-            file_structure[week_title] = {
-                "text": content,
-                "files": files
-            }
+            file_structure[week_title] = {"text": content, "files": files}
 
         return file_structure
 
@@ -389,14 +381,12 @@ class BlackboardCrawler:
 
         try:
             # **2️⃣ 尝试正常下载**
-            response = self.session.get(
-                url, stream=True, timeout=10, verify=True)
+            response = self.session.get(url, stream=True, timeout=10, verify=True)
             response.raise_for_status()
         except requests.exceptions.SSLError:
             print(f"⚠️ SSL 失败，尝试降级 SSL 连接: {url}")
             try:
-                response = self.session.get(
-                    url, stream=True, timeout=10, verify=False)  # 不验证 SSL（仅用于调试）
+                response = self.session.get(url, stream=True, timeout=10, verify=False)  # 不验证 SSL（仅用于调试）
             except requests.exceptions.RequestException as e:
                 print(f"❌ SSL 降级仍失败，跳过文件: {url} - {e}")
                 return False  # 跳过该文件
@@ -446,8 +436,8 @@ class BlackboardCrawler:
             courses = vault[term]
 
             for course in courses:
-                course_name = course['name'].replace(" ", "_")
-                course_url = course['url']
+                course_name = course["name"].replace(" ", "_")
+                course_url = course["url"]
 
                 course_path = os.path.join(term_path, course_name)
                 os.makedirs(course_path, exist_ok=True)
@@ -455,13 +445,12 @@ class BlackboardCrawler:
                 sessions = self.parse_course(course_url)
 
                 for session_name, pages in sessions.items():
-                    session_path = os.path.join(
-                        course_path, session_name.replace(" ", "_"))
+                    session_path = os.path.join(course_path, session_name.replace(" ", "_"))
                     os.makedirs(session_path, exist_ok=True)
 
                     for page in pages:
-                        page_name = page['title'].replace(" ", "_")
-                        page_url = page['url']
+                        page_name = page["title"].replace(" ", "_")
+                        page_url = page["url"]
 
                         page_path = os.path.join(session_path, page_name)
                         os.makedirs(page_path, exist_ok=True)
@@ -476,28 +465,27 @@ class BlackboardCrawler:
                             entry_path = os.path.join(page_path, entry_name)
                             os.makedirs(entry_path, exist_ok=True)
 
-                            text = entry['text']
+                            text = entry["text"]
 
                             # **存储文本**
-                            if text != '':
-                                text_file_path = os.path.join(
-                                    entry_path, "text.txt")
+                            if text != "":
+                                text_file_path = os.path.join(entry_path, "text.txt")
                                 with open(text_file_path, "w", encoding="utf-8") as text_file:
                                     text_file.write(text)
                                 print(f"📄 文字内容已保存: {text_file_path}")
 
-                            for file in entry.get('files', []):
-                                file_name = file['name'].replace(" ", "_")
-                                file_url = file['url']
+                            for file in entry.get("files", []):
+                                file_name = file["name"].replace(" ", "_")
+                                file_url = file["url"]
                                 file_path = os.path.join(entry_path, file_name)
                                 self.download_file(file_url, file_path)
 
-            print(f'📥 {term}的课程资料爬取完毕！')
+            print(f"📥 {term}的课程资料爬取完毕！")
 
 
 if __name__ == "__main__":
 
-    terms = ['25spring']
+    terms = ["25spring"]
 
     crawler = BlackboardCrawler()
     if crawler.login():
