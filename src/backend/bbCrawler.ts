@@ -59,12 +59,6 @@ export async function updateCourseJson(context: vscode.ExtensionContext) {
             ".": "Fall2025",
             "Course1": {
                 ".": "Course1",
-                "Lectures": {
-                    ".": "Lectures",
-                    "week 1": {
-                        ".": "week 1",
-                    }
-                }
             },
             "Course2": {
                 ...
@@ -112,18 +106,35 @@ export async function updateCourseJson(context: vscode.ExtensionContext) {
             return;
         }
 
-        outputChannel.info('updateCourseJson', `✅ Retrieved ${Object.keys(courses).length} terms with courses`);
+        outputChannel.info('updateCourseJson', `Retrieved ${Object.keys(courses).length} terms with courses`);
 
-        // Check if the courseJson file exists
-        if (fs.existsSync(courseJsonPath)) {
-            // Read the existing courseJson file
-            const fileContent = fs.readFileSync(courseJsonPath, 'utf8');
-            try {
-                courseJsonOld = JSON.parse(fileContent);
-            } catch (error) {
-                outputChannel.error('updateCourseJson', `Failed to parse existing courseJson: ${error}`);
-                return;
+        // Transform courses data into the specified JSON format
+        for (const [termId, termCourses] of Object.entries(courses)) {
+            courseJsonNew[termId] = {
+                ".": termId
+            };
+
+            // Add each course in the term
+            for (const course of termCourses) {
+                // Use course name as both key and value
+                const courseName = course.name;
+                courseJsonNew[termId][courseName] = courseName;
             }
+        }
+
+        // Merge with existing data or replace as needed
+        // Here we simply replace term data with new data
+        const mergedJson = { ...courseJsonOld, ...courseJsonNew };
+        // todo: add tags to identity if the folder if modified
+
+        // Write the updated JSON back to the file
+        try {
+            fs.writeFileSync(courseJsonPath, JSON.stringify(courseJsonNew, null, 4), 'utf8');
+            vscode.window.showInformationMessage('✅ Course data updated successfully');
+            outputChannel.info('updateCourseJson', 'Course data updated successfully');
+        } catch (error) {
+            vscode.window.showErrorMessage('❌ Failed to save course data');
+            outputChannel.error('updateCourseJson', `Failed to save course data: ${error}`);
         }
     });
 };
