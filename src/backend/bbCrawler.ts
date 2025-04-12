@@ -434,11 +434,14 @@ export class BlackboardCrawler {
         try {
             const response = await this.fetch(this.courseListUrl, {
                 method: 'POST',
+                body: payload,
                 headers: {
                     ...this.headers,
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: payload
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/xml, text/xml, */*',
+                    'Referer': this.baseUrl
+                }
             });
 
             if (response.status !== 200) {
@@ -471,7 +474,7 @@ export class BlackboardCrawler {
             }
 
             if (!htmlContent) {
-                // outputChannel.appendLine("⚠️ Extracted HTML is empty, possible parsing error");
+                outputChannel.warn('getCoursesByTerm', "Couldn't extract HTML content from response");
                 return {};
             }
 
@@ -555,7 +558,7 @@ export class BlackboardCrawler {
                 }
             });
 
-            // outputChannel.appendLine(`✅ Successfully retrieved ${Object.keys(courses).length} terms with courses`);
+            outputChannel.info('getCoursesByTerm', `✅ Successfully retrieved ${Object.keys(courses).length} terms with courses`);
             return courses;
 
         } catch (error) {
