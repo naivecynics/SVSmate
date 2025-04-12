@@ -17,6 +17,7 @@ export const globalConfig = {
         DebugFolder: path.join(rootPath, '.svsmate/debug'),
     },
     ConfigFilePath: {
-        BlackboardFolderMapping: path.join(rootPath, '.svsmate/blackboard/folderMapping.json')
+        BlackboardFolderMapping: path.join(rootPath, '.svsmate/blackboard/folderMapping.json'),
+        BlackboardCookies: path.join(rootPath, '.svsmate/blackboard/cookies.json'),
     }
 };
