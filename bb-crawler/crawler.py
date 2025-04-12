@@ -58,14 +58,16 @@ class BlackboardCrawler:
 
         execution_value = execution.get("value")
 
+        # print(execution_value)
+
         # 提交登录表单
         cas_login_data = {
             "username": username,
             "password": password,
             "execution": execution_value,
-            "_eventId": "submit",
-            "geolocation": "",
-            "submit": "登录"
+            "_eventId": "submit"
+            # "geolocation": "",
+            # "submit": "登录"
         }
 
         cas_login_response = self.session.post(
@@ -74,6 +76,8 @@ class BlackboardCrawler:
             headers=self.headers,
             allow_redirects=True
         )
+
+        # print(cas_login_response.text)
 
         # 验证是否登录成功
         if "登出" in cas_login_response.text or "logout" in cas_login_response.text.lower():

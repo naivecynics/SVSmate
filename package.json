@@ -12,20 +12,41 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "SVSmate",
+      "properties": {
+        "SVSmate.apiKey": {
+          "type": "string",
+          "default": "sk-db1f4cf83f6f42e69ad9df6febfcc261",
+          "description": "Your Deepseek API key"
+        }
+      }
+    },
     "commands": [
       {
-        "command": "svsmate.helloWorld",
+        "command": "SVSmate.helloWorld",
         "title": "Hello World"
       },
       {
-        "command": "svsmate.crawlBB",
+        "command": "SVSmate.crawlBB",
         "title": "SVSmate: Crawl Blackboard PDFs"
+      },
+      {
+        "command": "SVSmate.organizeFiles",
+        "title": "SVSmate: Organize Files with AI"
       }
     ],
     "chatParticipants": [
       {
-        "id": "SVSMate.ChatBot",
-        "fullName": "SVSMate-ChatBot",
+        "id": "SVSmate.ChatBot-API",
+        "fullName": "SVSmate-ChatBot-API",
+        "name": "mate-API",
+        "description": "What can I assist you?",
+        "isSticky": true
+      },
+      {
+        "id": "SVSmate.ChatBot",
+        "fullName": "SVSmate-ChatBot",
         "name": "mate",
         "description": "What can I assist you?",
         "isSticky": true
