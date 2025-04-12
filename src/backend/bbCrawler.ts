@@ -104,8 +104,7 @@ export async function updateCourseJson(context: vscode.ExtensionContext) {
         // Get course list
         progress.report({ message: 'Getting course list...' });
         outputChannel.info('updateCourseJson', 'Getting course list...');
-        // const courses = await crawler.getCoursesByTerm();
-        const courses = await crawler.parseVault();
+        const courses = await crawler.getCoursesByTerm();
 
         if (!courses || Object.keys(courses).length === 0) {
             vscode.window.showWarningMessage('No courses found');
@@ -347,31 +346,40 @@ export class BlackboardCrawler {
         }
     }
 
+    /**
+     * Check if user is already logged in to Blackboard
+     * @returns true if logged in, false otherwise
+     */
     public async checkLogin(): Promise<boolean> {
         try {
-            // 第一步：访问 Blackboard 首页获取重定向 URL
-            const bbResponse = await this.fetch(this.baseUrl, {
+            // Try to access a protected page
+            const response = await this.fetch(`${this.baseUrl}/ultra/course`, {
                 headers: this.headers,
-            });
-            // 这里取 response.url 作为跳转前的信息
-            const bbResponseUrl = bbResponse.url;
-            // 使用 CAS 登录 URL，并带上 service 参数（登录成功后会跳回 loginUrl）
-            const casLoginUrl = `${this.casUrl}?service=${encodeURIComponent(this.loginUrl)}`;
-
-            // 第二步：获取 CAS 登录页面，提取隐藏域数据（例如 execution）
-            const casResponse = await this.fetch(casLoginUrl, {
-                headers: this.headers,
+                redirect: 'manual'
             });
 
-            if (casResponse.status === 200) {
-                outputChannel.info('checkLogin', 'User is logged in, redirecting...');
-                return true; // 已登录
-            } else if (casResponse.status === 302) {
-                outputChannel.info('checkLogin', 'User is not logged in, redirecting to CAS login...');
-                return false; // 未登录
-            } else {
-                throw new Error(`Unexpected response status: ${casResponse.status}`);
+            // If we get a 200 response or specific redirect, we're logged in
+            if (response.status === 200) {
+                outputChannel.info('checkLogin', 'User is logged in');
+                return true;
             }
+
+            // If we get a 302 redirect to CAS, we're not logged in
+            if (response.status === 302) {
+                const location = response.headers.get('location') || '';
+                if (location.includes('cas.sustech.edu.cn')) {
+                    outputChannel.info('checkLogin', 'User is not logged in, needs CAS authentication');
+                    return false;
+                }
+            }
+
+            // Fallback - try another check method
+            const checkUrl = `${this.baseUrl}/learn/api/public/v1/users/me`;
+            const meResponse = await this.fetch(checkUrl, {
+                headers: this.headers
+            });
+
+            return meResponse.status === 200;
         } catch (error) {
             outputChannel.error('checkLogin', `Error checking login status: ${error}`);
             return false;
@@ -379,9 +387,59 @@ export class BlackboardCrawler {
     }
 
     /**
-     * 使用 CAS 认证登录 Blackboard
+     * Complete CAS login process for Blackboard
+     * @param context Extension context for credential storage
+     * @returns boolean indicating login success
      */
     public async login(context: vscode.ExtensionContext): Promise<boolean> {
+        try {
+            // 1. Get credentials
+            const credentials = await this.getCredentials(context);
+            if (!credentials) {
+                return false;
+            }
+
+            // 2. Prepare CAS authentication (get execution parameter)
+            const casParams = await this.prepareCasAuthentication();
+            if (!casParams) {
+                outputChannel.error('login', 'Failed to prepare CAS authentication');
+                return false;
+            }
+
+            // 3. Submit credentials to CAS
+            const ticketUrl = await this.authenticateWithCas(
+                credentials.username,
+                credentials.password,
+                casParams.execution
+            );
+
+            if (!ticketUrl) {
+                vscode.window.showErrorMessage("❌ Authentication failed. Please check your credentials.");
+                return false;
+            }
+
+            // 4. Follow ticketUrl to validate the service ticket
+            const validationSuccess = await this.validateServiceTicket(ticketUrl);
+            if (!validationSuccess) {
+                vscode.window.showErrorMessage("❌ Failed to validate CAS ticket");
+                return false;
+            }
+
+            // 5. Save cookies after successful login
+            this.saveCookieJar();
+            vscode.window.showInformationMessage("✅ Successfully logged in to Blackboard!");
+            return true;
+        } catch (error) {
+            outputChannel.error('login', `Login process failed: ${error}`);
+            vscode.window.showErrorMessage(`❌ Login error: ${error instanceof Error ? error.message : String(error)}`);
+            return false;
+        }
+    }
+
+    /**
+     * Get user credentials from storage or prompt
+     */
+    private async getCredentials(context: vscode.ExtensionContext): Promise<{ username: string, password: string } | null> {
         const secretStorage = context.secrets;
         let username = await secretStorage.get('bb_username');
         let password = await secretStorage.get('bb_password');
@@ -396,7 +454,6 @@ export class BlackboardCrawler {
                 }
             });
 
-
             password = await vscode.window.showInputBox({
                 prompt: 'Enter your SUSTech password',
                 password: true,
@@ -407,10 +464,9 @@ export class BlackboardCrawler {
             });
 
             if (!username || !password) {
-                vscode.window.showErrorMessage('❌ Username or password is required!');
-                return false;
+                vscode.window.showErrorMessage('❌ Username and password are required!');
+                return null;
             }
-
 
             try {
                 const saveChoice = await vscode.window.showQuickPick(
@@ -428,78 +484,137 @@ export class BlackboardCrawler {
                     ]);
                 }
             } catch (error) {
-                outputChannel.error('login', `Failed to save credentials: ${error}`);
+                outputChannel.error('getCredentials', `Failed to save credentials: ${error}`);
             }
         }
 
-        try {
-            // 第一步：访问 Blackboard 首页获取重定向 URL
-            const bbResponse = await this.fetch(this.baseUrl, {
-                headers: this.headers,
-            });
-            // 这里取 response.url 作为跳转前的信息
-            const bbResponseUrl = bbResponse.url;
-            // 使用 CAS 登录 URL，并带上 service 参数（登录成功后会跳回 loginUrl）
-            const casLoginUrl = `${this.casUrl}?service=${encodeURIComponent(this.loginUrl)}`;
+        return { username, password };
+    }
 
-            // 第二步：获取 CAS 登录页面，提取隐藏域数据（例如 execution）
-            const casResponse = await this.fetch(casLoginUrl, {
+    /**
+     * Prepare CAS authentication by getting execution parameter
+     */
+    private async prepareCasAuthentication(): Promise<{ execution: string } | null> {
+        try {
+            // Create the service URL that CAS will redirect back to after authentication
+            const serviceUrl = encodeURIComponent(this.loginUrl);
+            const casLoginUrl = `${this.casUrl}?service=${serviceUrl}`;
+
+            // Get the CAS login page
+            const response = await this.fetch(casLoginUrl, {
                 headers: this.headers,
+                redirect: 'follow'
             });
-            const casHtml = await casResponse.text();
-            const $ = cheerio.load(casHtml);
-            const execution = $('input[name="execution"]').val();
-            if (!execution) {
-                outputChannel.error('login', 'Cannot find execution parameter for CAS authentication');
-                return false;
+
+            if (response.status !== 200) {
+                outputChannel.error('prepareCasAuthentication', `Failed to get CAS login page: ${response.status}`);
+                return null;
             }
 
-            // 第三步：提交登录表单
+            // Parse the login page to extract the execution parameter
+            const html = await response.text();
+            const $ = cheerio.load(html);
+            const execution = $('input[name="execution"]').val();
+
+            if (!execution) {
+                outputChannel.error('prepareCasAuthentication', 'Execution parameter not found in CAS login page');
+                return null;
+            }
+
+            return { execution: execution.toString() };
+        } catch (error) {
+            outputChannel.error('prepareCasAuthentication', `Error preparing CAS authentication: ${error}`);
+            return null;
+        }
+    }
+
+    /**
+     * Submit credentials to CAS server
+     */
+    private async authenticateWithCas(username: string, password: string, execution: string): Promise<string | null> {
+        try {
+            // Service URL for after authentication
+            const serviceUrl = encodeURIComponent(this.loginUrl);
+            const casLoginUrl = `${this.casUrl}?service=${serviceUrl}`;
+
+            // Prepare form data
             const formData = new URLSearchParams();
             formData.append('username', username);
             formData.append('password', password);
-            formData.append('execution', execution.toString());
+            formData.append('execution', execution);
             formData.append('_eventId', "submit");
             formData.append('geolocation', "");
             formData.append('submit', "登录");
 
-            const casLoginResponse = await this.fetch(casLoginUrl, {
+            // Submit the form
+            const response = await this.fetch(casLoginUrl, {
                 method: 'POST',
                 headers: {
                     ...this.headers,
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 body: formData,
-                // 设置为 manual 以便我们捕获 location header（ticket URL）
-                redirect: 'manual'
+                redirect: 'manual' // Don't follow redirects automatically
             });
 
-            // 从响应头中获取重定向地址（ticket URL）
-            const ticketUrl = casLoginResponse.headers.get('location');
+            // Check for successful authentication (should be a 302 redirect)
+            if (response.status === 302) {
+                const location = response.headers.get('location');
 
-            if (!ticketUrl) {
-                vscode.window.showErrorMessage("❌ Wrong username or password!");
-                return false;
+                if (!location) {
+                    outputChannel.error('authenticateWithCas', 'No location header in CAS response');
+                    return null;
+                }
+
+                if (location.includes('authenticationFailure')) {
+                    outputChannel.error('authenticateWithCas', 'Authentication failed: Invalid credentials');
+                    return null;
+                }
+
+                // If location contains ticket parameter, authentication successful
+                if (location.includes('ticket=')) {
+                    outputChannel.info('authenticateWithCas', 'CAS authentication successful, received ticket');
+                    return location;
+                }
             }
 
-            if (!ticketUrl.includes('https://bb.sustech.edu.cn')) {
-                vscode.window.showErrorMessage("❌ Login verification failed!");
-                return false;
-            } else {
-                // Save cookies after successful login
-                this.saveCookieJar();
-                vscode.window.showInformationMessage("✅ CAS 认证成功，已登录到 Blackboard！");
-                return true;
-            }
+            outputChannel.error('authenticateWithCas', `Unexpected response: ${response.status}`);
+            return null;
         } catch (error) {
-            vscode.window.showErrorMessage(`❌ Login error: ${error instanceof Error ? error.message : String(error)}`);
-            return false;
+            outputChannel.error('authenticateWithCas', `Error during CAS authentication: ${error}`);
+            return null;
         }
     }
 
     /**
-     * Get courses organized by term
+     * Validate the service ticket with the service provider
      */
+    private async validateServiceTicket(ticketUrl: string): Promise<boolean> {
+        try {
+            // Follow the redirect with the ticket to complete authentication
+            const response = await this.fetch(ticketUrl, {
+                headers: this.headers,
+                redirect: 'follow'
+            });
+
+            // Check if we're successfully logged in
+            if (response.status === 200) {
+                // Verify we're actually on BB, not an error page
+                const finalUrl = response.url;
+                if (finalUrl.includes('bb.sustech.edu.cn')) {
+                    outputChannel.info('validateServiceTicket', `Successfully validated ticket, redirected to: ${finalUrl}`);
+                    return true;
+                }
+            }
+
+            outputChannel.error('validateServiceTicket', `Ticket validation failed: ${response.status}`);
+            return false;
+        } catch (error) {
+            outputChannel.error('validateServiceTicket', `Error validating service ticket: ${error}`);
+            return false;
+        }
+    }
+
     public async getCoursesByTerm(): Promise<CoursesByTerm> {
         // Prepare request payload for course list
         const payload = new URLSearchParams({
@@ -645,165 +760,6 @@ export class BlackboardCrawler {
         } catch (error) {
             outputChannel.error('getCoursesByTerm', `Failed to get courses: ${error}`);
             return {};
-        }
-    }
-
-    public async parseVault(): Promise<CoursesByTerm | null> {
-        console.log("📡 正在获取课程列表...");
-
-        // Blackboard course list URL and request payload
-        const courseListUrl = 'https://bb.sustech.edu.cn/webapps/portal/execute/tabs/tabAction';
-        const payload = new URLSearchParams({
-            "action": "refreshAjaxModule",
-            "modId": "_3_1",
-            "tabId": "_1_1",
-            "tab_tab_group_id": "_1_1"
-        });
-
-        const headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'Mozilla/5.0',
-            'Accept': 'text/html,application/xhtml+xml,application/xml'
-        };
-
-        try {
-            const response = await this.fetch(courseListUrl, {
-                method: 'POST',
-                headers: headers,
-                body: payload
-            });
-
-            if (response.status !== 200) {
-                console.log("❌ 课程列表加载失败");
-                return null;
-            }
-
-            const xmlData = await response.text();
-            // save the xmlData to a file for debugging
-            fs.writeFileSync('debug/xmlData.html', xmlData, 'utf-8');
-            console.log("✅ 已保存 XML 数据到 debug/xmlData.xml 用于调试");
-
-            // Parse XML to extract CDATA content
-            const parser = new xml2js.Parser({
-                explicitArray: false,
-                trim: true,
-                explicitCharkey: true,
-                explicitRoot: true // 明确保留根节点
-            });
-
-            const result = await parser.parseStringPromise(xmlData);
-
-            // save the result to a file for debugging
-            fs.writeFileSync('debug/result.json', JSON.stringify(result, null, 2), 'utf-8');
-            console.log("✅ 已保存解析结果到 debug/result.json 用于调试");
-
-            // Extract HTML content from CDATA section
-            let htmlContent = '';
-            if (result && result.contents && result.contents._) {
-                htmlContent = result.contents._;
-            }
-
-            if (!htmlContent) {
-                console.log("⚠️ 提取的 HTML 为空，可能解析错误");
-                return null;
-            }
-
-            // Parse HTML content using cheerio
-            const $ = cheerio.load(htmlContent);
-
-            // Store course information
-            const courses: CoursesByTerm = {};
-
-            // Iterate through all terms
-            $('h3.termHeading-coursefakeclass').each((_, term) => {
-                const termName = $(term).text().trim();
-
-                // Extract term identifier (year + season)
-                const match = termName.match(/（(Spring|Fall|Summer|Winter) (\d{4})）/);
-                let termId = 'unknown';
-
-                if (match) {
-                    const season = match[1].toLowerCase();
-                    const year = match[2].slice(-2);
-                    termId = `${year}${season}`;
-                }
-
-                courses[termId] = [];
-
-                // Find the term's course list div
-                const aTag = $(term).find('a[id]');
-                if (aTag.length) {
-                    const termIdMatch = aTag.attr('id')?.match(/termCourses__\d+_\d+/);
-                    if (termIdMatch) {
-                        const fullTermId = "_3_1" + termIdMatch[0];
-                        const courseListDiv = $(`div#${fullTermId}`);
-
-                        if (courseListDiv.length) {
-                            // Find all course items
-                            courseListDiv.find('li').each((_, courseLi) => {
-                                const courseLink = $(courseLi).find('a[href]');
-
-                                // Skip announcements
-                                if (!courseLink.length || courseLink.attr('href')?.includes('announcement')) {
-                                    return;
-                                }
-
-                                const courseName = courseLink.text().trim();
-                                const courseUrl = courseLink.attr('href')?.trim() || '';
-                                const fullCourseUrl = `https://bb.sustech.edu.cn${courseUrl}`;
-
-                                // Find announcement information
-                                const announcement: Announcement = { content: '', url: '' };
-                                const courseDataBlock = $(courseLi).find('div.courseDataBlock');
-
-                                if (courseDataBlock.length) {
-                                    // Remove "公告: " label for cleaner text
-                                    const spanLabel = courseDataBlock.find('span.dataBlockLabel');
-                                    if (spanLabel.length) {
-                                        spanLabel.remove();
-                                    }
-
-                                    // Extract announcement details
-                                    const annLink = courseDataBlock.find('a[href]');
-                                    if (annLink.length) {
-                                        announcement.content = annLink.text().trim();
-                                        announcement.url = `https://bb.sustech.edu.cn${annLink.attr('href')?.trim() || ''}`;
-                                    }
-                                }
-
-                                // Store the course data
-                                courses[termId].push({
-                                    name: courseName,
-                                    url: fullCourseUrl,
-                                    announcement: announcement
-                                });
-                            });
-                        }
-                    }
-                }
-
-            });
-
-            // // Debug output if needed
-            // if (true) {
-            //     // Ensure debug directory exists
-            //     if (!fs.existsSync('debug')) {
-            //         fs.mkdirSync('debug', { recursive: true });
-            //     }
-
-            //     // Save the raw XML for debugging
-            //     fs.writeFileSync('debug/debug-main-page.html', xmlData, 'utf-8');
-            //     console.log("✅ 已保存页面 HTML 到 debug/debug-main-page.html 用于调试");
-
-            //     // Save extracted course data
-            //     fs.writeFileSync('debug/courses.json', JSON.stringify(courses, null, 4), 'utf-8');
-            //     console.log("✅ 课程数据已成功保存到 debug/courses.json！");
-            // }
-
-            return courses;
-        } catch (error) {
-            console.error(`❌ 解析错误: ${error}`);
-            return null;
         }
     }
 
