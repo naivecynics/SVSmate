@@ -12,6 +12,21 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "svsmate",
+      "properties": {
+        "svsmate.root": {
+          "type": "string",
+          "default": "~/",
+          "description": "the root directory for svsmate where svsmate will store all files."
+        },
+        "svsmate.apikey": {
+          "type": "string",
+          "default": "sk-c0e9243de07945c28e782f57929909b0",
+          "description": "API key to power the plugin."
+        }
+      }
+    },
     "commands": [
       {
         "command": "svsmate.helloWorld",
@@ -34,16 +49,22 @@
         "title": "SVSmate: Update One Term"
       }
     ],
-    "configuration": {
-      "title": "SVSmate",
-      "properties": {
-        "svsmate.root": {
-          "type": "string",
-          "default": "~/",
-          "description": "The root directory for SVSmate where SVSmate will store all files."
-        }
+    "chatParticipants": [
+      {
+        "id": "svsmate.ChatBot-API",
+        "fullName": "svsmate-ChatBot-API",
+        "name": "mate-API",
+        "description": "What can I assist you?",
+        "isSticky": true
+      },
+      {
+        "id": "svsmate.ChatBot",
+        "fullName": "svsmate-ChatBot",
+        "name": "mate",
+        "description": "What can I assist you?",
+        "isSticky": true
       }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -60,6 +81,7 @@
     "fetch-cookie": "^3.1.0",
     "js-yaml": "^4.1.0",
     "node-fetch": "^2.7.0",
+    "openai": "^4.87.3",
     "tough-cookie": "^5.1.2",
     "xml2js": "^0.6.2"
   },
