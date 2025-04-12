@@ -18,12 +18,20 @@
         "title": "Hello World"
       },
       {
-        "command": "svsmate.crawlBB",
-        "title": "SVSmate: Crawl Blackboard PDFs"
+        "command": "svsmate.BB-updateAll",
+        "title": "SVSmate: Update All files in BB"
       },
       {
-        "command": "svsmate.updateCourseJson",
+        "command": "svsmate.BB-updateCourseJson",
         "title": "SVSmate: Update Course JSON"
+      },
+      {
+        "command": "svsmate.BB-updateOneCourse",
+        "title": "SVSmate: Update One Course"
+      },
+      {
+        "command": "svsmate.BB-updateOneTerm",
+        "title": "SVSmate: Update One Term"
       }
     ],
     "configuration": {
