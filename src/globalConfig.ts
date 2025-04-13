@@ -8,6 +8,7 @@ let rootPath = vscode.workspace.getConfiguration('svsmate').get('root') as strin
 if (rootPath.startsWith('~')) {
     rootPath = path.join(os.homedir(), rootPath.slice(1));
 }
+// const rootPath = context.globalStorageUri.fsPath
 
 export const globalConfig = {
     // The config file paths

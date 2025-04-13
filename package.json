@@ -149,6 +149,14 @@
         "title": "更新课程"
       },
       {
+        "command": "bbMaterialView.updateAll",
+        "title": "Update All",
+        "icon": {
+          "dark": "./src/icons/update-dark.svg",
+          "light": "./src/icons/update-light.svg"
+        }
+      },
+      {
         "command": "notesView.deleteNote",
         "title": "删除笔记"
       }
@@ -174,7 +182,7 @@
         {
           "id": "mySidebar",
           "title": "My Sidebar",
-          "icon": "src/resource/pig.svg"
+          "icon": "src/icons/pig.svg"
         }
       ]
     },
@@ -265,6 +273,12 @@
           "when": "view == todoListView ",
           "group": "navigation",
           "title": "Clear Search"
+        },
+        {
+          "command": "bbMaterialView.updateAll",
+          "when": "view == bbMaterialView",
+          "group": "navigation",
+          "title": "Update All"
         }
       ]
     }

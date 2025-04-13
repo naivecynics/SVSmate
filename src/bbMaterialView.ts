@@ -6,7 +6,15 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
     private _onDidChangeTreeData: vscode.EventEmitter<BBMaterialItem | undefined | null | void> = new vscode.EventEmitter<BBMaterialItem | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<BBMaterialItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
-    constructor(private bbVaultPath: string) {}
+    private fileWatcher: vscode.FileSystemWatcher;
+
+    constructor(private bbVaultPath: string) {
+        // Initialize file watcher
+        this.fileWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(bbVaultPath, '**/*'));
+        this.fileWatcher.onDidChange(() => this.refresh());
+        this.fileWatcher.onDidCreate(() => this.refresh());
+        this.fileWatcher.onDidDelete(() => this.refresh());
+    }
 
     refresh(): void {
         this._onDidChangeTreeData.fire();
@@ -76,6 +84,10 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
                 return 'document';
         }
     }
+
+    dispose(): void {
+        this.fileWatcher.dispose();
+    }
 }
 
 export class BBMaterialItem extends vscode.TreeItem {
@@ -118,4 +130,4 @@ export class BBMaterialItem extends vscode.TreeItem {
             };
         }
     }
-} 
+}

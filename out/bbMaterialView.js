@@ -41,8 +41,14 @@ class BBMaterialViewProvider {
     bbVaultPath;
     _onDidChangeTreeData = new vscode.EventEmitter();
     onDidChangeTreeData = this._onDidChangeTreeData.event;
+    fileWatcher;
     constructor(bbVaultPath) {
         this.bbVaultPath = bbVaultPath;
+        // Initialize file watcher
+        this.fileWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(bbVaultPath, '**/*'));
+        this.fileWatcher.onDidChange(() => this.refresh());
+        this.fileWatcher.onDidCreate(() => this.refresh());
+        this.fileWatcher.onDidDelete(() => this.refresh());
     }
     refresh() {
         this._onDidChangeTreeData.fire();
@@ -93,6 +99,9 @@ class BBMaterialViewProvider {
             default:
                 return 'document';
         }
+    }
+    dispose() {
+        this.fileWatcher.dispose();
     }
 }
 exports.BBMaterialViewProvider = BBMaterialViewProvider;

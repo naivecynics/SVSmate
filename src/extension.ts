@@ -14,6 +14,8 @@ import { CopilotViewProvider } from "./copilotView";
 import { NotesViewProvider } from "./notesView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./bbMaterialView";
 import * as fse from 'fs-extra';
+import * as bbCrawler from './backend/bbCrawler';
+import { BlackboardCrawler } from './backend/bbCrawler';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -28,6 +30,8 @@ export function activate(context: vscode.ExtensionContext) {
 			fs.mkdirSync(configFolders[folder], { recursive: true });
 		}
 	}
+
+  vscode.window.showInformationMessage('BlackboardSaveFolder: ' + configFolders.BlackboardSaveFolder);
 
   // hello world
   const disposable = vscode.commands.registerCommand('svsmate.helloWorld', () => {
@@ -73,9 +77,11 @@ export function activate(context: vscode.ExtensionContext) {
   // ------------------------------------------------
 
 
-  const global_storage_path = context.globalStorageUri.fsPath;
+  // const global_storage_path = context.globalStorageUri.fsPath;
+  const global_storage_path = globalConfig.ConfigFolderPath.SVSMateFolder;
 
-  const crawled_courses_path = path.join(global_storage_path, "crawled_courses");
+  // const crawled_courses_path = path.join(global_storage_path, "crawled_courses");
+  const crawled_courses_path = globalConfig.ConfigFolderPath.BlackboardSaveFolder;
 
   if (!fs.existsSync(crawled_courses_path)) {
     fs.mkdirSync(crawled_courses_path, { recursive: true });
@@ -128,9 +134,36 @@ export function activate(context: vscode.ExtensionContext) {
   const notesViewProvider = new NotesViewProvider(notes_path);
   vscode.window.registerTreeDataProvider("notesView", notesViewProvider);
 
-  const bbVaultPath = path.join(crawled_courses_path, "bb-vault");
-  const bbMaterialViewProvider = new BBMaterialViewProvider(bbVaultPath);
+  // const bbVaultPath = path.join(crawled_courses_path, "bb-vault");
+  const bbMaterialViewProvider = new BBMaterialViewProvider(crawled_courses_path);
   vscode.window.registerTreeDataProvider("bbMaterialView", bbMaterialViewProvider);
+
+  vscode.commands.registerCommand('bbMaterialView.refresh', () => bbMaterialViewProvider.refresh());
+
+  vscode.commands.registerCommand('bbMaterialView.updateAll', async () => {
+    try {
+        await bb.updateAll(context);
+        vscode.window.showInformationMessage('All materials updated successfully!');
+    } catch (error) {
+        if (error instanceof Error) {
+            vscode.window.showErrorMessage(`Failed to update all materials: ${error.message}`);
+        } else {
+            vscode.window.showErrorMessage('Failed to update all materials: Unknown error');
+        }
+    }
+  });
+
+  vscode.commands.registerCommand('bbMaterialView.updateAllButton', async () => {
+    try {
+        await vscode.commands.executeCommand('bbMaterialView.updateAll');
+    } catch (error) {
+        if (error instanceof Error) {
+            vscode.window.showErrorMessage(`Failed to execute update all: ${error.message}`);
+        } else {
+            vscode.window.showErrorMessage('Failed to execute update all: Unknown error');
+        }
+    }
+  });
 
   // // 直接加载本地 `tasks.json` 文件
   // const localJsonPath = path.join(workspaceFolders[0].uri.fsPath, "tasks.json");
@@ -312,20 +345,46 @@ export function activate(context: vscode.ExtensionContext) {
     // 更新学期命令
     vscode.commands.registerCommand('bbMaterialView.updateSemester', async (item: BBMaterialItem) => {
       try {
-        // TODO: 实现更新学期的逻辑
-        vscode.window.showInformationMessage(`正在更新学期: ${item.label}...`);
+        // 获取学期名称
+        const termPath = item.resourceUri.fsPath.split('/').slice(-1)[0];
+        await bbCrawler.updateOneTerm(context, termPath);
+        vscode.window.showInformationMessage(`Term updated successfully: ${item.label}`);
       } catch (error) {
-        vscode.window.showErrorMessage(`更新学期失败: ${error}`);
+        if (error instanceof Error) {
+            vscode.window.showErrorMessage(`Failed to update term: ${error.message}`);
+        } else {
+            vscode.window.showErrorMessage('Failed to update term: Unknown error');
+        }
       }
     }),
 
     // 更新课程命令
     vscode.commands.registerCommand('bbMaterialView.updateCourse', async (item: BBMaterialItem) => {
       try {
-        // TODO: 实现更新课程的逻辑
-        vscode.window.showInformationMessage(`正在更新课程: ${item.label}...`);
+        // 获取课程名称 传入应该是学期名字/课程名字
+        const coursePath = item.resourceUri.fsPath.split('/').slice(-2).join('/');
+        await bbCrawler.updateOneCourse(context, coursePath);
+        vscode.window.showInformationMessage(`Course updated successfully: ${item.label}`);
       } catch (error) {
-        vscode.window.showErrorMessage(`更新课程失败: ${error}`);
+        if (error instanceof Error) {
+            vscode.window.showErrorMessage(`Failed to update course: ${error.message}`);
+        } else {
+            vscode.window.showErrorMessage('Failed to update course: Unknown error');
+        }
+      }
+    }),
+
+    vscode.commands.registerCommand('bbMaterialView.updateTermTree', async (item: BBMaterialItem) => {
+      try {
+        const termTreePath = item.resourceUri.fsPath;
+        await bbCrawler.updateOneTermTree(context, termTreePath);
+        vscode.window.showInformationMessage(`Term tree updated successfully: ${item.label}`);
+      } catch (error) {
+        if (error instanceof Error) {
+            vscode.window.showErrorMessage(`Failed to update term tree: ${error.message}`);
+        } else {
+            vscode.window.showErrorMessage('Failed to update term tree: Unknown error');
+        }
       }
     })
   );

@@ -856,7 +856,6 @@ export async function updateAll(context: vscode.ExtensionContext) {
                     }
                 }
             }
-            break;
         }
 
         vscode.window.showInformationMessage('✅ Blackboard content download complete!');
