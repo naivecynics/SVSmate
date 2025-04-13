@@ -5,6 +5,8 @@ node_modules
 .vscode-test/
 *.vsix
 
+package-lock.json
+
 # mac
 .DS_Store
 

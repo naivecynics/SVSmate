@@ -1,0 +1,45 @@
+declare namespace _default {
+    export let foldLength: number;
+    export let debug: boolean;
+    export let newLineChar: string;
+    export { Binary };
+    export { Component };
+    export { ComponentParser };
+    export { Duration };
+    export { Event };
+    export { Period };
+    export { Property };
+    export { Recur };
+    export { RecurExpansion };
+    export { RecurIterator };
+    export { Time };
+    export { Timezone };
+    export { TimezoneService };
+    export { UtcOffset };
+    export { VCardTime };
+    export { parse };
+    export { stringify };
+    export { design };
+    export { helpers };
+}
+export default _default;
+import Binary from "./binary.js";
+import Component from "./component.js";
+import ComponentParser from "./component_parser.js";
+import Duration from "./duration.js";
+import Event from "./event.js";
+import Period from "./period.js";
+import Property from "./property.js";
+import Recur from "./recur.js";
+import RecurExpansion from "./recur_expansion.js";
+import RecurIterator from "./recur_iterator.js";
+import Time from "./time.js";
+import Timezone from "./timezone.js";
+import TimezoneService from "./timezone_service.js";
+import UtcOffset from "./utc_offset.js";
+import VCardTime from "./vcard_time.js";
+import parse from "./parse.js";
+import stringify from "./stringify.js";
+import design from "./design.js";
+import * as helpers from "./helpers.js";
+//# sourceMappingURL=module.d.ts.map
