@@ -11,7 +11,7 @@ import * as tough from 'tough-cookie';
 import { promisify } from 'util';
 import { pipeline } from 'stream';
 import { globalConfig } from '../globalConfig';
-
+import { writeFile } from 'fs/promises';
 const fetch = require('node-fetch');
 const yaml = require('js-yaml');
 const xml2js = require('xml2js');
@@ -497,8 +497,195 @@ export async function updateOneTerm(context: vscode.ExtensionContext, termId: st
                                 progress.report({ message: `Downloading: ${fileName}` });
                                 outputChannel.info('updateOneTerm', `Downloading file: ${fileName}`);
 
-                                await crawler.downloadFile(file.url, filePath);
+                                // await crawler.downloadFile(file.url, filePath);
+                                try {
+                                    await writeFile(filePath, file.url, { encoding: 'utf-8' });
+                                    outputChannel.info('updateOneTerm', `URL saved: ${file.url}`);
+                                } catch (err) {
+                                    outputChannel.error('updateOneTerm', `Failed to save URL: ${err}`);
+                                }
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        vscode.window.showInformationMessage(`✅ Term "${termId}" content downloaded successfully!`);
+        outputChannel.info('updateOneTerm', `Term "${termId}" content downloaded successfully`);
+    });
+}
+
+export async function updateOneTermTree(context: vscode.ExtensionContext, termId: string) {
+    const courseJsonPath = globalConfig.ConfigFilePath.BlackboardFolderMapping;
+    const baseDownloadPath = globalConfig.ConfigFolderPath.BlackboardSaveFolder;
+
+    // Load folder mapping from file
+    let folderMapping: any = {};
+    try {
+        if (fs.existsSync(courseJsonPath)) {
+            const mappingData = fs.readFileSync(courseJsonPath, 'utf-8');
+            folderMapping = JSON.parse(mappingData);
+            outputChannel.info('updateOneTerm', `Loaded folder mapping file for term: ${termId}`);
+        } else {
+            outputChannel.warn('updateOneTerm', 'Folder mapping file not found, using direct paths');
+        }
+    } catch (error) {
+        outputChannel.error('updateOneTerm', `Error loading folder mapping: ${error}`);
+    }
+
+    await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: `Blackboard Crawler - Term: ${termId}`,
+        cancellable: true
+    }, async (progress, token) => {
+        // Create Blackboard crawler instance
+        const crawler = new BlackboardCrawler();
+
+        // Login if needed
+        outputChannel.info('updateOneTerm', 'Checking login status...');
+        let checkLoginSuccess = await crawler.checkLogin();
+        if (!checkLoginSuccess) {
+            outputChannel.info('updateOneTerm', 'Logging in...');
+            let loginSuccess = await crawler.login(context);
+            if (!loginSuccess) {
+                vscode.window.showErrorMessage('❌ Failed to login to Blackboard');
+                outputChannel.error('updateOneTerm', 'Login failed');
+                return;
+            }
+        }
+
+        vscode.window.showInformationMessage('✅ Successfully logged in to Blackboard');
+        outputChannel.info('updateOneTerm', 'Login successful');
+
+        // Get course list
+        progress.report({ message: 'Getting course list...' });
+        outputChannel.info('updateOneTerm', 'Getting course list...');
+        const courses = await crawler.getCoursesByTerm();
+
+        if (!courses || Object.keys(courses).length === 0) {
+            vscode.window.showWarningMessage('No courses found');
+            outputChannel.warn('updateOneTerm', 'No courses found');
+            return;
+        }
+
+        // Check if the specified term exists
+        if (!courses[termId]) {
+            vscode.window.showErrorMessage(`❌ Term "${termId}" not found`);
+            outputChannel.error('updateOneTerm', `Term "${termId}" not found in retrieved courses`);
+            return;
+        }
+
+        const termCourses = courses[termId];
+        outputChannel.info('updateOneTerm', `Found ${termCourses.length} courses in term "${termId}"`);
+
+        // Get mapped term directory name from JSON
+        const termDirName = folderMapping[termId]?.['.'] || termId;
+
+        // Create term directory with mapped name
+        const termPath = path.join(baseDownloadPath, termDirName);
+        if (!fs.existsSync(termPath)) {
+            fs.mkdirSync(termPath, { recursive: true });
+        }
+
+        // Process each course in the term
+        for (const course of termCourses) {
+            if (token.isCancellationRequested) {
+                outputChannel.info('updateOneTerm', 'Operation cancelled by user');
+                return;
+            }
+
+            progress.report({ message: `Processing: ${course.name}` });
+            outputChannel.info('updateOneTerm', `Processing course: ${course.name}`);
+
+            // Get mapped course directory name from JSON
+            const courseName = course.name;
+            const courseSafeName = courseName.replace(/[<>:"/\\|?*]/g, '_');
+            const courseDirName = folderMapping[termId]?.[courseName] || courseSafeName;
+
+            // Create course directory with mapped name
+            const coursePath = path.join(termPath, courseDirName);
+            if (!fs.existsSync(coursePath)) {
+                fs.mkdirSync(coursePath, { recursive: true });
+            }
+
+            // Save announcement if available
+            if (course.announcement.content) {
+                fs.writeFileSync(
+                    path.join(coursePath, 'announcement.txt'),
+                    `${course.announcement.content}\nURL: ${course.announcement.url}`
+                );
+            }
+
+            // Get course sidebar
+            progress.report({ message: `Getting sidebar for: ${course.name}` });
+            const sidebar = await crawler.getCourseSidebarMenu(course.url);
+
+            if (!sidebar || Object.keys(sidebar).length === 0) {
+                outputChannel.warn('updateOneTerm', `No sidebar content found for course: ${course.name}`);
+                continue;
+            }
+
+            // Process each category in sidebar
+            for (const [category, pages] of Object.entries(sidebar)) {
+                if (token.isCancellationRequested) {
+                    outputChannel.info('updateOneTerm', 'Operation cancelled by user');
+                    return;
+                }
+
+                if (Array.isArray(pages)) {
+                    // Create category directory
+                    const categoryName = category.replace(/[<>:"/\\|?*]/g, '_');
+                    const categoryPath = path.join(coursePath, categoryName);
+                    if (!fs.existsSync(categoryPath)) {
+                        fs.mkdirSync(categoryPath, { recursive: true });
+                    }
+
+                    // Process each page in category
+                    for (const page of pages) {
+                        if (token.isCancellationRequested) {
+                            outputChannel.info('updateOneTerm', 'Operation cancelled by user');
+                            return;
+                        }
+
+                        progress.report({ message: `Processing: ${page.title}` });
+                        outputChannel.info('updateOneTerm', `Processing page: ${page.title}`);
+
+                        // Get page content
+                        const pageContent = await crawler.getPageContent(page.url);
+                        if (!pageContent || Object.keys(pageContent).length === 0) {
+                            outputChannel.warn('updateOneTerm', `No content found for page: ${page.title}`);
+                            continue;
+                        }
+
+                        // Create page directory
+                        const pageName = page.title.replace(/[<>:"/\\|?*]/g, '_');
+                        const pagePath = path.join(categoryPath, pageName);
+                        if (!fs.existsSync(pagePath)) {
+                            fs.mkdirSync(pagePath, { recursive: true });
+                        }
+
+                        // Process each section in the page
+                        for (const [section, content] of Object.entries(pageContent)) {
+                            const sectionName = section.replace(/[<>:"/\\|?*]/g, '_');
+                            const sectionPath = path.join(pagePath, sectionName);
+                            const fileList: { name: string; path: string; url: string }[] = [];
+                            // Store File Resouces
+                            for (const file of content.files) {
+                                if (token.isCancellationRequested) {
+                                    return;
+                                }
+
+                                const fileName = file.name.replace(/[<>:"/\\|?*]/g, '_');
+                                const filePath = path.join(sectionPath, fileName);
+                                fileList.push({
+                                    name: fileName,
+                                    path: filePath,
+                                    url: file.url,
+                                });
+                            }
+                            const jsonPath = `${sectionPath}.json`;
+                            await writeFile(jsonPath, JSON.stringify(fileList, null, 2), { encoding: 'utf-8' });
                         }
                     }
                 }

@@ -33,6 +33,10 @@
         "title": "Hello World"
       },
       {
+        "command": "svsmate.organizeFiles",
+        "title": "Test organizeFiles"
+      },
+      {
         "command": "svsmate.BB-updateAll",
         "title": "SVSmate: Update All files in BB"
       },
@@ -46,6 +50,10 @@
       },
       {
         "command": "svsmate.BB-updateOneTerm",
+        "title": "SVSmate: Update One Term"
+      },
+      {
+        "command": "svsmate.BB-updateOneTermTree",
         "title": "SVSmate: Update One Term"
       }
     ],

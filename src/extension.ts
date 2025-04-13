@@ -53,9 +53,11 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(crawlBBGetCourseDisposable);
 
 
-	const crawlBBGetTermDisposable = vscode.commands.registerCommand('svsmate.BB-updateOneTerm', async () => await bb.updateOneTerm(context, '25spring'));
-	context.subscriptions.push(crawlBBGetTermDisposable);
+	const crawlbbgettermdisposable = vscode.commands.registerCommand('svsmate.bb-updateoneterm', async () => await bb.updateOneTerm(context, '25spring'));
+	context.subscriptions.push(crawlbbgettermdisposable);
 
+	const crawlbbgettermtreedisposable = vscode.commands.registerCommand('svsmate.BB-updateOneTermTree', async () => await bb.updateOneTermTree(context, '25spring'));
+	context.subscriptions.push(crawlbbgettermtreedisposable);
 
 }
 
