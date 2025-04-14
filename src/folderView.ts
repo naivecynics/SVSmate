@@ -10,6 +10,12 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem> {
 
   private fileSystemWatcher: vscode.FileSystemWatcher;
 
+  /**
+   * AI-generated-content
+   * tool: vscode-copilot
+   * version: 1.98.0
+   * usage: can refresh the tree view when files are created, deleted or changed
+   */
   constructor(private workspaceRoot: string) {
     // 创建文件系统监听器
     this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*');

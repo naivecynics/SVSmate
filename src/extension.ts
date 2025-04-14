@@ -300,6 +300,12 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }),
 
+      /**
+       * AI-generated-content
+       * tool: vscode-copilot
+       * version: 1.98.0
+       * usage: register the command to open the file in read-only mode
+       */
     // 添加设置文件只读状态的命令
     vscode.commands.registerCommand('bbMaterialView.setReadOnly', async (uri: vscode.Uri) => {
       const document = await vscode.workspace.openTextDocument(uri);
