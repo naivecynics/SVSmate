@@ -497,13 +497,13 @@ export async function updateOneTerm(context: vscode.ExtensionContext, termId: st
                                 progress.report({ message: `Downloading: ${fileName}` });
                                 outputChannel.info('updateOneTerm', `Downloading file: ${fileName}`);
 
-                                // await crawler.downloadFile(file.url, filePath);
-                                try {
-                                    await writeFile(filePath, file.url, { encoding: 'utf-8' });
-                                    outputChannel.info('updateOneTerm', `URL saved: ${file.url}`);
-                                } catch (err) {
-                                    outputChannel.error('updateOneTerm', `Failed to save URL: ${err}`);
-                                }
+                                await crawler.downloadFile(file.url, filePath);
+                                // try {
+                                //     await writeFile(filePath, file.url, { encoding: 'utf-8' });
+                                //     outputChannel.info('updateOneTerm', `URL saved: ${file.url}`);
+                                // } catch (err) {
+                                //     outputChannel.error('updateOneTerm', `Failed to save URL: ${err}`);
+                                // }
                             }
                         }
                     }

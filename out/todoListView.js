@@ -37,6 +37,7 @@ exports.TodoListViewProvider = void 0;
 const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const os = __importStar(require("os"));
 class TodoListViewProvider {
     context;
     constructor(context) {
@@ -171,7 +172,8 @@ class TodoListViewProvider {
         if (!fs.existsSync(folderPath)) {
             fs.mkdirSync(folderPath, { recursive: true });
         }
-        return path.join(folderPath);
+        return path.join(os.homedir(), '.svsmate');
+        // return path.join(folderPath);
     }
     // Toggle task checkbox
     toggleTaskCheckbox(item) {

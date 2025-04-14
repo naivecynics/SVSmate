@@ -65,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(crawlBBGetCourseDisposable);
 
 
-	const crawlbbgettermdisposable = vscode.commands.registerCommand('svsmate.bb-updateoneterm', async () => await bb.updateOneTerm(context, '25spring'));
+	const crawlbbgettermdisposable = vscode.commands.registerCommand('svsmate.BB-updateOneTerm', async () => await bb.updateOneTerm(context, '25spring'));
 	context.subscriptions.push(crawlbbgettermdisposable);
 
 	const crawlbbgettermtreedisposable = vscode.commands.registerCommand('svsmate.BB-updateOneTermTree', async () => await bb.updateOneTermTree(context, '25spring'));
@@ -292,11 +292,96 @@ export function activate(context: vscode.ExtensionContext) {
        * version: 1.98.0
        * usage: register the command to open the file in read-only mode
        */
-    vscode.commands.registerCommand('bbMaterialView.setReadOnly', async (uri: vscode.Uri) => {
+    vscode.commands.registerCommand('bbMaterialView.setReadOnly', async (uri: vscode.Uri): Promise<void> => {
       const document = await vscode.workspace.openTextDocument(uri);
       if (document) {
         vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
       }
+    }),
+
+    vscode.commands.registerCommand('bbMaterialView.aiCopyToWorkspace', async (item: BBMaterialItem) => {
+      const sourcePath = item.resourceUri.fsPath;
+      const fileName = path.basename(sourcePath);
+      const configPath = path.join(process.env.HOME || process.env.USERPROFILE || '', '.svsmate/blackboard/ai-config.json');
+
+      let config: Record<string, string> = {};
+      try {
+        const content = await fs.promises.readFile(configPath, 'utf-8');
+        config = JSON.parse(content);
+      } catch (err) {
+        vscode.window.showErrorMessage(`读取配置失败: ${err}`);
+        return;
+      }
+      let targetRoot = '';
+      const matchKey = Object.keys(config).find(key => sourcePath.includes(key));
+
+      if (matchKey) {
+        // 自动匹配成功，直接使用对应的 value 作为课程路径
+        targetRoot = config[matchKey];
+      } else {
+        // 无匹配，手动选择
+        const coursePaths = Object.values(config);
+        if (coursePaths.length === 0) {
+          vscode.window.showErrorMessage('配置文件中没有课程路径');
+          return;
+        }
+
+        const selected = await vscode.window.showQuickPick(coursePaths, {
+          placeHolder: '选择你要将文件归入的课程（AI 将在该课程目录下推荐子路径）'
+        });
+
+        if (!selected) return; // 用户取消
+        targetRoot = selected;
+      }
+
+      let aiSuggestions: Record<string, string>;
+      try {
+        aiSuggestions = await organizeFiles(targetRoot, [sourcePath]);
+      } catch (err) {
+        vscode.window.showErrorMessage(`AI 组织失败: ${err}`);
+        return;
+      }
+
+      const targetPath = aiSuggestions[sourcePath];
+      if (!targetPath) {
+        vscode.window.showWarningMessage('AI 没有返回建议路径，默认复制到课程根目录');
+      }
+
+      const confirmedPath = await vscode.window.showInputBox({
+        prompt: '确认目标路径（可修改）',
+        value: targetPath
+      });
+
+      if (!confirmedPath) return;
+
+      const stat = await fs.promises.stat(sourcePath);
+
+      // 确保 confirmedPath 是文件夹路径
+      let targetDir = confirmedPath;
+
+      // 如果 confirmedPath 是已存在的文件，取其上级目录作为目标
+      if (fs.existsSync(confirmedPath)) {
+        const confirmedStat = await fs.promises.stat(confirmedPath);
+        if (!confirmedStat.isDirectory()) {
+          targetDir = path.dirname(confirmedPath);
+        }
+      }
+
+      // 拼接最终路径
+      const finalTargetPath = path.join(targetDir, fileName);
+
+      // 创建目录并复制
+      await fs.promises.mkdir(path.dirname(finalTargetPath), { recursive: true });
+
+      if (stat.isDirectory()) {
+        const fse = require('fs-extra');
+        await fse.copy(sourcePath, finalTargetPath, { overwrite: true });
+      } else {
+        await fs.promises.copyFile(sourcePath, finalTargetPath);
+      }
+
+      vscode.window.showInformationMessage(`成功复制到：${finalTargetPath}`);
+
     }),
 
     vscode.commands.registerCommand('bbMaterialView.openReadOnly', async (uri: vscode.Uri) => {
@@ -366,10 +451,10 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.showErrorMessage('Failed to update term tree: Unknown error');
         }
       }
+
     })
+
   );
-
-
 }
 
 class stdOutputChannel {

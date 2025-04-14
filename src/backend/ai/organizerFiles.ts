@@ -2,10 +2,17 @@ import * as vscode from 'vscode';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { ChatBot } from './ChatBot';
+import * as os from 'os';
+import * as path from 'path';
 
 const execAsync = promisify(exec);
 
 export async function organizeFiles(rootPath: string, targetFiles: string[]): Promise<Record<string, string>> {
+  if (rootPath.startsWith('~')) {
+    rootPath = path.join(os.homedir(), rootPath.slice(1));
+  } else if (!path.isAbsolute(rootPath)) {
+    rootPath = path.resolve(rootPath); // 转成绝对路径（基于当前工作目录）
+  }
   const command = `find "${rootPath}" -type d -maxdepth 2`;
   let folderStructure = '';
   try {
@@ -28,7 +35,7 @@ ${targetFiles.join('\n')}
 For each file, please suggest the most appropriate folder to place it in from the above list.
 Return your result as a JSON object like:
 \`\`\`json
-{"file1.ext": "folder1", "file2.ext": "folder2"}
+{"full-file-path-1.ext": "folder1", "full-file-path-2.ext": "folder2"}
 \`\`\`
 Only respond with the JSON object.
 `;

@@ -1,5 +1,5 @@
 # vscode
-out
+out/
 dist
 node_modules
 .vscode-test/

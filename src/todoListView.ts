@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from 'os';
 
 // interface TodoItem {
 //   label: string;
@@ -171,7 +172,8 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem> {
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
     }
-    return path.join(folderPath);
+    return path.join(os.homedir(), '.svsmate');
+    // return path.join(folderPath);
   }
 
   // Toggle task checkbox

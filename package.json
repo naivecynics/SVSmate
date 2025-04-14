@@ -126,11 +126,15 @@
       },
       {
         "command": "bbMaterialView.copyToWorkspace",
-        "title": "Copy to Workspace",
+        "title": "复制",
         "icon": {
           "dark": "./src/icons/copy-dark.svg",
           "light": "./src/icons/copy-light.svg"
         }
+      },
+      {
+        "command": "bbMaterialView.aiCopyToWorkspace",
+        "title": "传送"
       },
       {
         "command": "bbMaterialView.setReadOnly",
@@ -241,6 +245,11 @@
         {
           "command": "bbMaterialView.copyToWorkspace",
           "when": "view == bbMaterialView",
+          "group": "inline"
+        },
+        {
+          "command": "bbMaterialView.aiCopyToWorkspace",
+          "when": "view == bbMaterialView && viewItem == file",
           "group": "inline"
         },
         {
