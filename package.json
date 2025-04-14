@@ -1,0 +1,341 @@
+{
+  "name": "svsmate",
+  "displayName": "SVSmate",
+  "description": "SUSTech+VSCode+Mate",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.98.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "svsmate",
+      "properties": {
+        "svsmate.root": {
+          "type": "string",
+          "default": "~/",
+          "description": "the root directory for svsmate where svsmate will store all files."
+        },
+        "svsmate.apikey": {
+          "type": "string",
+          "default": "sk-c0e9243de07945c28e782f57929909b0",
+          "description": "API key to power the plugin."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "svsmate.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "svsmate.organizeFiles",
+        "title": "Test organizeFiles"
+      },
+      {
+        "command": "svsmate.BB-updateAll",
+        "title": "SVSmate: Update All files in BB"
+      },
+      {
+        "command": "svsmate.BB-updateCourseJson",
+        "title": "SVSmate: Update Course JSON"
+      },
+      {
+        "command": "svsmate.BB-updateOneCourse",
+        "title": "SVSmate: Update One Course"
+      },
+      {
+        "command": "svsmate.BB-updateOneTerm",
+        "title": "SVSmate: Update One Term"
+      },
+      {
+        "command": "svsmate.BB-updateOneTermTree",
+        "title": "SVSmate: Update One Term"
+      },
+      {
+        "command": "todoListView.addItem",
+        "title": "Add Item",
+        "icon": {
+          "dark": "./src/icons/addItem_dark.svg",
+          "light": "./src/icons/addItem_light.svg"
+        }
+      },
+      {
+        "command": "todoListView.loadJsonFile",
+        "title": "Load JSON File"
+      },
+      {
+        "command": "todoListView.editTask",
+        "title": "Edit Task",
+        "icon": {
+          "dark": "./src/icons/editTask_dark.svg",
+          "light": "./src/icons/editTask_light.svg"
+        }
+      },
+      {
+        "command": "todoListView.deleteTask",
+        "title": "Delete Task",
+        "icon": {
+          "dark": "./src/icons/deleteTask_dark.svg",
+          "light": "./src/icons/deleteTask_light.svg"
+        }
+      },
+      {
+        "command": "todoListView.toggleTaskCheckbox",
+        "title": "Toggle Task Checkbox"
+      },
+      {
+        "command": "todoListView.sortByEndTime",
+        "title": "Sort By DDL",
+        "icon": {
+          "dark": "./src/icons/sortByDDL-dark.svg",
+          "light": "./src/icons/sortByDDL-light.svg"
+        }
+      },
+      {
+        "command": "todoListView.sortByKinds",
+        "title": "Sort By Kinds",
+        "icon": {
+          "dark": "./src/icons/sortByKinds-dark.svg",
+          "light": "./src/icons/sortByKinds-light.svg"
+        }
+      },
+      {
+        "command": "todoListView.searchTasks",
+        "title": "Search Tasks",
+        "icon": {
+          "dark": "./src/icons/search-dark.svg",
+          "light": "./src/icons/search-light.svg"
+        }
+      },
+      {
+        "command": "todoListView.clearSearch",
+        "title": "Clear Search",
+        "icon": {
+          "dark": "./src/icons/clear-2.svg",
+          "light": "./src/icons/clear.svg"
+        }
+      },
+      {
+        "command": "notesView.createNote",
+        "title": "Create Note"
+      },
+      {
+        "command": "bbMaterialView.copyToWorkspace",
+        "title": "Copy to Workspace",
+        "icon": {
+          "dark": "./src/icons/copy-dark.svg",
+          "light": "./src/icons/copy-light.svg"
+        }
+      },
+      {
+        "command": "bbMaterialView.setReadOnly",
+        "title": "Set Read Only"
+      },
+      {
+        "command": "bbMaterialView.openReadOnly",
+        "title": "Open Read Only"
+      },
+      {
+        "command": "bbMaterialView.openPDF",
+        "title": "Open PDF"
+      },
+      {
+        "command": "bbMaterialView.updateSemester",
+        "title": "Update Semester",
+        "icon": {
+          "dark": "./src/icons/update-term-dark.svg",
+          "light": "./src/icons/update-term-light.svg"
+        }
+      },
+      {
+        "command": "bbMaterialView.updateCourse",
+        "title": "Update Course",
+        "icon": {
+          "dark": "./src/icons/update-course-dark.svg",
+          "light": "./src/icons/update-course-light.svg"
+        }
+      },
+      {
+        "command": "bbMaterialView.updateAll",
+        "title": "Update All",
+        "icon": {
+          "dark": "./src/icons/update-dark.svg",
+          "light": "./src/icons/update-light.svg"
+        }
+      },
+      {
+        "command": "notesView.deleteNote",
+        "title": "Delete Note",
+        "icon": {
+          "dark": "./src/icons/delete-dark.svg",
+          "light": "./src/icons/delete-light.svg"
+        }
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "svsmate.ChatBot-API",
+        "fullName": "svsmate-ChatBot-API",
+        "name": "mate-API",
+        "description": "What can I assist you?",
+        "isSticky": true
+      },
+      {
+        "id": "svsmate.ChatBot",
+        "fullName": "svsmate-ChatBot",
+        "name": "mate",
+        "description": "What can I assist you?",
+        "isSticky": true
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mySidebar",
+          "title": "My Sidebar",
+          "icon": "src/icons/pig.svg"
+        }
+      ]
+    },
+    "views": {
+      "mySidebar": [
+        {
+          "id": "folderView",
+          "name": "File Explorer"
+        },
+        {
+          "id": "todoListView",
+          "name": "To-Do List"
+        },
+        {
+          "id": "notesView",
+          "name": "Notes"
+        },
+        {
+          "id": "bbMaterialView",
+          "name": "BB Materials"
+        },
+        {
+          "id": "copilotView",
+          "name": "Copilot"
+        }
+      ]
+    },
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "todoListView.editTask",
+          "when": "view == todoListView",
+          "group": "inline"
+        },
+        {
+          "command": "todoListView.deleteTask",
+          "when": "view == todoListView",
+          "group": "inline"
+        },
+        {
+          "command": "bbMaterialView.copyToWorkspace",
+          "when": "view == bbMaterialView",
+          "group": "inline"
+        },
+        {
+          "command": "bbMaterialView.updateSemester",
+          "when": "view == bbMaterialView && viewItem =~ /semesterFolder/",
+          "group": "inline"
+        },
+        {
+          "command": "bbMaterialView.updateCourse",
+          "when": "view == bbMaterialView && viewItem =~ /courseFolder/",
+          "group": "inline"
+        },
+        {
+          "command": "notesView.deleteNote",
+          "when": "view == notesView",
+          "group": "inline"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "todoListView.addItem",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Add Item"
+        },
+        {
+          "command": "todoListView.sortByEndTime",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Sort By End Time"
+        },
+        {
+          "command": "todoListView.sortByKinds",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Sort By Kinds"
+        },
+        {
+          "command": "todoListView.searchTasks",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Search Tasks"
+        },
+        {
+          "command": "todoListView.clearSearch",
+          "when": "view == todoListView ",
+          "group": "navigation",
+          "title": "Clear Search"
+        },
+        {
+          "command": "bbMaterialView.updateAll",
+          "when": "view == bbMaterialView",
+          "group": "navigation",
+          "title": "Update All"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "axios-cookiejar-support": "^5.0.5",
+    "cheerio": "^1.0.0",
+    "fetch-cookie": "^3.1.0",
+    "js-yaml": "^4.1.0",
+    "node-fetch": "^2.7.0",
+    "openai": "^4.87.3",
+    "tough-cookie": "^5.1.2",
+    "xml2js": "^0.6.2",
+    "@types/fs-extra": "^11.0.4",
+    "fs-extra": "^11.3.0",
+    "ical.js": "^2.1.0",
+    "node-ical": "^0.20.1"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.35",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.17.28",
+    "@types/node-fetch": "^2.6.12",
+    "@types/vscode": "^1.98.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.84.0",
+    "@typescript-eslint/eslint-plugin": "^8.25.0",
+    "@typescript-eslint/parser": "^8.25.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.21.0",
+    "typescript": "^5.7.3"
+  }
+}

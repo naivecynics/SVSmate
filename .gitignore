@@ -1,3 +1,20 @@
-out/
-.vscode-test
+# vscode
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
 
+package-lock.json
+
+# mac
+.DS_Store
+
+# private info
+login.yaml
+
+# debug cache
+bb-crawler/cache
+
+# personal bb vault
+bb-crawler/bb-vault
