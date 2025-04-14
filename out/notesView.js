@@ -52,10 +52,10 @@ class NotesViewProvider {
     }
     async getChildren(element) {
         if (!element) {
-            // 根节点，显示两个子文件夹
+            // Root node, display two subfolders
             return [
-                new NoteItem('爬取课程笔记', vscode.TreeItemCollapsibleState.Collapsed, vscode.Uri.file(path.join(this.notesPath, 'crawled_courses_notes'))),
-                new NoteItem('个人笔记', vscode.TreeItemCollapsibleState.Collapsed, vscode.Uri.file(path.join(this.notesPath, 'personal_notes')))
+                new NoteItem('Crawled Course Notes', vscode.TreeItemCollapsibleState.Collapsed, vscode.Uri.file(path.join(this.notesPath, 'crawled_courses_notes'))),
+                new NoteItem('Personal Notes', vscode.TreeItemCollapsibleState.Collapsed, vscode.Uri.file(path.join(this.notesPath, 'personal_notes')))
             ];
         }
         const folderPath = element.resourceUri.fsPath;

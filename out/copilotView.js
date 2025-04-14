@@ -6,6 +6,12 @@ class CopilotViewProvider {
         webviewView.webview.options = { enableScripts: true };
         webviewView.webview.html = this.getHtml();
     }
+    /**
+     * AI-generated-content
+     * tool: vscode-copilot
+     * version: 1.98.0
+     * usage: create tree items for the copilot view
+     **/
     getHtml() {
         return `
       <html>

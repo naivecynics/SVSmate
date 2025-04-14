@@ -56,6 +56,12 @@ class BBMaterialViewProvider {
     getTreeItem(element) {
         return element;
     }
+    /**
+        AI-generated-content
+        tool: vscode-copilot
+        version: 1.98.0
+        usage: show the tree item in the view
+    **/
     async getChildren(element) {
         if (!element) {
             // 根节点，显示bb-vault文件夹内容
@@ -69,6 +75,12 @@ class BBMaterialViewProvider {
         }
         return [];
     }
+    /**
+        AI-generated-content
+        tool: vscode-copilot
+        version: 1.98.0
+        usage: create tree items for the view
+    **/
     async createTreeItems(items, parentPath, level) {
         const treeItems = [];
         for (const item of items) {

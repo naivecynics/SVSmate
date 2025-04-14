@@ -112,11 +112,8 @@ function activate(context) {
     if (!fs.existsSync(personal_notes_path)) {
         fs.mkdirSync(personal_notes_path, { recursive: true });
     }
-    vscode.window.showInformationMessage("global_storage_path: " + global_storage_path);
-    vscode.window.showInformationMessage("crawled_courses_path: " + crawled_courses_path);
-    // vscode.window.showInformationMessage("crawled_courses_notes_path: " + crawled_courses_notes_path);
-    // vscode.window.showInformationMessage("personal_notes_path: " + personal_notes_path);
-    // vscode.window.showInformationMessage("tasks_path: " + tasks_path);
+    vscode.window.showInformationMessage("Global Storage Path: " + global_storage_path);
+    vscode.window.showInformationMessage("Crawled Courses Path: " + crawled_courses_path);
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
         vscode.window.showWarningMessage("No workspace folder is open.");
@@ -164,23 +161,20 @@ function activate(context) {
             }
         }
     });
-    // // 直接加载本地 `tasks.json` 文件
-    // const localJsonPath = path.join(workspaceFolders[0].uri.fsPath, "tasks.json");
-    // todoListViewProvider.loadJsonFile();
     context.subscriptions.push(vscode.commands.registerCommand("todoListView.addItem", async () => {
-        const input = await vscode.window.showInputBox({ prompt: "输入任务名称" });
+        const input = await vscode.window.showInputBox({ prompt: "Enter task name" });
         if (input) {
-            const endDate = await vscode.window.showInputBox({ prompt: "输入截止日期 (格式: YYYY-MM-DD)" });
-            const category = await vscode.window.showInputBox({ prompt: "输入任务分类" });
+            const endDate = await vscode.window.showInputBox({ prompt: "Enter due date (format: YYYY-MM-DD)" });
+            const category = await vscode.window.showInputBox({ prompt: "Enter task category" });
             if (endDate) {
-                todoListViewProvider.addItem(input, endDate, category || "无分类");
+                todoListViewProvider.addItem(input, endDate, category || "No Category");
             }
         }
     }), vscode.commands.registerCommand("todoListView.loadJsonFile", async () => {
         const fileUri = await vscode.window.showOpenDialog({
             canSelectMany: false,
-            openLabel: "选择 JSON 文件",
-            filters: { "JSON 文件": ["json"] }
+            openLabel: "Select JSON File",
+            filters: { "JSON Files": ["json"] }
         });
         if (fileUri && fileUri[0]) {
             await todoListViewProvider.loadJsonFile();
@@ -199,36 +193,31 @@ function activate(context) {
         todoListViewProvider.sortBy("category");
     }), vscode.commands.registerCommand('todoListView.searchTasks', async () => {
         const searchTerm = await vscode.window.showInputBox({
-            prompt: '输入任务名称（支持模糊搜索）',
-            placeHolder: '例如：开发功能'
+            prompt: 'Enter task name (supports fuzzy search)',
+            placeHolder: 'e.g., Develop feature'
         });
         if (searchTerm !== undefined) {
-            // provider.setSearchTerm(searchTerm);
             todoListViewProvider.setSearchTerm(searchTerm);
         }
-    }), 
-    // 注册清除命令
-    vscode.commands.registerCommand('todoListView.clearSearch', () => {
+    }), vscode.commands.registerCommand('todoListView.clearSearch', () => {
         todoListViewProvider.clearSearch();
     }), vscode.commands.registerCommand('notesView.createNote', async (folderPath) => {
         await notesViewProvider.createNote(folderPath);
-    }), 
-    // 添加删除笔记命令
-    vscode.commands.registerCommand('notesView.deleteNote', async (item) => {
+    }), vscode.commands.registerCommand('notesView.deleteNote', async (item) => {
         try {
-            const answer = await vscode.window.showWarningMessage(`确定要删除笔记 "${item.label}" 吗？`, '是', '否');
-            if (answer === '是') {
+            const answer = await vscode.window.showWarningMessage(`Are you sure you want to delete the note "${item.label}"?`, 'Yes', 'No');
+            if (answer === 'Yes') {
                 await notesViewProvider.deleteNote(item.resourceUri.fsPath);
-                vscode.window.showInformationMessage(`笔记 "${item.label}" 已删除`);
+                vscode.window.showInformationMessage(`Note "${item.label}" has been deleted`);
             }
         }
         catch (error) {
-            vscode.window.showErrorMessage(`删除笔记失败: ${error}`);
+            vscode.window.showErrorMessage(`Failed to delete note: ${error}`);
         }
     }), vscode.commands.registerCommand('bbMaterialView.copyToWorkspace', async (item) => {
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
-            vscode.window.showErrorMessage('没有打开的工作区！');
+            vscode.window.showErrorMessage('No workspace folder is open!');
             return;
         }
         const sourcePath = item.resourceUri.fsPath;
@@ -236,73 +225,64 @@ function activate(context) {
         const targetPath = path.join(workspaceFolders[0].uri.fsPath, fileName);
         try {
             if (fs.statSync(sourcePath).isDirectory()) {
-                // 如果是文件夹，先检查目标路径是否存在
                 if (fs.existsSync(targetPath)) {
-                    const answer = await vscode.window.showWarningMessage(`目标路径 ${fileName} 已存在，是否覆盖？`, '是', '否');
-                    if (answer !== '是') {
+                    const answer = await vscode.window.showWarningMessage(`The target path ${fileName} already exists. Overwrite?`, 'Yes', 'No');
+                    if (answer !== 'Yes') {
                         return;
                     }
                 }
-                // 使用fs-extra复制整个目录
                 await fse.copy(sourcePath, targetPath, { overwrite: true });
-                vscode.window.showInformationMessage(`文件夹 ${fileName} 已复制到工作区`);
+                vscode.window.showInformationMessage(`Folder ${fileName} has been copied to the workspace`);
             }
             else {
-                // 如果是文件，先检查目标路径是否存在
                 if (fs.existsSync(targetPath)) {
-                    const answer = await vscode.window.showWarningMessage(`目标文件 ${fileName} 已存在，是否覆盖？`, '是', '否');
-                    if (answer !== '是') {
+                    const answer = await vscode.window.showWarningMessage(`The target file ${fileName} already exists. Overwrite?`, 'Yes', 'No');
+                    if (answer !== 'Yes') {
                         return;
                     }
                 }
-                // 使用fs-extra复制文件
                 await fse.copyFile(sourcePath, targetPath);
-                vscode.window.showInformationMessage(`文件 ${fileName} 已复制到工作区`);
+                vscode.window.showInformationMessage(`File ${fileName} has been copied to the workspace`);
             }
         }
         catch (error) {
-            vscode.window.showErrorMessage(`复制失败: ${error}`);
+            vscode.window.showErrorMessage(`Failed to copy: ${error}`);
         }
     }), 
-    // 添加设置文件只读状态的命令
+    /**
+     * AI-generated-content
+     * tool: vscode-copilot
+     * version: 1.98.0
+     * usage: register the command to open the file in read-only mode
+     */
     vscode.commands.registerCommand('bbMaterialView.setReadOnly', async (uri) => {
         const document = await vscode.workspace.openTextDocument(uri);
         if (document) {
-            // 设置文档为只读
             vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
         }
     }), vscode.commands.registerCommand('bbMaterialView.openReadOnly', async (uri) => {
         try {
-            // 打开文档
             const document = await vscode.workspace.openTextDocument(uri);
-            // 显示文档
             await vscode.window.showTextDocument(document, {
                 preview: true,
                 preserveFocus: true
             });
-            // 设置文档为只读
             await vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
         }
         catch (error) {
-            vscode.window.showErrorMessage(`打开文件失败: ${error}`);
+            vscode.window.showErrorMessage(`Failed to open file: ${error}`);
         }
     }), vscode.commands.registerCommand('bbMaterialView.openPDF', async (uri) => {
         try {
-            // 使用vscode.open命令打开PDF
             await vscode.commands.executeCommand('vscode.open', uri);
-            // 等待文档打开
             await new Promise(resolve => setTimeout(resolve, 100));
-            // 设置文档为只读
             await vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
         }
         catch (error) {
-            vscode.window.showErrorMessage(`打开PDF失败: ${error}`);
+            vscode.window.showErrorMessage(`Failed to open PDF: ${error}`);
         }
-    }), 
-    // 更新学期命令
-    vscode.commands.registerCommand('bbMaterialView.updateSemester', async (item) => {
+    }), vscode.commands.registerCommand('bbMaterialView.updateSemester', async (item) => {
         try {
-            // 获取学期名称
             const termPath = item.resourceUri.fsPath.split('/').slice(-1)[0];
             await bbCrawler.updateOneTerm(context, termPath);
             vscode.window.showInformationMessage(`Term updated successfully: ${item.label}`);
@@ -315,11 +295,8 @@ function activate(context) {
                 vscode.window.showErrorMessage('Failed to update term: Unknown error');
             }
         }
-    }), 
-    // 更新课程命令
-    vscode.commands.registerCommand('bbMaterialView.updateCourse', async (item) => {
+    }), vscode.commands.registerCommand('bbMaterialView.updateCourse', async (item) => {
         try {
-            // 获取课程名称 传入应该是学期名字/课程名字
             const coursePath = item.resourceUri.fsPath.split('/').slice(-2).join('/');
             await bbCrawler.updateOneCourse(context, coursePath);
             vscode.window.showInformationMessage(`Course updated successfully: ${item.label}`);

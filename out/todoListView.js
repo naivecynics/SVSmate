@@ -47,6 +47,12 @@ class TodoListViewProvider {
     items = [];
     getTreeItem(element) {
         const treeItem = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None);
+        /**
+         * AI-generated-content
+         * tool: vscode-copilot
+         * version: 1.98.0
+         * usage: make search term highlight
+         */
         // 实现搜索关键词高亮
         if (this._searchTerm && element.label.toLowerCase().includes(this._searchTerm)) {
             treeItem.label = this.highlightSearchTerm(element.label, this._searchTerm);

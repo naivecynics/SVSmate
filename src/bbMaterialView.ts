@@ -24,6 +24,13 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
         return element;
     }
 
+    /**
+        AI-generated-content
+        tool: vscode-copilot
+        version: 1.98.0
+        usage: show the tree item in the view
+    **/
+
     async getChildren(element?: BBMaterialItem): Promise<BBMaterialItem[]> {
         if (!element) {
             // 根节点，显示bb-vault文件夹内容
@@ -40,6 +47,12 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
         return [];
     }
 
+    /**
+        AI-generated-content
+        tool: vscode-copilot
+        version: 1.98.0
+        usage: create tree items for the view
+    **/
     private async createTreeItems(items: string[], parentPath: string, level: number): Promise<BBMaterialItem[]> {
         const treeItems: BBMaterialItem[] = [];
 

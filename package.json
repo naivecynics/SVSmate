@@ -126,7 +126,11 @@
       },
       {
         "command": "bbMaterialView.copyToWorkspace",
-        "title": "复制到工作区"
+        "title": "Copy to Workspace",
+        "icon": {
+          "dark": "./src/icons/copy-dark.svg",
+          "light": "./src/icons/copy-light.svg"
+        }
       },
       {
         "command": "bbMaterialView.setReadOnly",
@@ -142,11 +146,19 @@
       },
       {
         "command": "bbMaterialView.updateSemester",
-        "title": "更新学期"
+        "title": "Update Semester",
+        "icon": {
+          "dark": "./src/icons/update-term-dark.svg",
+          "light": "./src/icons/update-term-light.svg"
+        }
       },
       {
         "command": "bbMaterialView.updateCourse",
-        "title": "更新课程"
+        "title": "Update Course",
+        "icon": {
+          "dark": "./src/icons/update-course-dark.svg",
+          "light": "./src/icons/update-course-light.svg"
+        }
       },
       {
         "command": "bbMaterialView.updateAll",
@@ -158,7 +170,11 @@
       },
       {
         "command": "notesView.deleteNote",
-        "title": "删除笔记"
+        "title": "Delete Note",
+        "icon": {
+          "dark": "./src/icons/delete-dark.svg",
+          "light": "./src/icons/delete-light.svg"
+        }
       }
     ],
     "chatParticipants": [

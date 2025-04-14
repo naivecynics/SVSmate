@@ -42,6 +42,12 @@ class FolderViewProvider {
     _onDidChangeTreeData = new vscode.EventEmitter();
     onDidChangeTreeData = this._onDidChangeTreeData.event;
     fileSystemWatcher;
+    /**
+     * AI-generated-content
+     * tool: vscode-copilot
+     * version: 1.98.0
+     * usage: can refresh the tree view when files are created, deleted or changed
+     */
     constructor(workspaceRoot) {
         this.workspaceRoot = workspaceRoot;
         // 创建文件系统监听器
