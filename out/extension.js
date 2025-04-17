@@ -33,134 +33,84 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.outputChannel = void 0;
 exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
-const fs = __importStar(require("fs"));
-const organizerFiles_1 = require("./backend/ai/organizerFiles");
 const createChatParticipantAPI_1 = require("./backend/ai/createChatParticipantAPI");
 const createChatParticipant_1 = require("./backend/ai/createChatParticipant");
-const globalConfig_1 = require("./globalConfig");
-const bb = __importStar(require("./backend/bbCrawler"));
-const folderView_1 = require("./folderView");
-const path = __importStar(require("path"));
-const todoListView_1 = require("./todoListView");
-const copilotView_1 = require("./copilotView");
-const notesView_1 = require("./notesView");
-const bbMaterialView_1 = require("./bbMaterialView");
-const fse = __importStar(require("fs-extra"));
-const bbCrawler = __importStar(require("./backend/bbCrawler"));
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-function activate(context) {
-    console.log('Congratulations, your extension "svsmate" is now active!');
-    // Create the config folders if they do not exist
-    const configFolders = globalConfig_1.globalConfig.ConfigFolderPath;
-    for (const folder of Object.keys(configFolders)) {
-        if (!fs.existsSync(configFolders[folder])) {
-            fs.mkdirSync(configFolders[folder], { recursive: true });
-        }
-    }
-    vscode.window.showInformationMessage('BlackboardSaveFolder: ' + configFolders.BlackboardSaveFolder);
-    // hello world
-    const disposable = vscode.commands.registerCommand('svsmate.helloWorld', () => {
-        vscode.window.showInformationMessage('Hello World from svsmate!');
-    });
-    context.subscriptions.push(disposable);
-    // ai organize
-    const organizeDisposable = vscode.commands.registerCommand('svsmate.organizeFiles', async () => {
-        const testFile = ['/Users/naivecynics/SUSTech/bb-vault/25spring/Operating_Systems_Spring_2025/Course_Materials/--Lab_7/Lab/lab7-en.pdf'];
-        const rootPath = '/Users/naivecynics/SUSTech/cs302-operating-systems/';
-        (0, organizerFiles_1.organizeFiles)(rootPath, testFile);
-    });
-    context.subscriptions.push(organizeDisposable);
-    // copilot ai chatbot @mate-API
+const updateCommands_1 = require("./backend/bb/updateCommands");
+const downloadCommands_1 = require("./backend/bb/downloadCommands");
+const FolderView_1 = require("./frontend/FolderView");
+const TodoListView_1 = require("./frontend/TodoListView");
+const CopilotView_1 = require("./frontend/CopilotView");
+const NotesView_1 = require("./frontend/NotesView");
+const BBMaterialView_1 = require("./frontend/BBMaterialView");
+// import { outputChannel } from './utils/OutputChannel';
+const PathManager = __importStar(require("./utils/pathManager"));
+async function activate(context) {
+    PathManager.initPathManager(context);
+    console.log('SVSmate activated!');
+    // ------------------------------------------------
+    //                      file
+    // ------------------------------------------------
+    const folderViewProvider = FolderView_1.FolderViewProvider.create();
+    folderViewProvider && vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
+    folderViewProvider && context.subscriptions.push(folderViewProvider);
+    // ------------------------------------------------
+    //                       ai
+    // ------------------------------------------------
+    // copilot ai chatbot @mate-API & @mate
     (0, createChatParticipantAPI_1.createChatParticipantAPI)();
-    (0, createChatParticipant_1.createChatParticipant)();
-    console.log('Your @mate & @mate-API is activated and ready to teach!');
-    // Blackboard crawler
-    const crawlBBDisposable = vscode.commands.registerCommand('svsmate.BB-updateAll', async () => await bb.updateAll(context));
-    context.subscriptions.push(crawlBBDisposable);
-    const crawlBBCourseListDisposable = vscode.commands.registerCommand('svsmate.BB-updateCourseJson', async () => await bb.updateCourseJson(context));
-    context.subscriptions.push(crawlBBCourseListDisposable);
-    const crawlBBGetCourseDisposable = vscode.commands.registerCommand('svsmate.BB-updateOneCourse', async () => await bb.updateOneCourse(context, '25spring/Computer Vision Spring 2025'));
-    context.subscriptions.push(crawlBBGetCourseDisposable);
-    const crawlbbgettermdisposable = vscode.commands.registerCommand('svsmate.bb-updateoneterm', async () => await bb.updateOneTerm(context, '25spring'));
-    context.subscriptions.push(crawlbbgettermdisposable);
-    const crawlbbgettermtreedisposable = vscode.commands.registerCommand('svsmate.BB-updateOneTermTree', async () => await bb.updateOneTermTree(context, '25spring'));
-    context.subscriptions.push(crawlbbgettermtreedisposable);
+    createChatParticipant_1.createChatParticipant;
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider("copilotView", CopilotView_1.CopilotViewProvider.create()));
     // ------------------------------------------------
-    //                     frontend
+    //                   blaskboard
     // ------------------------------------------------
-    // const global_storage_path = context.globalStorageUri.fsPath;
-    const global_storage_path = globalConfig_1.globalConfig.ConfigFolderPath.SVSMateFolder;
-    // const crawled_courses_path = path.join(global_storage_path, "crawled_courses");
-    const crawled_courses_path = globalConfig_1.globalConfig.ConfigFolderPath.BlackboardSaveFolder;
-    if (!fs.existsSync(crawled_courses_path)) {
-        fs.mkdirSync(crawled_courses_path, { recursive: true });
-    }
-    const notes_path = path.join(global_storage_path, "notes");
-    if (!fs.existsSync(notes_path)) {
-        fs.mkdirSync(notes_path, { recursive: true });
-    }
-    const crawled_courses_notes_path = path.join(notes_path, "crawled_courses_notes");
-    if (!fs.existsSync(crawled_courses_notes_path)) {
-        fs.mkdirSync(crawled_courses_notes_path, { recursive: true });
-    }
-    const personal_notes_path = path.join(notes_path, "personal_notes");
-    if (!fs.existsSync(personal_notes_path)) {
-        fs.mkdirSync(personal_notes_path, { recursive: true });
-    }
-    vscode.window.showInformationMessage("Global Storage Path: " + global_storage_path);
-    vscode.window.showInformationMessage("Crawled Courses Path: " + crawled_courses_path);
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders) {
-        vscode.window.showWarningMessage("No workspace folder is open.");
-        return;
-    }
-    const folderViewProvider = new folderView_1.FolderViewProvider(workspaceFolders[0].uri.fsPath);
-    vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
-    // 注册视图提供者的销毁方法
-    // context.subscriptions.push(folderViewProvider);
-    const todoListViewProvider = new todoListView_1.TodoListViewProvider(context);
-    vscode.window.registerTreeDataProvider('todoListView', todoListViewProvider);
-    todoListViewProvider.loadJsonFile();
-    vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider);
-    vscode.window.registerWebviewViewProvider("copilotView", new copilotView_1.CopilotViewProvider());
-    const notesViewProvider = new notesView_1.NotesViewProvider(notes_path);
-    vscode.window.registerTreeDataProvider("notesView", notesViewProvider);
-    // const bbVaultPath = path.join(crawled_courses_path, "bb-vault");
-    const bbMaterialViewProvider = new bbMaterialView_1.BBMaterialViewProvider(crawled_courses_path);
+    const bbMaterialViewProvider = BBMaterialView_1.BBMaterialViewProvider.create();
     vscode.window.registerTreeDataProvider("bbMaterialView", bbMaterialViewProvider);
-    vscode.commands.registerCommand('bbMaterialView.refresh', () => bbMaterialViewProvider.refresh());
-    vscode.commands.registerCommand('bbMaterialView.updateAll', async () => {
+    context.subscriptions.push(bbMaterialViewProvider, vscode.commands.registerCommand('svsmate.BB-updateAll', async () => {
+        await (0, updateCommands_1.updateAll)(context);
+    }), vscode.commands.registerCommand('svsmate.BB-updateTerm', async (item) => {
+        await (0, updateCommands_1.updateTerm)(context, item);
+    }), vscode.commands.registerCommand('svsmate.BB-updateCourse', async (item) => {
+        await (0, updateCommands_1.updateCourse)(context, item);
+    }), vscode.commands.registerCommand('svsmate.BB-downloadToWorkspace', async (item) => {
+        await (0, downloadCommands_1.downloadToWorkspace)(context, item);
+    }), vscode.commands.registerCommand('svsmate.BB-downloadToAiSpace', async (item) => {
+        await (0, downloadCommands_1.downloadToWorkspace)(context, item, true);
+    }));
+    // ------------------------------------------------
+    //                 collaboration
+    // ------------------------------------------------
+    // TODO: How? 
+    // ------------------------------------------------
+    //                      note
+    // ------------------------------------------------
+    const notesViewProvider = await NotesView_1.NotesViewProvider.create();
+    vscode.window.registerTreeDataProvider("notesView", notesViewProvider);
+    context.subscriptions.push(notesViewProvider);
+    vscode.commands.registerCommand('notesView.createNote', async (folderPath) => {
+        await notesViewProvider.createNote(folderPath);
+    });
+    vscode.commands.registerCommand('notesView.deleteNote', async (item) => {
         try {
-            await bb.updateAll(context);
-            vscode.window.showInformationMessage('All materials updated successfully!');
+            const answer = await vscode.window.showWarningMessage(`Are you sure you want to delete the note "${item.label}"?`, 'Yes', 'No');
+            if (answer === 'Yes') {
+                await notesViewProvider.deleteNote(item.resourceUri.fsPath);
+                vscode.window.showInformationMessage(`Note "${item.label}" has been deleted`);
+            }
         }
         catch (error) {
-            if (error instanceof Error) {
-                vscode.window.showErrorMessage(`Failed to update all materials: ${error.message}`);
-            }
-            else {
-                vscode.window.showErrorMessage('Failed to update all materials: Unknown error');
-            }
+            vscode.window.showErrorMessage(`Failed to delete note: ${error}`);
         }
     });
-    vscode.commands.registerCommand('bbMaterialView.updateAllButton', async () => {
-        try {
-            await vscode.commands.executeCommand('bbMaterialView.updateAll');
-        }
-        catch (error) {
-            if (error instanceof Error) {
-                vscode.window.showErrorMessage(`Failed to execute update all: ${error.message}`);
-            }
-            else {
-                vscode.window.showErrorMessage('Failed to execute update all: Unknown error');
-            }
-        }
-    });
+    // ------------------------------------------------
+    //                      todo
+    // ------------------------------------------------
+    const todoListViewProvider = await TodoListView_1.TodoListViewProvider.create();
+    vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider);
+    context.subscriptions.push(todoListViewProvider);
+    // TODO: move follow commands to ./frontend/todo/todoCommands.ts
     context.subscriptions.push(vscode.commands.registerCommand("todoListView.addItem", async () => {
         const input = await vscode.window.showInputBox({ prompt: "Enter task name" });
         if (input) {
@@ -170,15 +120,6 @@ function activate(context) {
                 todoListViewProvider.addItem(input, endDate, category || "No Category");
             }
         }
-    }), vscode.commands.registerCommand("todoListView.loadJsonFile", async () => {
-        const fileUri = await vscode.window.showOpenDialog({
-            canSelectMany: false,
-            openLabel: "Select JSON File",
-            filters: { "JSON Files": ["json"] }
-        });
-        if (fileUri && fileUri[0]) {
-            await todoListViewProvider.loadJsonFile();
-        }
     }), vscode.commands.registerCommand("todoListView.editTask", async (task) => {
         todoListViewProvider.editTask(task);
     }), vscode.commands.registerCommand("todoListView.deleteTask", (task) => {
@@ -186,7 +127,7 @@ function activate(context) {
     }), vscode.commands.registerCommand("todoListView.toggleTaskCheckbox", (task) => {
         task.checked = !task.checked;
         todoListViewProvider._onDidChangeTreeData.fire(undefined);
-        todoListViewProvider.saveJsonFile();
+        // todoListViewProvider.slackboardCrawleraveJsonFile();
     }), vscode.commands.registerCommand("todoListView.sortByEndTime", () => {
         todoListViewProvider.sortBy("endTime");
     }), vscode.commands.registerCommand("todoListView.sortByKinds", () => {
@@ -201,153 +142,7 @@ function activate(context) {
         }
     }), vscode.commands.registerCommand('todoListView.clearSearch', () => {
         todoListViewProvider.clearSearch();
-    }), vscode.commands.registerCommand('notesView.createNote', async (folderPath) => {
-        await notesViewProvider.createNote(folderPath);
-    }), vscode.commands.registerCommand('notesView.deleteNote', async (item) => {
-        try {
-            const answer = await vscode.window.showWarningMessage(`Are you sure you want to delete the note "${item.label}"?`, 'Yes', 'No');
-            if (answer === 'Yes') {
-                await notesViewProvider.deleteNote(item.resourceUri.fsPath);
-                vscode.window.showInformationMessage(`Note "${item.label}" has been deleted`);
-            }
-        }
-        catch (error) {
-            vscode.window.showErrorMessage(`Failed to delete note: ${error}`);
-        }
-    }), vscode.commands.registerCommand('bbMaterialView.copyToWorkspace', async (item) => {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders) {
-            vscode.window.showErrorMessage('No workspace folder is open!');
-            return;
-        }
-        const sourcePath = item.resourceUri.fsPath;
-        const fileName = path.basename(sourcePath);
-        const targetPath = path.join(workspaceFolders[0].uri.fsPath, fileName);
-        try {
-            if (fs.statSync(sourcePath).isDirectory()) {
-                if (fs.existsSync(targetPath)) {
-                    const answer = await vscode.window.showWarningMessage(`The target path ${fileName} already exists. Overwrite?`, 'Yes', 'No');
-                    if (answer !== 'Yes') {
-                        return;
-                    }
-                }
-                await fse.copy(sourcePath, targetPath, { overwrite: true });
-                vscode.window.showInformationMessage(`Folder ${fileName} has been copied to the workspace`);
-            }
-            else {
-                if (fs.existsSync(targetPath)) {
-                    const answer = await vscode.window.showWarningMessage(`The target file ${fileName} already exists. Overwrite?`, 'Yes', 'No');
-                    if (answer !== 'Yes') {
-                        return;
-                    }
-                }
-                await fse.copyFile(sourcePath, targetPath);
-                vscode.window.showInformationMessage(`File ${fileName} has been copied to the workspace`);
-            }
-        }
-        catch (error) {
-            vscode.window.showErrorMessage(`Failed to copy: ${error}`);
-        }
-    }), 
-    /**
-     * AI-generated-content
-     * tool: vscode-copilot
-     * version: 1.98.0
-     * usage: register the command to open the file in read-only mode
-     */
-    vscode.commands.registerCommand('bbMaterialView.setReadOnly', async (uri) => {
-        const document = await vscode.workspace.openTextDocument(uri);
-        if (document) {
-            vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
-        }
-    }), vscode.commands.registerCommand('bbMaterialView.openReadOnly', async (uri) => {
-        try {
-            const document = await vscode.workspace.openTextDocument(uri);
-            await vscode.window.showTextDocument(document, {
-                preview: true,
-                preserveFocus: true
-            });
-            await vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
-        }
-        catch (error) {
-            vscode.window.showErrorMessage(`Failed to open file: ${error}`);
-        }
-    }), vscode.commands.registerCommand('bbMaterialView.openPDF', async (uri) => {
-        try {
-            await vscode.commands.executeCommand('vscode.open', uri);
-            await new Promise(resolve => setTimeout(resolve, 100));
-            await vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
-        }
-        catch (error) {
-            vscode.window.showErrorMessage(`Failed to open PDF: ${error}`);
-        }
-    }), vscode.commands.registerCommand('bbMaterialView.updateSemester', async (item) => {
-        try {
-            const termPath = item.resourceUri.fsPath.split('/').slice(-1)[0];
-            await bbCrawler.updateOneTerm(context, termPath);
-            vscode.window.showInformationMessage(`Term updated successfully: ${item.label}`);
-        }
-        catch (error) {
-            if (error instanceof Error) {
-                vscode.window.showErrorMessage(`Failed to update term: ${error.message}`);
-            }
-            else {
-                vscode.window.showErrorMessage('Failed to update term: Unknown error');
-            }
-        }
-    }), vscode.commands.registerCommand('bbMaterialView.updateCourse', async (item) => {
-        try {
-            const coursePath = item.resourceUri.fsPath.split('/').slice(-2).join('/');
-            await bbCrawler.updateOneCourse(context, coursePath);
-            vscode.window.showInformationMessage(`Course updated successfully: ${item.label}`);
-        }
-        catch (error) {
-            if (error instanceof Error) {
-                vscode.window.showErrorMessage(`Failed to update course: ${error.message}`);
-            }
-            else {
-                vscode.window.showErrorMessage('Failed to update course: Unknown error');
-            }
-        }
-    }), vscode.commands.registerCommand('bbMaterialView.updateTermTree', async (item) => {
-        try {
-            const termTreePath = item.resourceUri.fsPath;
-            await bbCrawler.updateOneTermTree(context, termTreePath);
-            vscode.window.showInformationMessage(`Term tree updated successfully: ${item.label}`);
-        }
-        catch (error) {
-            if (error instanceof Error) {
-                vscode.window.showErrorMessage(`Failed to update term tree: ${error.message}`);
-            }
-            else {
-                vscode.window.showErrorMessage('Failed to update term tree: Unknown error');
-            }
-        }
     }));
 }
-class stdOutputChannel {
-    output;
-    constructor(name = 'svsmate') {
-        this.output = vscode.window.createOutputChannel(name);
-        this.output.show();
-    }
-    async info(module, msg) {
-        const timestamp = new Date().toISOString();
-        const log = `[${timestamp}] [INFO] [${module}] ${msg}`;
-        this.output.appendLine(log);
-    }
-    async warn(module, msg) {
-        const timestamp = new Date().toISOString();
-        const log = `[${timestamp}] [WARN] [${module}] ${msg}`;
-        this.output.appendLine(log);
-    }
-    async error(module, msg) {
-        const timestamp = new Date().toISOString();
-        const log = `[${timestamp}] [ERROR] [${module}] ${msg}`;
-        this.output.appendLine(log);
-    }
-}
-exports.outputChannel = new stdOutputChannel();
-// This method is called when your extension is deactivated
 function deactivate() { }
 //# sourceMappingURL=extension.js.map

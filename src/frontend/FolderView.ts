@@ -16,7 +16,8 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem> {
    * version: 1.98.0
    * usage: can refresh the tree view when files are created, deleted or changed
    */
-  constructor(private workspaceRoot: string) {
+  constructor(private workspaceRoot: string | undefined) {
+
     // 创建文件系统监听器
     this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*');
     
@@ -24,6 +25,15 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem> {
     this.fileSystemWatcher.onDidCreate(() => this.refresh());
     this.fileSystemWatcher.onDidDelete(() => this.refresh());
     this.fileSystemWatcher.onDidChange(() => this.refresh());
+  }
+
+   static create(): FolderViewProvider | undefined {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders || folders.length === 0) {
+      vscode.window.showWarningMessage("No workspace folder is open.");
+      return;
+    }
+    return new FolderViewProvider(folders[0].uri.fsPath);
   }
 
   dispose() {

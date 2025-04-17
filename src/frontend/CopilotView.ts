@@ -1,19 +1,20 @@
 import * as vscode from "vscode";
 
-export class CopilotViewProvider implements vscode.WebviewViewProvider {
+export class CopilotViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
+  private constructor() {}
+
+  public static create(): CopilotViewProvider {
+    return new CopilotViewProvider();
+  }
+
   resolveWebviewView(webviewView: vscode.WebviewView) {
     webviewView.webview.options = { enableScripts: true };
     webviewView.webview.html = this.getHtml();
   }
 
-  /**
-   * AI-generated-content
-   * tool: vscode-copilot
-   * version: 1.98.0
-   * usage: create tree items for the copilot view
-   **/
   private getHtml(): string {
     return `
+      <!DOCTYPE html>
       <html>
         <body>
           <h2>GitHub Copilot</h2>
@@ -26,5 +27,9 @@ export class CopilotViewProvider implements vscode.WebviewViewProvider {
         </body>
       </html>
     `;
+  }
+
+  public dispose(): void {
+    // 目前无资源需要释放，但保持结构完整
   }
 }

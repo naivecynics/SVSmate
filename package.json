@@ -17,45 +17,59 @@
       "properties": {
         "svsmate.root": {
           "type": "string",
-          "default": "~/",
-          "description": "the root directory for svsmate where svsmate will store all files."
+          "default": "~/.svsmate",
+          "description": "Enter a directory path if you want to costomize the cache location."
         },
         "svsmate.apikey": {
           "type": "string",
           "default": "sk-c0e9243de07945c28e782f57929909b0",
-          "description": "API key to power the plugin."
+          "description": "API key to enpower the extension (deepseek api available only)."
         }
       }
     },
     "commands": [
       {
-        "command": "svsmate.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "svsmate.organizeFiles",
-        "title": "Test organizeFiles"
-      },
-      {
         "command": "svsmate.BB-updateAll",
-        "title": "SVSmate: Update All files in BB"
+        "title": "SVSmate: Update All Materials",
+        "icon": {
+          "dark": "./src/icons/update-all-dark.svg",
+          "light": "./src/icons/update-light.svg"
+        }
       },
       {
-        "command": "svsmate.BB-updateCourseJson",
-        "title": "SVSmate: Update Course JSON"
+        "command": "svsmate.BB-updateCourse",
+        "title": "SVSmate: Update One Course",
+        "icon": {
+          "dark": "./src/icons/update-dark.svg",
+          "light": "./src/icons/update-light.svg"
+        }
       },
       {
-        "command": "svsmate.BB-updateOneCourse",
-        "title": "SVSmate: Update One Course"
+        "command": "svsmate.BB-updateTerm",
+        "title": "SVSmate: Update One Term",
+        "icon": {
+          "dark": "./src/icons/update-dark.svg",
+          "light": "./src/icons/update-light.svg"
+        }
       },
       {
-        "command": "svsmate.BB-updateOneTerm",
-        "title": "SVSmate: Update One Term"
+        "command": "svsmate.BB-downloadToWorkspace",
+        "title": "SVSmate: Download File to Workspace",
+        "icon": {
+          "dark": "./src/icons/download-dark.svg",
+          "light": "./src/icons/download-light.svg"
+        }
       },
       {
-        "command": "svsmate.BB-updateOneTermTree",
-        "title": "SVSmate: Update One Term"
+        "command": "svsmate.BB-downloadToAiSpace",
+        "title": "SVSmate: Download File to AI Suggested Directory",
+        "icon": {
+          "dark": "./src/icons/copy-dark.svg",
+          "light": "./src/icons/copy-light.svg"
+        }
       },
+
+      
       {
         "command": "todoListView.addItem",
         "title": "Add Item",
@@ -63,10 +77,6 @@
           "dark": "./src/icons/addItem_dark.svg",
           "light": "./src/icons/addItem_light.svg"
         }
-      },
-      {
-        "command": "todoListView.loadJsonFile",
-        "title": "Load JSON File"
       },
       {
         "command": "todoListView.editTask",
@@ -120,57 +130,11 @@
           "light": "./src/icons/clear.svg"
         }
       },
+
+
       {
         "command": "notesView.createNote",
         "title": "Create Note"
-      },
-      {
-        "command": "bbMaterialView.copyToWorkspace",
-        "title": "复制",
-        "icon": {
-          "dark": "./src/icons/copy-dark.svg",
-          "light": "./src/icons/copy-light.svg"
-        }
-      },
-      {
-        "command": "bbMaterialView.aiCopyToWorkspace",
-        "title": "传送"
-      },
-      {
-        "command": "bbMaterialView.setReadOnly",
-        "title": "Set Read Only"
-      },
-      {
-        "command": "bbMaterialView.openReadOnly",
-        "title": "Open Read Only"
-      },
-      {
-        "command": "bbMaterialView.openPDF",
-        "title": "Open PDF"
-      },
-      {
-        "command": "bbMaterialView.updateSemester",
-        "title": "Update Semester",
-        "icon": {
-          "dark": "./src/icons/update-term-dark.svg",
-          "light": "./src/icons/update-term-light.svg"
-        }
-      },
-      {
-        "command": "bbMaterialView.updateCourse",
-        "title": "Update Course",
-        "icon": {
-          "dark": "./src/icons/update-course-dark.svg",
-          "light": "./src/icons/update-course-light.svg"
-        }
-      },
-      {
-        "command": "bbMaterialView.updateAll",
-        "title": "Update All",
-        "icon": {
-          "dark": "./src/icons/update-dark.svg",
-          "light": "./src/icons/update-light.svg"
-        }
       },
       {
         "command": "notesView.deleteNote",
@@ -200,17 +164,21 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "mySidebar",
-          "title": "My Sidebar",
+          "id": "SVSmate",
+          "title": "SVSmate",
           "icon": "src/icons/pig.svg"
         }
       ]
     },
     "views": {
-      "mySidebar": [
+      "SVSmate": [
         {
           "id": "folderView",
           "name": "File Explorer"
+        },
+        {
+          "id": "bbMaterialView",
+          "name": "BB Materials"
         },
         {
           "id": "todoListView",
@@ -219,10 +187,6 @@
         {
           "id": "notesView",
           "name": "Notes"
-        },
-        {
-          "id": "bbMaterialView",
-          "name": "BB Materials"
         },
         {
           "id": "copilotView",
@@ -242,26 +206,30 @@
           "when": "view == todoListView",
           "group": "inline"
         },
+
+
         {
-          "command": "bbMaterialView.copyToWorkspace",
-          "when": "view == bbMaterialView",
-          "group": "inline"
-        },
-        {
-          "command": "bbMaterialView.aiCopyToWorkspace",
+          "command": "svsmate.BB-downloadToAiSpace",
           "when": "view == bbMaterialView && viewItem == file",
           "group": "inline"
         },
         {
-          "command": "bbMaterialView.updateSemester",
-          "when": "view == bbMaterialView && viewItem =~ /semesterFolder/",
+          "command": "svsmate.BB-downloadToWorkspace",
+          "when": "view == bbMaterialView && viewItem == file",
           "group": "inline"
         },
         {
-          "command": "bbMaterialView.updateCourse",
-          "when": "view == bbMaterialView && viewItem =~ /courseFolder/",
+          "command": "svsmate.BB-updateTerm",
+          "when": "view == bbMaterialView && viewItem == termFolder",
           "group": "inline"
         },
+        {
+          "command": "svsmate.BB-updateCourse",
+          "when": "view == bbMaterialView && viewItem == courseFolder",
+          "group": "inline"
+        },
+
+
         {
           "command": "notesView.deleteNote",
           "when": "view == notesView",
@@ -300,7 +268,7 @@
           "title": "Clear Search"
         },
         {
-          "command": "bbMaterialView.updateAll",
+          "command": "svsmate.BB-updateAll",
           "when": "view == bbMaterialView",
           "group": "navigation",
           "title": "Update All"
@@ -332,14 +300,11 @@
     "node-ical": "^0.20.1"
   },
   "devDependencies": {
-    "@types/cheerio": "^0.22.35",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^20.17.28",
-    "@types/node-fetch": "^2.6.12",
     "@types/vscode": "^1.98.0",
+    "@types/cheerio": "^0.22.35",
+    "@types/node-fetch": "^2.6.12",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "@types/vscode": "^1.84.0",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "@vscode/test-cli": "^0.0.10",
