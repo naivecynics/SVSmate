@@ -661,7 +661,7 @@ export class BlackboardCrawler {
             });
 
             if (response.status !== 200) {
-                // outputChannel.appendLine(`Failed to get page content: ${response.status}`);
+                outputChannel.error('getPageContent', `Failed to fetch page. Status: ${response.status}`);
                 return {};
             }
 
@@ -671,6 +671,14 @@ export class BlackboardCrawler {
             // Parse HTML
             const html = await response.text();
             const $ = cheerio.load(html);
+
+            if (this.debug
+                && finalUrl == 'https://bb.sustech.edu.cn/webapps/blackboard/content/listContent.jsp?course_id=_7065_1&content_id=_531840_1&mode=reset') {
+                const debugDir = PathManager.getDir('debug');
+                const debugFilePath = path.join(debugDir, `page.html`);
+                fs.writeFileSync(debugFilePath, html);
+                outputChannel.info('getPageContent', `HTML data saved to ${debugFilePath}`);
+            }
 
             // Extract file structure
             const pageContent = this.extractFileStructure($);
@@ -685,64 +693,89 @@ export class BlackboardCrawler {
     /**
      * Extract file structure from page HTML
      */
-    private extractFileStructure($: cheerio.CheerioAPI | cheerio.Root): PageStructure {
-        if (!$) {
-            // outputChannel.appendLine("Parsing failed, cannot extract file structure");
-            return {};
-        }
+  private extractFileStructure($: cheerio.CheerioAPI | cheerio.Root): PageStructure {
+      if (!$) {
+          return {};
+      }
 
-        const fileStructure: PageStructure = {};
+      const fileStructure: PageStructure = {};
 
-        // Traverse all content areas
-        $('li.clearfix.liItem.read').each((_, item) => {
-            // Get week title
-            const weekTitleTag = $(item).find('h3');
-            if (!weekTitleTag.length) {
-                return;
-            }
+      $('li.clearfix.liItem.read').each((_, item) => {
+          const weekTitleTag = $(item).find('h3');
+          if (!weekTitleTag.length) {
+              return;
+          }
 
-            const weekTitle = weekTitleTag.text().trim();
-            let content = '';
+          const linkTag = weekTitleTag.find('a[href]');
+          if (!linkTag.length) {
+              return;
+          }
 
-            // 1. Extract text information with newlines preserved
-            const detailsDiv = $(item).find('div.details');
-            if (detailsDiv.length) {
-                // Preserve newlines in content text
-                content = detailsDiv.text().replace(/\s+/g, ' ').trim();
-            }
+          const titleText = linkTag.text().trim();
+          const vtbDiv = $(item).find('div.vtbegenerated_div');
+          let content = '';
+          if (vtbDiv.length) {
+              let rawText = vtbDiv.html() || '';
 
-            // 2. Get file list
-            const files: Array<{ name: string; url: string }> = [];
-            $(item).find('li').each((_, fileLi) => {
-                const fileLink = $(fileLi).find('a[href]');
-                if (fileLink.length) {
-                    const fileName = fileLink.text().trim();
-                    const fileUrl = fileLink.attr('href')?.trim() || '';
+              rawText = rawText.replace(/<br\s*\/?>/gi, '\n')   // br换成换行
+                              .replace(/<[^>]+>/g, '')          // 去掉HTML标签
+                              .replace(/&nbsp;/g, ' ')          // 空格替换
+                              .replace(/[ \t]+/g, ' ')          // 多余空格
+                              .trim();
 
-                    // Filter out invalid URLs
-                    if (fileUrl.startsWith('#') || fileUrl.includes('close')) {
-                        return;
-                    }
+              // 内容质量检测：如果文本很短，或者没有有效中文/英文，就认为是垃圾内容
+              const meaningfulText = rawText.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]+/g, '');
+              if (meaningfulText.length >= 10) {  // 内容有效，长度够
+                  content = rawText;
+              } else {
+                  content = '';  // 太短/没有有效内容，直接置空
+              }
+          }
 
-                    // Convert relative URLs
-                    let fullFileUrl = fileUrl;
-                    if (!fileUrl.startsWith('http')) {
-                        fullFileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
-                    }
+          const files: Array<{ name: string; url: string }> = [];
 
-                    // Ensure filename is not empty
-                    if (fileName) {
-                        files.push({ name: fileName, url: fullFileUrl });
-                    }
-                }
-            });
+          // 检测是不是有 Attached Files 这种多附件
+          const attachedFiles = $(item).find('div.details a[href]');
+          if (attachedFiles.length > 1) {
+              // 多附件模式
+              attachedFiles.each((_, fileLink) => {
+                  const $fileLink = $(fileLink);
+                  const fileName = $fileLink.text().trim();
+                  let fileUrl = $fileLink.attr('href')?.trim() || '';
 
-            // 3. Organize data structure
-            fileStructure[weekTitle] = { text: content, files: files };
-        });
+                  if (fileUrl && !fileUrl.startsWith('http')) {
+                      fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
+                  }
 
-        return fileStructure;
+                  if (fileName && fileUrl) {
+                      files.push({ name: fileName, url: fileUrl });
+                  }
+              });
+          } else {
+              // 单文件模式
+              let fileUrl = linkTag.attr('href')?.trim() || '';
+              if (fileUrl && !fileUrl.startsWith('http')) {
+                  fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
+              }
+              if (titleText && fileUrl) {
+                  files.push({ name: titleText, url: fileUrl });
+              }
+          }
+
+          if (titleText && files.length > 0) {
+              fileStructure[titleText] = {
+                  text: content,
+                  files: files
+              };
+          }
+      });
+
+    if (Object.keys(fileStructure).length === 0) {
+        outputChannel.warn('extractFileStructure', `No valid files found on this page`);
     }
+    return fileStructure;
+}
+
 
     /**
      * Download a file with progress tracking

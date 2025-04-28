@@ -272,6 +272,12 @@
           "when": "view == bbMaterialView",
           "group": "navigation",
           "title": "Update All"
+        },
+        {
+          "command": "svsmate.BB-updateTerm",
+          "when": "view == bbMaterialView",
+          "group": "navigation",
+          "title": "Update Term"
         }
       ]
     }

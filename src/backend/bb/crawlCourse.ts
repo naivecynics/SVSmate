@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
 import { writeFile } from 'fs/promises';
 import { outputChannel } from '../../utils/OutputChannel';
 import { BlackboardCrawler } from './BlackboardCrawler';
@@ -48,40 +47,41 @@ export async function crawlCourse(
         for (const page of pages) {
             if (token.isCancellationRequested) return;
 
-            progress.report({ message: `Processing: ${page.title}` });
-            outputChannel.info(loggerPrefix, `Processing: ${page.title}`);
+            try {
+                progress.report({ message: `Processing: ${page.title}` });
+                outputChannel.info(loggerPrefix, `Processing: ${page.title}`);
 
-            const pageContent = await crawler.getPageContent(page.url);
-            if (!pageContent || Object.keys(pageContent).length === 0) { outputChannel.warn(loggerPrefix, `No content found for page: ${page.title}`); continue; }
+                const pageContent = await crawler.getPageContent(page.url);
 
-            const pagePath = safeEnsureDir(categoryPath, page.title);
+                if (!pageContent || Object.keys(pageContent).length === 0) {
+                    outputChannel.warn(loggerPrefix, `No content found for page: ${page.title}`);
+                    continue;
+                }
 
-            for (const [entryName, entryContent] of Object.entries(pageContent)) {
-                if (token.isCancellationRequested) return;
+                const pagePath = safeEnsureDir(categoryPath, page.title);
 
-                // record files url
+                for (const [entryName, entryContent] of Object.entries(pageContent)) {
+                    if (token.isCancellationRequested) return;
 
-                const json: { description: string; files: { name: string; url: string }[]; } = {
-                  description: entryContent.text,
-                  files: entryContent.files.map(file => ({
-                    name: file.name,
-                    url: file.url
-                  }))
-                };
-                const jsonPath = path.join(pagePath, `${entryName}.json`);
-                await writeFile(jsonPath, JSON.stringify(json, null, 2), { encoding: 'utf-8' });
-                outputChannel.info(loggerPrefix, `Saved JSON for section: ${entryName}`);
+                    if (!entryContent || (!entryContent.text && (!entryContent.files || entryContent.files.length === 0))) {
+                        outputChannel.warn(loggerPrefix, `Empty entry skipped: ${entryName}`);
+                        continue;
+                    }
 
-                // download files
-
-                // const sectionPath = safeEnsureDir(pagePath, section);
-                // for (const file of entry.files) {
-                //     if (token.isCancellationRequested) return;
-                //     const filePath = path.join(sectionPath, safe(file.name));
-                //     progress.report({ message: `Downloading: ${file.name}` });
-                //     outputChannel.info(loggerPrefix, `Downloading: ${file.name}`);
-                //     await crawler.downloadFile(file.url, filePath);
-                // }
+                    const json: { description: string; files: { name: string; url: string }[]; } = {
+                        description: entryContent.text || '',
+                        files: entryContent.files.map(file => ({
+                            name: file.name,
+                            url: file.url
+                        }))
+                    };
+                    const jsonPath = path.join(pagePath, `${entryName}.json`);
+                    await writeFile(jsonPath, JSON.stringify(json, null, 2), { encoding: 'utf-8' });
+                    outputChannel.info(loggerPrefix, `Saved JSON for section: ${entryName}`);
+                }
+            } catch (error) {
+                outputChannel.error(loggerPrefix, `Error processing page: ${page.title}, error: ${error}`);
+                continue; 
             }
         }
     }

@@ -6,13 +6,13 @@ import { crawlCourse } from './crawlCourse';
 import { safeEnsureDir } from '../../utils/pathUtils';
 import { BlackboardCrawler } from './BlackboardCrawler';
 import { BBMaterialItem } from '../../frontend/BBMaterialView';
-
+import { safe } from '../../utils/pathUtils';
 
 export async function updateCourse(context: vscode.ExtensionContext, item: BBMaterialItem) {
     const courseName = path.basename(item.resourceUri.fsPath);
     const termId = path.basename(path.dirname(item.resourceUri.fsPath));
     const bbVaultDir = PathManager.getDir('bb');
-    const crawler = new BlackboardCrawler();
+    const crawler = new BlackboardCrawler(true);
     if (!termId || !courseName) {
         vscode.window.showErrorMessage('Invalid course path format. Expected format: "term/courseName"');
         outputChannel.error('updateOneCourse', 'Invalid course path format');
@@ -28,7 +28,7 @@ export async function updateCourse(context: vscode.ExtensionContext, item: BBMat
 
         progress.report({ message: 'Getting course list...' });
         const allCourses = await crawler.getCoursesByTerm();
-        const course = allCourses?.[termId]?.find(c => c.name === courseName);
+        const course = allCourses?.[termId]?.find(c => safe(c.name) === courseName);
 
         if (!course) {
             const termExists = allCourses && allCourses[termId];
@@ -48,10 +48,27 @@ export async function updateCourse(context: vscode.ExtensionContext, item: BBMat
 }
 
 
-export async function updateTerm(context: vscode.ExtensionContext, item: BBMaterialItem) {
+export async function updateTerm(context: vscode.ExtensionContext, item?: BBMaterialItem) {
+    const crawler = new BlackboardCrawler();
+
+    if (!item) {
+        const termIdInput = await vscode.window.showInputBox({
+            prompt: 'Please enter term ID to initialize:',
+            placeHolder: 'e.g. 25spring',
+            validateInput: (val) => val.trim() === '' ? 'term ID cann\'y be null' : null
+        });
+
+        if (!termIdInput) return;
+
+        const bbVaultDir = PathManager.getDir('bb');
+        const fakePath = path.join(bbVaultDir, termIdInput);
+        item = {
+            resourceUri: vscode.Uri.file(fakePath),
+        } as BBMaterialItem;
+    }
+
     const termId = path.basename(item.resourceUri.fsPath);
     const bbVaultDir = PathManager.getDir('bb');
-    const crawler = new BlackboardCrawler();
 
     if (!(await crawler.ensureLogin(context))) return;
 
