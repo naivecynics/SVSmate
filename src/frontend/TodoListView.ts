@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
+import * as ical from "node-ical";
 import * as PathManager from "../utils/pathManager";
 
 interface TodoItem {
@@ -146,6 +147,40 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     fs.writeFileSync(filePath, JSON.stringify(json, null, 2), "utf8");
   }
 
+
+  async loadICSFile(filePath: string) {
+    try {
+      let icsContent: string;
+      if (filePath.startsWith("http")) {
+        const res = await fetch(filePath);
+        if (!res.ok) {throw new Error(`HTTP ${res.status}`);}
+        icsContent = await res.text();
+      } else {
+        if (!fs.existsSync(filePath)) {
+          vscode.window.showErrorMessage(`.ics 文件不存在: ${filePath}`);
+          return;
+        }
+        icsContent = fs.readFileSync(filePath, "utf8");
+      }
+  
+      const events = ical.parseICS(icsContent);
+      const now = new Date();
+      let addedCount = 0;
+      for (const key in events) {
+        const event = events[key];
+        if (event.type === "VEVENT" && event.end instanceof Date && event.end > now) {
+          const label = event.summary || "无标题任务";
+          const endTime = event.end.toISOString().split("T")[0]; // YYYY-MM-DD
+          const category = event.location || "BB-tasks";
+          this.addItem(label, endTime, category);
+          addedCount++;
+        }
+      }
+      vscode.window.showInformationMessage(`成功导入 ${addedCount} 条未来任务`);
+    } catch (err) {
+      vscode.window.showErrorMessage(`加载 .ics 文件失败: ${err}`);
+    }
+  }
 }
 
 // import * as vscode from "vscode";

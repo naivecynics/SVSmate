@@ -68,8 +68,6 @@
           "light": "./src/icons/copy-light.svg"
         }
       },
-
-      
       {
         "command": "todoListView.addItem",
         "title": "Add Item",
@@ -130,8 +128,14 @@
           "light": "./src/icons/clear.svg"
         }
       },
-
-
+      {
+        "command": "todoListView.loadICSFile",
+        "title": "Load From .ics File",
+        "icon": {
+          "dark": "./src/icons/load_dark.svg",
+          "light": "./src/icons/load_light.svg"
+        }
+      },
       {
         "command": "notesView.createNote",
         "title": "Create Note"
@@ -206,8 +210,6 @@
           "when": "view == todoListView",
           "group": "inline"
         },
-
-
         {
           "command": "svsmate.BB-downloadToAiSpace",
           "when": "view == bbMaterialView && viewItem == file",
@@ -228,8 +230,6 @@
           "when": "view == bbMaterialView && viewItem == courseFolder",
           "group": "inline"
         },
-
-
         {
           "command": "notesView.deleteNote",
           "when": "view == notesView",
@@ -268,6 +268,12 @@
           "title": "Clear Search"
         },
         {
+          "command": "todoListView.loadICSFile",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Load From .ics File"
+        },
+        {
           "command": "svsmate.BB-updateAll",
           "when": "view == bbMaterialView",
           "group": "navigation",
@@ -291,26 +297,26 @@
     "test": "vscode-test"
   },
   "dependencies": {
+    "@types/fs-extra": "^11.0.4",
     "axios": "^1.6.7",
     "axios-cookiejar-support": "^5.0.5",
     "cheerio": "^1.0.0",
     "fetch-cookie": "^3.1.0",
-    "js-yaml": "^4.1.0",
-    "node-fetch": "^2.7.0",
-    "openai": "^4.87.3",
-    "tough-cookie": "^5.1.2",
-    "xml2js": "^0.6.2",
-    "@types/fs-extra": "^11.0.4",
     "fs-extra": "^11.3.0",
     "ical.js": "^2.1.0",
-    "node-ical": "^0.20.1"
+    "js-yaml": "^4.1.0",
+    "node-fetch": "^2.7.0",
+    "node-ical": "^0.20.1",
+    "openai": "^4.87.3",
+    "tough-cookie": "^5.1.2",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "@types/vscode": "^1.98.0",
     "@types/cheerio": "^0.22.35",
-    "@types/node-fetch": "^2.6.12",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/node-fetch": "^2.6.12",
+    "@types/vscode": "^1.98.0",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "@vscode/test-cli": "^0.0.10",

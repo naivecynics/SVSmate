@@ -142,6 +142,18 @@ async function activate(context) {
         }
     }), vscode.commands.registerCommand('todoListView.clearSearch', () => {
         todoListViewProvider.clearSearch();
+    }), vscode.commands.registerCommand('todoListView.loadICSFile', async () => {
+        const input = await vscode.window.showInputBox({
+            prompt: '请点击获取外部日程表链接并复制URL',
+            placeHolder: 'https://example.com/calendar.ics',
+            ignoreFocusOut: true
+        });
+        if (input && input.trim().startsWith('http')) {
+            await todoListViewProvider.loadICSFile(input.trim());
+        }
+        else {
+            vscode.window.showErrorMessage('请输入一个有效的 .ics 网络链接（以 http 开头）');
+        }
     }));
 }
 function deactivate() { }
