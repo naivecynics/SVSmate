@@ -125,8 +125,7 @@ async function activate(context) {
     }), vscode.commands.registerCommand("todoListView.deleteTask", (task) => {
         todoListViewProvider.deleteTask(task);
     }), vscode.commands.registerCommand("todoListView.toggleTaskCheckbox", (task) => {
-        task.checked = !task.checked;
-        todoListViewProvider._onDidChangeTreeData.fire(undefined);
+        todoListViewProvider.toggleTaskCheckbox(task);
         // todoListViewProvider.slackboardCrawleraveJsonFile();
     }), vscode.commands.registerCommand("todoListView.sortByEndTime", () => {
         todoListViewProvider.sortBy("endTime");

@@ -136,8 +136,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
     
     vscode.commands.registerCommand("todoListView.toggleTaskCheckbox", (task) => {
-      task.checked = !task.checked;
-      todoListViewProvider._onDidChangeTreeData.fire(undefined);
+      todoListViewProvider.toggleTaskCheckbox(task);
       // todoListViewProvider.slackboardCrawleraveJsonFile();
     }),
 
