@@ -65,11 +65,11 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
       return [];
     }
 
-    if (!stats.isDirectory()) return [];
+    if (!stats.isDirectory()) {return [];}
 
     const entries = await fs.promises.readdir(targetPath);
     for (const name of entries) {
-      if (name.startsWith('.')) continue;
+      if (name.startsWith('.')) {continue;}
 
       const fullPath = path.join(targetPath, name);
       let stat: fs.Stats;
