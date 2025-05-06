@@ -130,6 +130,16 @@
           "light": "./src/icons/clear.svg"
         }
       },
+      {
+        "command": "todoListView.addSubTask",
+        "title": "add subTask",
+        "icon": "$(add)"
+      },
+      {
+        "command": "todoList.generateAISubtasks",
+        "title": "generate AI subtasks",
+        "icon": "$./src/icons/download-light.svg"
+      },
 
 
       {
@@ -206,7 +216,16 @@
           "when": "view == todoListView",
           "group": "inline"
         },
-
+        {
+          "command": "todoListView.addSubTask",
+          "when": "view == todoListView && viewItem == task",
+          "group": "inline"
+        },
+        {
+          "command": "todoList.generateAISubtasks",
+          "when": "view == todoListView && viewItem == task",
+          "group": "inline"
+        },
 
         {
           "command": "svsmate.BB-downloadToAiSpace",

@@ -1,8 +1,9 @@
-import * as vscode from 'vscode'
+import * as vscode from 'vscode';
 import { createChatParticipantAPI } from './backend/ai/createChatParticipantAPI';
 import { createChatParticipant } from './backend/ai/createChatParticipant';
 import { updateAll, updateCourse, updateTerm } from './backend/bb/updateCommands';
 import { downloadToWorkspace } from './backend/bb/downloadCommands';
+import { addAIGeneratedSubtasks } from './backend/ai/createSubtasks';
 
 import { FolderViewProvider } from "./frontend/FolderView";
 import { TodoListViewProvider } from "./frontend/TodoListView";
@@ -16,24 +17,24 @@ import * as PathManager from './utils/pathManager';
 
 export async function activate(context: vscode.ExtensionContext) {
 
-  PathManager.initPathManager(context)
+  PathManager.initPathManager(context);
 
   console.log('SVSmate activated!');
 
   // ------------------------------------------------
   //                      file
   // ------------------------------------------------
-  const folderViewProvider = FolderViewProvider.create()
+  const folderViewProvider = FolderViewProvider.create();
   folderViewProvider && vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
-  folderViewProvider && context.subscriptions.push(folderViewProvider)
+  folderViewProvider && context.subscriptions.push(folderViewProvider);
 
   // ------------------------------------------------
   //                       ai
   // ------------------------------------------------
-  
+
   // copilot ai chatbot @mate-API & @mate
   createChatParticipantAPI();
-  createChatParticipant
+  createChatParticipant();
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("copilotView", CopilotViewProvider.create())
@@ -69,13 +70,13 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
 
     // TODO: Add a init update one term commmand on view/title
-  )
+  );
 
 
   // ------------------------------------------------
   //                 collaboration
   // ------------------------------------------------
-  
+
   // TODO: How? 
 
   // ------------------------------------------------
@@ -87,7 +88,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   vscode.commands.registerCommand('notesView.createNote', async (folderPath: string) => {
     await notesViewProvider.createNote(folderPath);
-  })
+  });
 
   vscode.commands.registerCommand('notesView.deleteNote', async (item: any) => {
     try {
@@ -96,7 +97,7 @@ export async function activate(context: vscode.ExtensionContext) {
         'Yes',
         'No'
       );
-      
+
       if (answer === 'Yes') {
         await notesViewProvider.deleteNote(item.resourceUri.fsPath);
         vscode.window.showInformationMessage(`Note "${item.label}" has been deleted`);
@@ -104,7 +105,7 @@ export async function activate(context: vscode.ExtensionContext) {
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to delete note: ${error}`);
     }
-  })
+  });
 
   // ------------------------------------------------
   //                      todo
@@ -134,7 +135,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("todoListView.deleteTask", (task) => {
       todoListViewProvider.deleteTask(task);
     }),
-    
+
     vscode.commands.registerCommand("todoListView.toggleTaskCheckbox", (task) => {
       task.checked = !task.checked;
       todoListViewProvider._onDidChangeTreeData.fire(undefined);
@@ -144,7 +145,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("todoListView.sortByEndTime", () => {
       todoListViewProvider.sortBy("endTime");
     }),
-  
+
     vscode.commands.registerCommand("todoListView.sortByKinds", () => {
       todoListViewProvider.sortBy("category");
     }),
@@ -160,6 +161,16 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
     vscode.commands.registerCommand('todoListView.clearSearch', () => {
       todoListViewProvider.clearSearch();
+    }),
+    vscode.commands.registerCommand('todoListView.addSubTask', async (task) => {
+      if (todoListViewProvider) {
+        await todoListViewProvider.addSubTask(task);
+      }
+    }),
+    vscode.commands.registerCommand('todoList.generateAISubtasks', async (task) => {
+      if (todoListViewProvider) {
+      await addAIGeneratedSubtasks(task, todoListViewProvider);
+    }
     }),
   );
 }
