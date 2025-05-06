@@ -10,6 +10,8 @@ import { CopilotViewProvider } from "./frontend/CopilotView";
 import { NotesViewProvider } from "./frontend/NotesView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 
+import { listenForDocumentChanges } from './backend/collaboration/getDocumentChange';
+
 // import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
 
@@ -30,7 +32,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // ------------------------------------------------
   //                       ai
   // ------------------------------------------------
-  
+
   // copilot ai chatbot @mate-API & @mate
   createChatParticipantAPI();
   createChatParticipant
@@ -75,8 +77,8 @@ export async function activate(context: vscode.ExtensionContext) {
   // ------------------------------------------------
   //                 collaboration
   // ------------------------------------------------
-  
-  // TODO: How? 
+  const documentChangeListener = listenForDocumentChanges();
+  context.subscriptions.push(documentChangeListener);
 
   // ------------------------------------------------
   //                      note
@@ -96,7 +98,7 @@ export async function activate(context: vscode.ExtensionContext) {
         'Yes',
         'No'
       );
-      
+
       if (answer === 'Yes') {
         await notesViewProvider.deleteNote(item.resourceUri.fsPath);
         vscode.window.showInformationMessage(`Note "${item.label}" has been deleted`);
@@ -134,7 +136,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("todoListView.deleteTask", (task) => {
       todoListViewProvider.deleteTask(task);
     }),
-    
+
     vscode.commands.registerCommand("todoListView.toggleTaskCheckbox", (task) => {
       task.checked = !task.checked;
       todoListViewProvider._onDidChangeTreeData.fire(undefined);
@@ -144,7 +146,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("todoListView.sortByEndTime", () => {
       todoListViewProvider.sortBy("endTime");
     }),
-  
+
     vscode.commands.registerCommand("todoListView.sortByKinds", () => {
       todoListViewProvider.sortBy("category");
     }),

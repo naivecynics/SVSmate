@@ -3,8 +3,8 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 
-type FolderKey = 'bb' | 'todo' | 'notes' | 'debug' | 'cache';
-type FileKey = 'bbCookies' | 'todoList';
+type FolderKey = 'bb' | 'todo' | 'notes' | 'collab' | 'debug' | 'cache';
+type FileKey = 'bbCookies' | 'todoList' | 'collabHistory';
 
 let rootPath = '';
 
@@ -12,13 +12,15 @@ const folders: Record<FolderKey, string> = {
   bb: '',
   todo: '',
   notes: '',
+  collab: '',
   debug: '',
   cache: '',
 };
 
 const files: Record<FileKey, string> = {
   bbCookies: '',
-  todoList: ''
+  todoList: '',
+  collabHistory: ''
 };
 
 export function initPathManager(context: vscode.ExtensionContext) {
@@ -35,11 +37,13 @@ export function initPathManager(context: vscode.ExtensionContext) {
   folders.bb = path.join(root, 'bb-vault');
   folders.todo = path.join(root, 'todo');
   folders.notes = path.join(root, 'notes');
+  folders.collab = path.join(root, 'collab');
   folders.debug = path.join(root, 'debug');
   folders.cache = path.join(root, '.cache');
 
   files.bbCookies = path.join(folders.cache, 'cookies.json');
   files.todoList = path.join(folders.todo, 'tasks.json');
+  files.collabHistory = path.join(folders.collab, 'collabHistory.json');
 }
 
 export function getDir(key: FolderKey): string {

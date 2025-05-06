@@ -68,8 +68,6 @@
           "light": "./src/icons/copy-light.svg"
         }
       },
-
-      
       {
         "command": "todoListView.addItem",
         "title": "Add Item",
@@ -130,8 +128,6 @@
           "light": "./src/icons/clear.svg"
         }
       },
-
-
       {
         "command": "notesView.createNote",
         "title": "Create Note"
@@ -206,8 +202,6 @@
           "when": "view == todoListView",
           "group": "inline"
         },
-
-
         {
           "command": "svsmate.BB-downloadToAiSpace",
           "when": "view == bbMaterialView && viewItem == file",
@@ -228,8 +222,6 @@
           "when": "view == bbMaterialView && viewItem == courseFolder",
           "group": "inline"
         },
-
-
         {
           "command": "notesView.deleteNote",
           "when": "view == notesView",

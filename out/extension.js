@@ -45,6 +45,7 @@ const TodoListView_1 = require("./frontend/TodoListView");
 const CopilotView_1 = require("./frontend/CopilotView");
 const NotesView_1 = require("./frontend/NotesView");
 const BBMaterialView_1 = require("./frontend/BBMaterialView");
+const getDocumentChange_1 = require("./backend/collaboration/getDocumentChange");
 // import { outputChannel } from './utils/OutputChannel';
 const PathManager = __importStar(require("./utils/pathManager"));
 async function activate(context) {
@@ -82,7 +83,8 @@ async function activate(context) {
     // ------------------------------------------------
     //                 collaboration
     // ------------------------------------------------
-    // TODO: How? 
+    const documentChangeListener = (0, getDocumentChange_1.listenForDocumentChanges)();
+    context.subscriptions.push(documentChangeListener);
     // ------------------------------------------------
     //                      note
     // ------------------------------------------------
