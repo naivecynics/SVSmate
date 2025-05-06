@@ -2,6 +2,7 @@ import * as net from 'net';
 import * as dgram from 'dgram';
 import * as os from 'os';
 import * as vscode from 'vscode';
+import { outputChannel } from '../../utils/OutputChannel';
 
 const DEFAULT_TCP_PORT = 12345;
 const DEFAULT_UDP_PORT = 12346;
@@ -16,7 +17,7 @@ export class ConnectionManager {
     getLocalIp(): string {
         const interfaces = os.networkInterfaces();
         for (const iface of Object.values(interfaces).flat()) {
-            if (iface && iface.family === 'IPv4' && !iface.internal) {
+            if (iface && iface.family === 'IPv4' && !iface.internal && iface.address.startsWith('10.')) {
                 return iface.address;
             }
         }
@@ -32,7 +33,7 @@ export class ConnectionManager {
         });
 
         this.tcpServer.listen(DEFAULT_TCP_PORT, () => {
-            vscode.window.showInformationMessage(`TCP Server started on ${this.getLocalIp()}:${DEFAULT_TCP_PORT}`);
+            outputChannel.info('ConnectionManager', `TCP Server started on ${this.getLocalIp()}:${DEFAULT_TCP_PORT}`);
         });
     }
 
@@ -49,12 +50,19 @@ export class ConnectionManager {
     // 连接远程服务器
     async connect(ip: string) {
         // 连接TCP
+        outputChannel.info('ConnectionManager', `Attempting to connect to ${ip}:${DEFAULT_TCP_PORT}...`);
         this.tcpClient = net.connect(DEFAULT_TCP_PORT, ip, () => {
-            vscode.window.showInformationMessage(`Connected to ${ip}:${DEFAULT_TCP_PORT}`);
+            outputChannel.info('ConnectionManager', `Successfully connected to ${ip}:${DEFAULT_TCP_PORT}`);
+        });
+
+        // 添加错误处理
+        this.tcpClient.on('error', (err) => {
+            outputChannel.error('ConnectionManager', `Connection failed: ${err.message}`);
         });
 
         // 设置UDP目标
         this.targetUdpInfo = { address: ip, port: DEFAULT_UDP_PORT };
+        outputChannel.info('ConnectionManager', `UDP target set to ${ip}:${DEFAULT_UDP_PORT}`);
     }
 
     // 发送文字消息
@@ -76,15 +84,15 @@ export class ConnectionManager {
     }
 
     private handleTcpData(data: Buffer) {
-        vscode.window.showInformationMessage(`Received message: ${data.toString()}`);
+        outputChannel.info('ConnectionManager', `Received message: ${data.toString()}`);
     }
 
     private handleUdpData(data: Buffer, fromIp: string) {
         try {
             const pos = JSON.parse(data.toString());
-            vscode.window.showInformationMessage(`Cursor at ${fromIp}: Line ${pos.line}, Column ${pos.column}`);
+            outputChannel.info('ConnectionManager', `Cursor at ${fromIp}: Line ${pos.line}, Column ${pos.column}`);
         } catch {
-            vscode.window.showErrorMessage('Invalid cursor data');
+            outputChannel.error('ConnectionManager', 'Invalid cursor data');
         }
     }
 
