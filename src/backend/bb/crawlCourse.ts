@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { writeFile } from 'fs/promises';
 import { outputChannel } from '../../utils/OutputChannel';
 import { BlackboardCrawler } from './BlackboardCrawler';
-import { safeEnsureDir } from '../../utils/pathUtils';
+import { safeEnsureDir,safe } from '../../utils/pathUtils';
 
 export async function crawlCourse(
     course: any,
@@ -68,7 +68,7 @@ export async function crawlCourse(
                     url: file.url
                   }))
                 };
-                const jsonPath = path.join(pagePath, `${entryName}.json`);
+                const jsonPath = path.join(pagePath, safe(`${entryName}.json`));
                 await writeFile(jsonPath, JSON.stringify(json, null, 2), { encoding: 'utf-8' });
                 outputChannel.info(loggerPrefix, `Saved JSON for section: ${entryName}`);
 
