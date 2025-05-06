@@ -132,13 +132,19 @@
       },
       {
         "command": "todoListView.addSubTask",
-        "title": "add subTask",
-        "icon": "$(add)"
+        "title": "Add SubTask",
+        "icon": {
+          "dark": "./src/icons/addItem_dark.svg",
+          "light": "./src/icons/addItem_light.svg"
+        }
       },
       {
         "command": "todoList.generateAISubtasks",
-        "title": "generate AI subtasks",
-        "icon": "$./src/icons/download-light.svg"
+        "title": "Generate AI Subtasks",
+        "icon": {
+          "dark": "./src/icons/download-dark.svg",
+          "light": "./src/icons/download-light.svg"
+        }
       },
 
 

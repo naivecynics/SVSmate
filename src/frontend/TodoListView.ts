@@ -19,7 +19,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
   private _searchTerm = "";
   private _filteredItems: TodoItem[] = [];
 
-  private constructor() {} // 私有构造，只允许 create() 创建实例
+  private constructor() { } // 私有构造，只允许 create() 创建实例
 
   static async create(): Promise<TodoListViewProvider> {
     const provider = new TodoListViewProvider();
@@ -35,20 +35,18 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
   getTreeItem(element: TodoItem): vscode.TreeItem {
     // 判断是否有子任务，决定是否可折叠
     const hasChildren = element.children && element.children.length > 0;
-    const state = hasChildren 
-      ? vscode.TreeItemCollapsibleState.Collapsed 
+    const state = hasChildren
+      ? vscode.TreeItemCollapsibleState.Collapsed
       : vscode.TreeItemCollapsibleState.None;
-      
+
     const item = new vscode.TreeItem(element.label, state);
     item.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");
     item.tooltip = new vscode.MarkdownString(
-      `**任务:** ${element.label}\n**分类:** ${element.category}\n**截止:** ${element.endTime}${
-        hasChildren ? `\n**子任务:** ${element.children.length}个` : ""
+      `**任务:** ${element.label}\n**分类:** ${element.category}\n**截止:** ${element.endTime}${hasChildren ? `\n**子任务:** ${element.children.length}个` : ""
       }`
     );
-    item.description = `[${element.category}] ❗${element.endTime}${
-      hasChildren ? ` (${element.children.length})` : ""
-    }`;
+    item.description = `[${element.category}] ❗${element.endTime}${hasChildren ? ` (${element.children.length})` : ""
+      }`;
     item.resourceUri = vscode.Uri.parse(`date:${element.endTime}`);
     item.checkboxState = element.checked
       ? vscode.TreeItemCheckboxState.Checked
@@ -58,10 +56,10 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
       title: "Toggle Task",
       arguments: [element]
     };
-    
+
     // 添加上下文键，用于右键菜单区分主任务和子任务
     item.contextValue = element.id.includes("/") ? "subtask" : "task";
-    
+
     return item;
   }
 
@@ -70,12 +68,12 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
       // 搜索模式下，展平所有任务
       return this._filteredItems;
     }
-    
+
     if (!element) {
       // 根节点，返回顶级任务
       return this.items;
     }
-    
+
     // 子节点，返回其子任务
     return element.children;
   }
@@ -85,7 +83,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     if (!element.id.includes("/")) {
       return null; // 顶级任务没有父任务
     }
-    
+
     const parentId = element.id.split("/").slice(0, -1).join("/");
     return this.findTaskById(parentId);
   }
@@ -109,12 +107,12 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
   setSearchTerm(term: string) {
     this._searchTerm = term.trim().toLowerCase();
     this._filteredItems = [];
-    
+
     if (this._searchTerm) {
       // 递归查找匹配项，并展平结果
       this.findMatchingTasks(this.items, this._searchTerm, this._filteredItems);
     }
-    
+
     this._onDidChangeTreeData.fire(undefined);
   }
 
@@ -141,17 +139,36 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
       vscode.window.showErrorMessage("日期格式错误，请使用 YYYY-MM-DD");
       return;
     }
-    
+
+    // Parse the date and validate it
+    const parts = endTime.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+
+    // Create a Date object (note: month is 0-indexed in JavaScript)
+    const date = new Date(year, month - 1, day);
+
+    // Validate the date components match the input (to catch invalid dates like 2023-02-30)
+    const isValidDate = (date.getFullYear() === year) &&
+      (date.getMonth() === month - 1) &&
+      (date.getDate() === day);
+
+    if (!isValidDate || year < 2000) {
+      vscode.window.showErrorMessage("请输入2000年以后的合法日期");
+      return;
+    }
+
     const id = `task_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    this.items.push({ 
+    this.items.push({
       id,
-      label, 
-      endTime, 
-      category, 
+      label,
+      endTime,
+      category,
       checked: false,
-      children: [] 
+      children: []
     });
-    
+
     this.saveToDisk();
     this._onDidChangeTreeData.fire(undefined);
   }
@@ -159,8 +176,8 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
   // ✅ 添加子任务
   async addSubTask(parentTask: TodoItem) {
     const label = await vscode.window.showInputBox({ prompt: "子任务名称" });
-    if (!label) {return;}
-    
+    if (!label) { return; }
+
     const subTaskId = `${parentTask.id}/${Date.now()}`;
     const subTask: TodoItem = {
       id: subTaskId,
@@ -170,7 +187,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
       checked: false,
       children: []
     };
-    
+
     parentTask.children.push(subTask);
     this.saveToDisk();
     this._onDidChangeTreeData.fire(undefined);
@@ -179,8 +196,8 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
   async editTask(task: TodoItem) {
     const newLabel = await vscode.window.showInputBox({ prompt: "修改任务名", value: task.label });
     const newCategory = await vscode.window.showInputBox({ prompt: "修改分类", value: task.category });
-    const newEndTime = await vscode.window.showInputBox({ 
-      prompt: "修改截止日期 (YYYY-MM-DD)", 
+    const newEndTime = await vscode.window.showInputBox({
+      prompt: "修改截止日期 (YYYY-MM-DD)",
       value: task.endTime,
       validateInput: (value) => {
         return /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : "日期格式错误，请使用 YYYY-MM-DD";
@@ -214,26 +231,26 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         this.items.splice(index, 1);
       }
     }
-    
+
     this.saveToDisk();
     this._onDidChangeTreeData.fire(undefined);
   }
 
   toggleTaskCheckbox(task: TodoItem) {
     task.checked = !task.checked;
-    
+
     // 递归更新子任务状态
     if (task.children.length > 0) {
       this.updateChildrenCheckState(task.children, task.checked);
     }
-    
+
     // 更新父任务状态（如果所有子任务完成，则父任务也标记完成）
     this.updateParentCheckState(task);
-    
+
     this.saveToDisk();
     this._onDidChangeTreeData.fire(undefined);
   }
-  
+
   // 递归更新子任务状态
   private updateChildrenCheckState(children: TodoItem[], checked: boolean) {
     for (const child of children) {
@@ -243,27 +260,27 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
       }
     }
   }
-  
+
   // 更新父任务状态
   private updateParentCheckState(task: TodoItem) {
     if (!task.id.includes("/")) {
       return; // 顶级任务无需更新父状态
     }
-    
+
     const pathParts = task.id.split("/");
     // 如果路径少于2部分，没有父任务
     if (pathParts.length < 2) {
       return;
     }
-    
+
     const parentId = pathParts.slice(0, -1).join("/");
     const parent = this.findTaskById(parentId);
-    
+
     if (parent) {
       // 检查所有子任务是否已完成
       const allChecked = parent.children.every(child => child.checked);
       parent.checked = allChecked;
-      
+
       // 递归更新更高层级的父任务
       this.updateParentCheckState(parent);
     }
@@ -274,10 +291,10 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     this.sortItems(this.items, key);
     this._onDidChangeTreeData.fire(undefined);
   }
-  
+
   private sortItems(items: TodoItem[], key: "endTime" | "category") {
     items.sort((a, b) => a[key].localeCompare(b[key]));
-    
+
     // 递归排序子任务
     for (const item of items) {
       if (item.children.length > 0) {
@@ -299,7 +316,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     try {
       const raw = fs.readFileSync(filePath, "utf8");
       const rawData = JSON.parse(raw);
-      
+
       // 将扁平的数据转换为树形结构
       this.items = this.buildTaskTree(rawData);
     } catch (err) {
@@ -307,12 +324,12 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
       this.items = [];
     }
   }
-  
+
   // 构建任务树
   private buildTaskTree(data: any[]): TodoItem[] {
     const allTasks: Record<string, TodoItem> = {};
     const rootTasks: TodoItem[] = [];
-    
+
     // 第一遍：创建所有任务对象
     for (const item of data) {
       const task: TodoItem = {
@@ -323,19 +340,19 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         checked: item.Finish || false,
         children: []
       };
-      
+
       allTasks[task.id] = task;
     }
-    
+
     // 第二遍：构建任务树
     for (const id in allTasks) {
       const task = allTasks[id];
-      
+
       // 检查是否为子任务
       if (task.id.includes("/")) {
         const parentId = task.id.split("/").slice(0, -1).join("/");
         const parent = allTasks[parentId];
-        
+
         if (parent) {
           parent.children.push(task);
         } else {
@@ -347,17 +364,17 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         rootTasks.push(task);
       }
     }
-    
+
     return rootTasks;
   }
 
   // 💾 保存任务
   private saveToDisk() {
     const filePath = PathManager.getFile("todoList");
-    
+
     // 将树形结构展平为一维数组
     const flattenedTasks = this.flattenTaskTree(this.items);
-    
+
     const json = flattenedTasks.map(i => ({
       id: i.id,
       Name: i.label,
@@ -365,34 +382,34 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
       Variety: i.category,
       Finish: i.checked
     }));
-    
+
     fs.writeFileSync(filePath, JSON.stringify(json, null, 2), "utf8");
   }
-  
+
   // 展平任务树为一维数组
   private flattenTaskTree(items: TodoItem[]): TodoItem[] {
     let result: TodoItem[] = [];
-    
+
     for (const item of items) {
       result.push(item);
-      
+
       if (item.children.length > 0) {
         result = result.concat(this.flattenTaskTree(item.children));
       }
     }
-    
+
     return result;
   }
   // 在 TodoListViewProvider 类中添加新方法
 
-async generateAISubtasks(task: TodoItem) {
-  try {
-    await aiSubtask.addAIGeneratedSubtasks(task, this);
-  } catch (error) {
-    vscode.window.showErrorMessage(`生成子任务失败: ${(error as Error).message}`);
+  async generateAISubtasks(task: TodoItem) {
+    try {
+      await aiSubtask.addAIGeneratedSubtasks(task, this);
+    } catch (error) {
+      vscode.window.showErrorMessage(`生成子任务失败: ${(error as Error).message}`);
+    }
   }
-}
-  
+
 }
 
 // import * as vscode from "vscode";
@@ -440,7 +457,7 @@ async generateAISubtasks(task: TodoItem) {
 //
 //     treeItem.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");
 //     treeItem.label = element.label;
-//     treeItem.description = `[${element.category}] ❗${element.endTime}`; 
+//     treeItem.description = `[${element.category}] ❗${element.endTime}`;
 //     treeItem.tooltip = new vscode.MarkdownString(`**任务:** ${element.label}  \n**分类:** ${element.category}  \n**截止日期:** ${element.endTime}`);
 //     treeItem.resourceUri = vscode.Uri.parse(`date:${element.endTime}`);
 //
@@ -467,8 +484,8 @@ async generateAISubtasks(task: TodoItem) {
 //   //实现搜索功能
 //   setSearchTerm(term: string) {
 //     this._searchTerm = term.trim().toLowerCase();
-//     this._filteredItems = this._searchTerm 
-//       ? this.items.filter(item => 
+//     this._filteredItems = this._searchTerm
+//       ? this.items.filter(item =>
 //           item.label.toLowerCase().includes(this._searchTerm)
 //         )
 //       : this.items;

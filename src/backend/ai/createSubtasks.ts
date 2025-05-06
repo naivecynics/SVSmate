@@ -32,7 +32,7 @@ export async function createSubtasksWithAI(
 `;
 
     const systemPrompt = `
-你是一个专业的任务拆解助手。请将用户提供的任务拆解为具体的子任务。
+你是一个专业的任务拆解助手。请将用户提供的任务拆解为具体、精确而简短的子任务，字数不多于7个字。
 仅返回一个JSON格式的子任务数组，每个子任务只需包含"label"字段。
 示例输出格式:
 [
