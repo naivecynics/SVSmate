@@ -40,6 +40,7 @@ const createChatParticipantAPI_1 = require("./backend/ai/createChatParticipantAP
 const createChatParticipant_1 = require("./backend/ai/createChatParticipant");
 const updateCommands_1 = require("./backend/bb/updateCommands");
 const downloadCommands_1 = require("./backend/bb/downloadCommands");
+const createSubtasks_1 = require("./backend/ai/createSubtasks");
 const FolderView_1 = require("./frontend/FolderView");
 const TodoListView_1 = require("./frontend/TodoListView");
 const CopilotView_1 = require("./frontend/CopilotView");
@@ -61,7 +62,7 @@ async function activate(context) {
     // ------------------------------------------------
     // copilot ai chatbot @mate-API & @mate
     (0, createChatParticipantAPI_1.createChatParticipantAPI)();
-    createChatParticipant_1.createChatParticipant;
+    (0, createChatParticipant_1.createChatParticipant)();
     context.subscriptions.push(vscode.window.registerWebviewViewProvider("copilotView", CopilotView_1.CopilotViewProvider.create()));
     // ------------------------------------------------
     //                   blaskboard
@@ -142,6 +143,26 @@ async function activate(context) {
         }
     }), vscode.commands.registerCommand('todoListView.clearSearch', () => {
         todoListViewProvider.clearSearch();
+    }), vscode.commands.registerCommand('todoListView.addSubTask', async (task) => {
+        if (todoListViewProvider) {
+            await todoListViewProvider.addSubTask(task);
+        }
+    }), vscode.commands.registerCommand('todoList.generateAISubtasks', async (task) => {
+        if (todoListViewProvider) {
+            await (0, createSubtasks_1.addAIGeneratedSubtasks)(task, todoListViewProvider);
+        }
+    }), vscode.commands.registerCommand('todoListView.loadICSFile', async () => {
+        const input = await vscode.window.showInputBox({
+            prompt: '请点击获取外部日程表链接并复制URL',
+            placeHolder: 'https://example.com/calendar.ics',
+            ignoreFocusOut: true
+        });
+        if (input && input.trim().startsWith('http')) {
+            await todoListViewProvider.loadICSFile(input.trim());
+        }
+        else {
+            vscode.window.showErrorMessage('请输入一个有效的 .ics 网络链接（以 http 开头）');
+        }
     }));
 }
 function deactivate() { }

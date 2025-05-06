@@ -131,6 +131,14 @@
         }
       },
       {
+        "command": "todoListView.loadICSFile",
+        "title": "Load From .ics File",
+        "icon": {
+          "dark": "./src/icons/load_dark.svg",
+          "light": "./src/icons/load_light.svg"
+        }
+      },
+      {
         "command": "todoListView.addSubTask",
         "title": "Add SubTask",
         "icon": {
@@ -142,12 +150,10 @@
         "command": "todoList.generateAISubtasks",
         "title": "Generate AI Subtasks",
         "icon": {
-          "dark": "./src/icons/download-dark.svg",
-          "light": "./src/icons/download-light.svg"
+          "dark": "./src/icons/generate_dark.svg",
+          "light": "./src/icons/generate_light.svg"
         }
       },
-
-
       {
         "command": "notesView.createNote",
         "title": "Create Note"
@@ -291,6 +297,12 @@
           "when": "view == todoListView ",
           "group": "navigation",
           "title": "Clear Search"
+        },
+        {
+          "command": "todoListView.loadICSFile",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Load From .ics File"
         },
         {
           "command": "svsmate.BB-updateAll",
