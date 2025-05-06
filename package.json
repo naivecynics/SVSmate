@@ -9,7 +9,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -139,6 +141,22 @@
           "dark": "./src/icons/delete-dark.svg",
           "light": "./src/icons/delete-light.svg"
         }
+      },
+      {
+        "command": "svsmate.startServer",
+        "title": "Start Server"
+      },
+      {
+        "command": "svsmate.connect",
+        "title": "Connect to Server"
+      },
+      {
+        "command": "svsmate.sendMessage",
+        "title": "Send Message"
+      },
+      {
+        "command": "svsmate.disconnect",
+        "title": "Disconnect"
       }
     ],
     "chatParticipants": [

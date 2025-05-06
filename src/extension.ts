@@ -11,6 +11,7 @@ import { NotesViewProvider } from "./frontend/NotesView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 
 import { listenForDocumentChanges } from './backend/collaboration/getDocumentChange';
+import { ConnectionManager } from './backend/collaboration/collabRoom';
 
 // import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
@@ -18,7 +19,7 @@ import * as PathManager from './utils/pathManager';
 
 export async function activate(context: vscode.ExtensionContext) {
 
-  PathManager.initPathManager(context)
+  PathManager.initPathManager(context);
 
   console.log('SVSmate activated!');
 
@@ -35,7 +36,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // copilot ai chatbot @mate-API & @mate
   createChatParticipantAPI();
-  createChatParticipant
+  createChatParticipant();
+
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("copilotView", CopilotViewProvider.create())
@@ -71,7 +73,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
 
     // TODO: Add a init update one term commmand on view/title
-  )
+  );
 
 
   // ------------------------------------------------
@@ -79,6 +81,41 @@ export async function activate(context: vscode.ExtensionContext) {
   // ------------------------------------------------
   const documentChangeListener = listenForDocumentChanges();
   context.subscriptions.push(documentChangeListener);
+
+  const manager = new ConnectionManager();
+
+  // 状态栏显示IP
+  const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
+  statusBar.text = `Local IP: ${manager.getLocalIp()}`;
+  statusBar.show();
+
+  // 注册命令
+  context.subscriptions.push(
+    vscode.commands.registerCommand('svsmate.startServer', () => {
+      manager.startTcpServer();
+      manager.startUdpServer();
+    }),
+
+    vscode.commands.registerCommand('svsmate.connect', async () => {
+      const ip = await vscode.window.showInputBox({ prompt: 'Enter target IP' });
+      if (ip) { manager.connect(ip); }
+    }),
+
+    vscode.commands.registerCommand('svsmate.sendMessage', async () => {
+      const message = await vscode.window.showInputBox({ prompt: 'Enter message' });
+      if (message) { manager.sendMessage(message); }
+    }),
+
+    vscode.commands.registerCommand('svsmate.disconnect', () => manager.disconnect())
+  );
+
+  // 自动发送光标位置
+  context.subscriptions.push(
+    vscode.window.onDidChangeTextEditorSelection(e => {
+      manager.sendCursorPosition(e.selections[0].active);
+    })
+  );
+
 
   // ------------------------------------------------
   //                      note
