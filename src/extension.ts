@@ -11,8 +11,9 @@ import { NotesViewProvider } from "./frontend/NotesView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 
 import { listenForDocumentChanges } from './backend/collaboration/getDocumentChange';
-import { ConnectionManager } from './backend/collaboration/collabRoom';
+import { ConnectionManager } from './backend/collaboration/ConnectionManager';
 import { FirewallManager } from './backend/collaboration/firewallManager';
+import { SharedFilesProvider } from './frontend/SharedFilesProvider';
 
 // import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
@@ -78,6 +79,32 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const manager = new ConnectionManager();
 
+  // Register SharedFilesProvider
+  const sharedFilesProvider = SharedFilesProvider.create(manager);
+  const sharedFilesView = vscode.window.registerTreeDataProvider('sharedFilesView', sharedFilesProvider);
+
+  // Register drop functionality for shared files view 
+  const registerDropProvider = vscode.window.createTreeView('sharedFilesView', {
+    treeDataProvider: sharedFilesProvider,
+    dragAndDropController: {
+      dropMimeTypes: ['text/uri-list'],
+      dragMimeTypes: [], // Add dragMimeTypes array (empty since we don't need drag functionality)
+      handleDrop: async (target: any, dataTransfer: vscode.DataTransfer) => {
+        await sharedFilesProvider.handleDrop(dataTransfer);
+        // Don't return a value, just let it return void
+      }
+    }
+  });
+
+  context.subscriptions.push(registerDropProvider);
+
+  // Register commands for shared files
+  context.subscriptions.push(
+    vscode.commands.registerCommand('svsmate.removeSharedFile', (filePath: string) => {
+      sharedFilesProvider.removeFile(filePath);
+    })
+  );
+
   FirewallManager.autoConfigure().catch(console.error);
 
   // 状态栏显示IP
@@ -108,9 +135,15 @@ export async function activate(context: vscode.ExtensionContext) {
   // 自动发送光标位置
   context.subscriptions.push(
     vscode.window.onDidChangeTextEditorSelection(e => {
-      manager.sendCursorPosition(e.selections[0].active);
+      if (e.textEditor && e.selections.length > 0) {
+        manager.sendCursorPosition(e.selections[0].active, e.textEditor.document.uri.fsPath);
+      }
     })
   );
+
+  // Connect shared files provider to connection manager
+  manager.setSharedFilesProvider(sharedFilesProvider);
+
   // endregion
 
   // region note

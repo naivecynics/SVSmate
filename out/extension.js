@@ -46,8 +46,9 @@ const CopilotView_1 = require("./frontend/CopilotView");
 const NotesView_1 = require("./frontend/NotesView");
 const BBMaterialView_1 = require("./frontend/BBMaterialView");
 const getDocumentChange_1 = require("./backend/collaboration/getDocumentChange");
-const collabRoom_1 = require("./backend/collaboration/collabRoom");
+const ConnectionManager_1 = require("./backend/collaboration/ConnectionManager");
 const firewallManager_1 = require("./backend/collaboration/firewallManager");
+const SharedFilesProvider_1 = require("./frontend/SharedFilesProvider");
 // import { outputChannel } from './utils/OutputChannel';
 const PathManager = __importStar(require("./utils/pathManager"));
 async function activate(context) {
@@ -82,7 +83,27 @@ async function activate(context) {
     // region collaboration
     const documentChangeListener = (0, getDocumentChange_1.listenForDocumentChanges)();
     context.subscriptions.push(documentChangeListener);
-    const manager = new collabRoom_1.ConnectionManager();
+    const manager = new ConnectionManager_1.ConnectionManager();
+    // Register SharedFilesProvider
+    const sharedFilesProvider = SharedFilesProvider_1.SharedFilesProvider.create(manager);
+    const sharedFilesView = vscode.window.registerTreeDataProvider('sharedFilesView', sharedFilesProvider);
+    // Register drop functionality for shared files view 
+    const registerDropProvider = vscode.window.createTreeView('sharedFilesView', {
+        treeDataProvider: sharedFilesProvider,
+        dragAndDropController: {
+            dropMimeTypes: ['text/uri-list'],
+            dragMimeTypes: [], // Add dragMimeTypes array (empty since we don't need drag functionality)
+            handleDrop: async (target, dataTransfer) => {
+                await sharedFilesProvider.handleDrop(dataTransfer);
+                // Don't return a value, just let it return void
+            }
+        }
+    });
+    context.subscriptions.push(registerDropProvider);
+    // Register commands for shared files
+    context.subscriptions.push(vscode.commands.registerCommand('svsmate.removeSharedFile', (filePath) => {
+        sharedFilesProvider.removeFile(filePath);
+    }));
     firewallManager_1.FirewallManager.autoConfigure().catch(console.error);
     // 状态栏显示IP
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
@@ -105,8 +126,12 @@ async function activate(context) {
     }), vscode.commands.registerCommand('svsmate.disconnect', () => manager.disconnect()));
     // 自动发送光标位置
     context.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(e => {
-        manager.sendCursorPosition(e.selections[0].active);
+        if (e.textEditor && e.selections.length > 0) {
+            manager.sendCursorPosition(e.selections[0].active, e.textEditor.document.uri.fsPath);
+        }
     }));
+    // Connect shared files provider to connection manager
+    manager.setSharedFilesProvider(sharedFilesProvider);
     // endregion
     // region note
     const notesViewProvider = await NotesView_1.NotesViewProvider.create();

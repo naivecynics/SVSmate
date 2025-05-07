@@ -36,6 +36,9 @@ export function listenForDocumentChanges() {
             changes
         };
         fs.appendFileSync(logFilePath, yaml.dump(logEntry));
+
+        // Emit an event that can be picked up by ConnectionManager
+        vscode.commands.executeCommand('svsmate.documentChanged', filePath, changes);
     });
 
     // Return a disposable to allow cleanup
