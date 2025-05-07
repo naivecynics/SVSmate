@@ -17,8 +17,16 @@ export class ConnectionManager {
     getLocalIp(): string {
         const interfaces = os.networkInterfaces();
         for (const iface of Object.values(interfaces).flat()) {
-            if (iface && iface.family === 'IPv4' && !iface.internal && iface.address.startsWith('10.')) {
-                return iface.address;
+            if (iface && iface.family === 'IPv4' && !iface.internal) {
+                if (iface.address.startsWith('10.')) {
+                    return iface.address;
+                }
+                if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(iface.address)) {
+                    return iface.address;
+                }
+                if (iface.address.startsWith('192.168.')) {
+                    return iface.address;
+                }
             }
         }
         return '0.0.0.0';
