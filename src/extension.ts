@@ -12,7 +12,7 @@ import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialVie
 
 import { listenForDocumentChanges } from './backend/collaboration/getDocumentChange';
 import { ConnectionManager } from './backend/collaboration/ConnectionManager';
-import { FirewallManager } from './backend/collaboration/firewallManager';
+import { FirewallManager } from './backend/collaboration/FireWallManager';
 import { SharedFilesProvider } from './frontend/SharedFilesProvider';
 
 // import { outputChannel } from './utils/OutputChannel';

@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { outputChannel } from '../utils/OutputChannel';
 import { ConnectionManager } from '../backend/collaboration/ConnectionManager';
+import * as PathManager from '../utils/pathManager';
 
 export class SharedFilesProvider implements vscode.TreeDataProvider<string> {
     private _onDidChangeTreeData = new vscode.EventEmitter<string | void>();
@@ -55,6 +56,31 @@ export class SharedFilesProvider implements vscode.TreeDataProvider<string> {
     syncWithManager(files: string[]) {
         this.sharedFiles = [...files];
         this._onDidChangeTreeData.fire();
+    }
+
+    // Store a remote file in the collaboration directory
+    async storeRemoteFile(filePath: string, content: string): Promise<string> {
+        const collabDir = PathManager.getDir('collab');
+        const fileName = path.basename(filePath);
+        const localPath = path.join(collabDir, fileName);
+
+        // Create a unique name if file already exists
+        let uniquePath = localPath;
+        let counter = 1;
+        while (fs.existsSync(uniquePath)) {
+            const ext = path.extname(fileName);
+            const baseName = path.basename(fileName, ext);
+            uniquePath = path.join(collabDir, `${baseName}_${counter}${ext}`);
+            counter++;
+        }
+
+        fs.writeFileSync(uniquePath, content, 'utf8');
+        outputChannel.info('SharedFiles', `Stored remote file: ${uniquePath}`);
+
+        // Add to shared files list
+        this.addFile(uniquePath);
+
+        return uniquePath;
     }
 
     getTreeItem(element: string): vscode.TreeItem {

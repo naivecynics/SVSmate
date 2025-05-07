@@ -47,7 +47,7 @@ const NotesView_1 = require("./frontend/NotesView");
 const BBMaterialView_1 = require("./frontend/BBMaterialView");
 const getDocumentChange_1 = require("./backend/collaboration/getDocumentChange");
 const ConnectionManager_1 = require("./backend/collaboration/ConnectionManager");
-const firewallManager_1 = require("./backend/collaboration/firewallManager");
+const FireWallManager_1 = require("./backend/collaboration/FireWallManager");
 const SharedFilesProvider_1 = require("./frontend/SharedFilesProvider");
 // import { outputChannel } from './utils/OutputChannel';
 const PathManager = __importStar(require("./utils/pathManager"));
@@ -104,7 +104,7 @@ async function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('svsmate.removeSharedFile', (filePath) => {
         sharedFilesProvider.removeFile(filePath);
     }));
-    firewallManager_1.FirewallManager.autoConfigure().catch(console.error);
+    FireWallManager_1.FirewallManager.autoConfigure().catch(console.error);
     // 状态栏显示IP
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
     statusBar.text = `Local IP: ${manager.getLocalIp()}`;

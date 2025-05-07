@@ -1,6 +1,7 @@
 import * as net from 'net';
 import * as dgram from 'dgram';
 import * as os from 'os';
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { outputChannel } from '../../utils/OutputChannel';
 import { YjsDocumentManager } from './YjsDocumentManager';
@@ -8,7 +9,7 @@ import { YjsDocumentManager } from './YjsDocumentManager';
 const TCP_PORT = 12345;
 const UDP_PORT = 12346;
 
-type MessageType = 'chat' | 'cursor' | 'fileShare' | 'fileUnshare' | 'fileList' | 'docUpdate' | 'requestDoc';
+type MessageType = 'chat' | 'cursor' | 'fileShare' | 'fileUnshare' | 'fileList' | 'docUpdate' | 'requestDoc' | 'requestFile';
 
 interface Message {
     type: MessageType;
@@ -307,6 +308,9 @@ export class ConnectionManager {
                     case 'requestDoc':
                         this.handleDocRequest(message.payload, socket);
                         break;
+                    case 'requestFile':
+                        this.handleFileRequest(message.payload, socket);
+                        break;
                 }
             }
         } catch (err) {
@@ -397,24 +401,66 @@ export class ConnectionManager {
         // TODO: Implement showing remote cursor in editor
     }
 
-    private handleFileShare(payload: any) {
-        const { path } = payload;
-        this.sharedFiles.add(path);
+    private async handleFileShare(payload: any) {
+        const { path: remotePath, content } = payload;
 
-        // Update the shared files view
-        if (this.sharedFilesProvider) {
-            this.sharedFilesProvider.addFile(path);
+        if (content && this.sharedFilesProvider) {
+            // Store the file in the collaboration directory
+            const localPath = await this.sharedFilesProvider.storeRemoteFile(remotePath, content);
+            this.sharedFiles.add(localPath);
+
+            outputChannel.info('Files', `Received and stored shared file: ${localPath}`);
+        } else {
+            // Legacy or path-only sharing (without content)
+            this.sharedFiles.add(remotePath);
+
+            // Update the shared files view
+            if (this.sharedFilesProvider) {
+                this.sharedFilesProvider.addFile(remotePath);
+            }
+
+            outputChannel.info('Files', `New shared file reference: ${remotePath}`);
+
+            // Request the file content
+            if (this.tcpConnection) {
+                const requestMessage: Message = {
+                    type: 'requestFile',
+                    payload: { path: remotePath }
+                };
+                this.tcpConnection.write(JSON.stringify(requestMessage));
+            }
+        }
+    }
+
+    private async handleFileRequest(payload: any, socket?: net.Socket) {
+        const { path: requestedPath } = payload;
+
+        if (!requestedPath || !fs.existsSync(requestedPath)) {
+            return;
         }
 
-        outputChannel.info('Files', `New shared file: ${path}`);
+        try {
+            // Read the file content
+            const content = fs.readFileSync(requestedPath, 'utf8');
 
-        // Request the initial document state
-        if (this.tcpConnection) {
-            const requestMessage: Message = {
-                type: 'requestDoc',
-                payload: { path }
+            // Send the file content to the requester
+            const response: Message = {
+                type: 'fileShare',
+                payload: {
+                    path: requestedPath,
+                    content: content
+                }
             };
-            this.tcpConnection.write(JSON.stringify(requestMessage));
+
+            if (socket) {
+                socket.write(JSON.stringify(response));
+            } else if (this.tcpConnection) {
+                this.tcpConnection.write(JSON.stringify(response));
+            }
+
+            outputChannel.info('Files', `Sent file content for: ${requestedPath}`);
+        } catch (error) {
+            outputChannel.error('Files', `Error reading file: ${error}`);
         }
     }
 
