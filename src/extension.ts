@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import * as vscode from 'vscode';
 import { createChatParticipantAPI } from './backend/ai/createChatParticipantAPI';
 import { createChatParticipant } from './backend/ai/createChatParticipant';
 import { updateAll, updateCourse, updateTerm } from './backend/bb/updateCommands';
@@ -25,9 +25,9 @@ export async function activate(context: vscode.ExtensionContext) {
   console.log('SVSmate activated!');
 
   // region file
-  const folderViewProvider = FolderViewProvider.create()
+  const folderViewProvider = FolderViewProvider.create();
   folderViewProvider && vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
-  folderViewProvider && context.subscriptions.push(folderViewProvider)
+  folderViewProvider && context.subscriptions.push(folderViewProvider);
   // endregion
 
   // region ai
@@ -120,7 +120,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   vscode.commands.registerCommand('notesView.createNote', async (folderPath: string) => {
     await notesViewProvider.createNote(folderPath);
-  })
+  });
 
   vscode.commands.registerCommand('notesView.deleteNote', async (item: any) => {
     try {
@@ -137,7 +137,7 @@ export async function activate(context: vscode.ExtensionContext) {
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to delete note: ${error}`);
     }
-  })
+  });
   // endregion
 
   // region todo
