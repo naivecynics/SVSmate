@@ -47,7 +47,6 @@ const NotesView_1 = require("./frontend/NotesView");
 const BBMaterialView_1 = require("./frontend/BBMaterialView");
 const getDocumentChange_1 = require("./backend/collaboration/getDocumentChange");
 const collabRoom_1 = require("./backend/collaboration/collabRoom");
-const firewallManager_1 = require("./backend/collaboration/firewallManager");
 // import { outputChannel } from './utils/OutputChannel';
 const PathManager = __importStar(require("./utils/pathManager"));
 async function activate(context) {
@@ -83,7 +82,7 @@ async function activate(context) {
     const documentChangeListener = (0, getDocumentChange_1.listenForDocumentChanges)();
     context.subscriptions.push(documentChangeListener);
     const manager = new collabRoom_1.ConnectionManager();
-    firewallManager_1.FirewallManager.autoConfigure().catch(console.error);
+    // FirewallManager.autoConfigure().catch(console.error);
     // 状态栏显示IP
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
     statusBar.text = `Local IP: ${manager.getLocalIp()}`;

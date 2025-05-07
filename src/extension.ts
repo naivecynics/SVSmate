@@ -12,7 +12,6 @@ import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialVie
 
 import { listenForDocumentChanges } from './backend/collaboration/getDocumentChange';
 import { ConnectionManager } from './backend/collaboration/collabRoom';
-import { FirewallManager } from './backend/collaboration/firewallManager';
 
 // import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
@@ -78,7 +77,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const manager = new ConnectionManager();
 
-  FirewallManager.autoConfigure().catch(console.error);
+  // FirewallManager.autoConfigure().catch(console.error);
 
   // 状态栏显示IP
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);

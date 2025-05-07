@@ -22,13 +22,13 @@ export function listenForDocumentChanges() {
 
         const changes = event.contentChanges;
 
-        // Log the changes to the output channel
-        outputChannel.info('Doc Change', 'File changed: ${filePath}');
-        changes.forEach(change => {
-            outputChannel.info('Doc Change', 'Change: ${JSON.stringify(change)}');
-        });
+        // // Log the changes to the output channel
+        // outputChannel.info('Doc Change', 'File changed: ${filePath}');
+        // changes.forEach(change => {
+        //     outputChannel.info('Doc Change', 'Change: ${JSON.stringify(change)}');
+        // });
 
-        // Optionally, save the changes to a log file
+        // save the changes to a log file
         const logFilePath = path.join(PathManager.getDir('debug'), 'document-changes.log');
         const logEntry = {
             timestamp: new Date().toISOString(),
