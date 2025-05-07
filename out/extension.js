@@ -47,27 +47,24 @@ const NotesView_1 = require("./frontend/NotesView");
 const BBMaterialView_1 = require("./frontend/BBMaterialView");
 const getDocumentChange_1 = require("./backend/collaboration/getDocumentChange");
 const collabRoom_1 = require("./backend/collaboration/collabRoom");
+const firewallManager_1 = require("./backend/collaboration/firewallManager");
 // import { outputChannel } from './utils/OutputChannel';
 const PathManager = __importStar(require("./utils/pathManager"));
 async function activate(context) {
     PathManager.initPathManager(context);
     console.log('SVSmate activated!');
-    // ------------------------------------------------
-    //                      file
-    // ------------------------------------------------
+    // region file
     const folderViewProvider = FolderView_1.FolderViewProvider.create();
     folderViewProvider && vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
     folderViewProvider && context.subscriptions.push(folderViewProvider);
-    // ------------------------------------------------
-    //                       ai
-    // ------------------------------------------------
+    // endregion
+    // region ai
     // copilot ai chatbot @mate-API & @mate
     (0, createChatParticipantAPI_1.createChatParticipantAPI)();
     (0, createChatParticipant_1.createChatParticipant)();
     context.subscriptions.push(vscode.window.registerWebviewViewProvider("copilotView", CopilotView_1.CopilotViewProvider.create()));
-    // ------------------------------------------------
-    //                   blaskboard
-    // ------------------------------------------------
+    // endregion
+    // region blackboard
     const bbMaterialViewProvider = BBMaterialView_1.BBMaterialViewProvider.create();
     vscode.window.registerTreeDataProvider("bbMaterialView", bbMaterialViewProvider);
     context.subscriptions.push(bbMaterialViewProvider, vscode.commands.registerCommand('svsmate.BB-updateAll', async () => {
@@ -81,12 +78,12 @@ async function activate(context) {
     }), vscode.commands.registerCommand('svsmate.BB-downloadToAiSpace', async (item) => {
         await (0, downloadCommands_1.downloadToWorkspace)(context, item, true);
     }));
-    // ------------------------------------------------
-    //                 collaboration
-    // ------------------------------------------------
+    // endregion
+    // region collaboration
     const documentChangeListener = (0, getDocumentChange_1.listenForDocumentChanges)();
     context.subscriptions.push(documentChangeListener);
     const manager = new collabRoom_1.ConnectionManager();
+    firewallManager_1.FirewallManager.autoConfigure().catch(console.error);
     // 状态栏显示IP
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
     statusBar.text = `Local IP: ${manager.getLocalIp()}`;
@@ -98,7 +95,7 @@ async function activate(context) {
     }), vscode.commands.registerCommand('svsmate.connect', async () => {
         const ip = await vscode.window.showInputBox({ prompt: 'Enter target IP' });
         if (ip) {
-            manager.connect(ip);
+            manager.connectToServer(ip);
         }
     }), vscode.commands.registerCommand('svsmate.sendMessage', async () => {
         const message = await vscode.window.showInputBox({ prompt: 'Enter message' });
@@ -110,9 +107,8 @@ async function activate(context) {
     context.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(e => {
         manager.sendCursorPosition(e.selections[0].active);
     }));
-    // ------------------------------------------------
-    //                      note
-    // ------------------------------------------------
+    // endregion
+    // region note
     const notesViewProvider = await NotesView_1.NotesViewProvider.create();
     vscode.window.registerTreeDataProvider("notesView", notesViewProvider);
     context.subscriptions.push(notesViewProvider);
@@ -131,9 +127,8 @@ async function activate(context) {
             vscode.window.showErrorMessage(`Failed to delete note: ${error}`);
         }
     });
-    // ------------------------------------------------
-    //                      todo
-    // ------------------------------------------------
+    // endregion
+    // region todo
     const todoListViewProvider = await TodoListView_1.TodoListViewProvider.create();
     vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider);
     context.subscriptions.push(todoListViewProvider);
@@ -170,6 +165,7 @@ async function activate(context) {
     }), vscode.commands.registerCommand('todoListView.clearSearch', () => {
         todoListViewProvider.clearSearch();
     }));
+    // endregion
 }
 function deactivate() { }
 //# sourceMappingURL=extension.js.map

@@ -12,6 +12,7 @@ import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialVie
 
 import { listenForDocumentChanges } from './backend/collaboration/getDocumentChange';
 import { ConnectionManager } from './backend/collaboration/collabRoom';
+import { FirewallManager } from './backend/collaboration/firewallManager';
 
 // import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
@@ -23,17 +24,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
   console.log('SVSmate activated!');
 
-  // ------------------------------------------------
-  //                      file
-  // ------------------------------------------------
+  // region file
   const folderViewProvider = FolderViewProvider.create()
   folderViewProvider && vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
   folderViewProvider && context.subscriptions.push(folderViewProvider)
+  // endregion
 
-  // ------------------------------------------------
-  //                       ai
-  // ------------------------------------------------
-
+  // region ai
   // copilot ai chatbot @mate-API & @mate
   createChatParticipantAPI();
   createChatParticipant();
@@ -42,10 +39,9 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("copilotView", CopilotViewProvider.create())
   );
+  // endregion
 
-  // ------------------------------------------------
-  //                   blaskboard
-  // ------------------------------------------------
+  // region blackboard
   const bbMaterialViewProvider = BBMaterialViewProvider.create();
   vscode.window.registerTreeDataProvider("bbMaterialView", bbMaterialViewProvider);
   context.subscriptions.push(
@@ -74,15 +70,15 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // TODO: Add a init update one term commmand on view/title
   );
+  // endregion
 
-
-  // ------------------------------------------------
-  //                 collaboration
-  // ------------------------------------------------
+  // region collaboration
   const documentChangeListener = listenForDocumentChanges();
   context.subscriptions.push(documentChangeListener);
 
   const manager = new ConnectionManager();
+
+  FirewallManager.autoConfigure().catch(console.error);
 
   // 状态栏显示IP
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
@@ -98,7 +94,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('svsmate.connect', async () => {
       const ip = await vscode.window.showInputBox({ prompt: 'Enter target IP' });
-      if (ip) { manager.connect(ip); }
+      if (ip) { manager.connectToServer(ip); }
     }),
 
     vscode.commands.registerCommand('svsmate.sendMessage', async () => {
@@ -115,11 +111,9 @@ export async function activate(context: vscode.ExtensionContext) {
       manager.sendCursorPosition(e.selections[0].active);
     })
   );
+  // endregion
 
-
-  // ------------------------------------------------
-  //                      note
-  // ------------------------------------------------
+  // region note
   const notesViewProvider = await NotesViewProvider.create();
   vscode.window.registerTreeDataProvider("notesView", notesViewProvider);
   context.subscriptions.push(notesViewProvider);
@@ -144,10 +138,9 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.window.showErrorMessage(`Failed to delete note: ${error}`);
     }
   })
+  // endregion
 
-  // ------------------------------------------------
-  //                      todo
-  // ------------------------------------------------
+  // region todo
   const todoListViewProvider = await TodoListViewProvider.create();
   vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider);
   context.subscriptions.push(todoListViewProvider);
@@ -201,6 +194,7 @@ export async function activate(context: vscode.ExtensionContext) {
       todoListViewProvider.clearSearch();
     }),
   );
+  // endregion
 }
 
 export function deactivate() { }

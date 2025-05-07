@@ -13,7 +13,6 @@ export class ConnectionManager {
     private udpSocket: dgram.Socket | null = null;
     private targetUdpInfo: { address: string; port: number } | null = null;
 
-    // 获取本机IP
     getLocalIp(): string {
         const interfaces = os.networkInterfaces();
         for (const iface of Object.values(interfaces).flat()) {
@@ -32,7 +31,6 @@ export class ConnectionManager {
         return '0.0.0.0';
     }
 
-    // 启动TCP服务器
     startTcpServer() {
         this.tcpServer = net.createServer(socket => {
             this.tcpClient = socket;
@@ -45,7 +43,6 @@ export class ConnectionManager {
         });
     }
 
-    // 启动UDP服务器
     startUdpServer() {
         this.udpSocket = dgram.createSocket('udp4');
         this.udpSocket.bind(DEFAULT_UDP_PORT);
@@ -55,32 +52,26 @@ export class ConnectionManager {
         });
     }
 
-    // 连接远程服务器
-    async connect(ip: string) {
-        // 连接TCP
+    async connectToServer(ip: string) {
         outputChannel.info('ConnectionManager', `Attempting to connect to ${ip}:${DEFAULT_TCP_PORT}...`);
         this.tcpClient = net.connect(DEFAULT_TCP_PORT, ip, () => {
             outputChannel.info('ConnectionManager', `Successfully connected to ${ip}:${DEFAULT_TCP_PORT}`);
         });
 
-        // 添加错误处理
         this.tcpClient.on('error', (err) => {
             outputChannel.error('ConnectionManager', `Connection failed: ${err.message}`);
         });
 
-        // 设置UDP目标
         this.targetUdpInfo = { address: ip, port: DEFAULT_UDP_PORT };
         outputChannel.info('ConnectionManager', `UDP target set to ${ip}:${DEFAULT_UDP_PORT}`);
     }
 
-    // 发送文字消息
     sendMessage(message: string) {
         if (this.tcpClient) {
             this.tcpClient.write(message);
         }
     }
 
-    // 发送光标位置
     sendCursorPosition(position: vscode.Position) {
         if (this.udpSocket && this.targetUdpInfo) {
             const data = JSON.stringify({
@@ -104,7 +95,6 @@ export class ConnectionManager {
         }
     }
 
-    // 断开连接
     disconnect() {
         this.tcpClient?.destroy();
         this.tcpServer?.close();
