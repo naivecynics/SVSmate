@@ -4,15 +4,17 @@ import { createChatParticipant } from './backend/ai/createChatParticipant';
 import { updateAll, updateCourse, updateTerm } from './backend/bb/updateCommands';
 import { downloadToWorkspace } from './backend/bb/downloadCommands';
 import { addAIGeneratedSubtasks } from './backend/ai/createSubtasks';
+import { addItem, editTask, deleteTask, toggleTaskCheckbox, sortByEndTime, sortByKinds, searchTasks, clearSearch, addSubTask, loadICSFile } from './backend/todo/todoCommands';
 
 import { FolderViewProvider } from "./frontend/FolderView";
-import { TodoListViewProvider } from "./frontend/TodoListView";
+import { TodoListViewProvider, TodoItem } from "./frontend/TodoListView";
 import { CopilotViewProvider } from "./frontend/CopilotView";
 import { NotesViewProvider } from "./frontend/NotesView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 
 // import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
+import { todo } from 'node:test';
 
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -112,78 +114,53 @@ export async function activate(context: vscode.ExtensionContext) {
   // ------------------------------------------------
   const todoListViewProvider = await TodoListViewProvider.create();
   vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider);
-  context.subscriptions.push(todoListViewProvider);
-
-  // TODO: move follow commands to ./frontend/todo/todoCommands.ts
 
   context.subscriptions.push(
+
+    todoListViewProvider,
+
     vscode.commands.registerCommand("todoListView.addItem", async () => {
-      const input = await vscode.window.showInputBox({ prompt: "Enter task name" });
-      if (input) {
-        const endDate = await vscode.window.showInputBox({ prompt: "Enter due date (format: YYYY-MM-DD)" });
-        const category = await vscode.window.showInputBox({ prompt: "Enter task category" });
-
-        if (endDate) {
-          todoListViewProvider.addItem(input, endDate, category || "No Category");
-        }
-      }
+      await addItem(todoListViewProvider);
     }),
 
-    vscode.commands.registerCommand("todoListView.editTask", async (task) => {
-      todoListViewProvider.editTask(task);
-    }),
-    vscode.commands.registerCommand("todoListView.deleteTask", (task) => {
-      todoListViewProvider.deleteTask(task);
+    vscode.commands.registerCommand("todoListView.editTask", async (item: TodoItem) => {
+      await editTask(todoListViewProvider, item);
     }),
 
-    vscode.commands.registerCommand("todoListView.toggleTaskCheckbox", (task) => {
-      task.checked = !task.checked;
-      todoListViewProvider._onDidChangeTreeData.fire(undefined);
-      // todoListViewProvider.slackboardCrawleraveJsonFile();
+    vscode.commands.registerCommand("todoListView.deleteTask", async (item: TodoItem) => {
+      await deleteTask(todoListViewProvider, item);
     }),
 
-    vscode.commands.registerCommand("todoListView.sortByEndTime", () => {
-      todoListViewProvider.sortBy("endTime");
+    vscode.commands.registerCommand("todoListView.toggleTaskCheckbox", async(item: TodoItem) => {
+      await toggleTaskCheckbox(todoListViewProvider, item);
     }),
 
-    vscode.commands.registerCommand("todoListView.sortByKinds", () => {
-      todoListViewProvider.sortBy("category");
+    vscode.commands.registerCommand("todoListView.sortByEndTime", async () => {
+      await sortByEndTime(todoListViewProvider);
+    }),
+
+    vscode.commands.registerCommand("todoListView.sortByKinds", async () => {
+      await sortByKinds(todoListViewProvider);
     }),
 
     vscode.commands.registerCommand('todoListView.searchTasks', async () => {
-      const searchTerm = await vscode.window.showInputBox({
-        prompt: 'Enter task name (supports fuzzy search)',
-        placeHolder: 'e.g., Develop feature'
-      });
-      if (searchTerm !== undefined) {
-        todoListViewProvider.setSearchTerm(searchTerm);
-      }
+      await searchTasks(todoListViewProvider);
     }),
-    vscode.commands.registerCommand('todoListView.clearSearch', () => {
-      todoListViewProvider.clearSearch();
+
+    vscode.commands.registerCommand('todoListView.clearSearch', async() => {
+      await clearSearch(todoListViewProvider);
     }),
-    vscode.commands.registerCommand('todoListView.addSubTask', async (task) => {
-      if (todoListViewProvider) {
-        await todoListViewProvider.addSubTask(task);
-      }
+
+    vscode.commands.registerCommand('todoListView.addSubTask', async (item: TodoItem) => {
+      await addSubTask(todoListViewProvider, item);
     }),
-    vscode.commands.registerCommand('todoList.generateAISubtasks', async (task) => {
-      if (todoListViewProvider) {
-      await addAIGeneratedSubtasks(task, todoListViewProvider);
-    }
+
+    vscode.commands.registerCommand('todoList.generateAISubtasks', async (item: TodoItem) => {
+      await addAIGeneratedSubtasks(todoListViewProvider, item);
     }),
+
     vscode.commands.registerCommand('todoListView.loadICSFile', async () => {
-      const input = await vscode.window.showInputBox({
-        prompt: '请点击获取外部日程表链接并复制URL',
-        placeHolder: 'https://example.com/calendar.ics',
-        ignoreFocusOut: true
-      });
-    
-      if (input && input.trim().startsWith('http')) {
-        await todoListViewProvider.loadICSFile(input.trim());
-      } else {
-        vscode.window.showErrorMessage('请输入一个有效的 .ics 网络链接（以 http 开头）');
-      }
+      await loadICSFile(todoListViewProvider);
     })
   );
 }

@@ -4,7 +4,7 @@ import * as ical from "node-ical";
 import * as PathManager from "../utils/pathManager";
 import * as aiSubtask from "../backend/ai/createSubtasks";
 
-interface TodoItem {
+export interface TodoItem {
   id: string;           // 唯一标识
   label: string;
   endTime: string;
@@ -371,7 +371,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
   }
 
   // 💾 保存任务
-  private saveToDisk() {
+  saveToDisk() {
     const filePath = PathManager.getFile("todoList");
 
     // 将树形结构展平为一维数组
@@ -401,15 +401,6 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     }
 
     return result;
-  }
-
-
-  async generateAISubtasks(task: TodoItem) {
-    try {
-      await aiSubtask.addAIGeneratedSubtasks(task, this);
-    } catch (error) {
-      vscode.window.showErrorMessage(`生成子任务失败: ${(error as Error).message}`);
-    }
   }
 
 
