@@ -18,6 +18,6 @@ export function safe(name: string): string {
  */
 export function safeEnsureDir(basePath: string, name: string): string {
     const dirPath = path.join(basePath, safe(name));
-    if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+    if (!fs.existsSync(dirPath)) { fs.mkdirSync(dirPath, { recursive: true }); }
     return dirPath;
 }

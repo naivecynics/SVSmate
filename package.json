@@ -68,8 +68,6 @@
           "light": "./src/icons/copy-light.svg"
         }
       },
-
-      
       {
         "command": "todoListView.addItem",
         "title": "Add Item",
@@ -130,8 +128,6 @@
           "light": "./src/icons/clear.svg"
         }
       },
-
-
       {
         "command": "notesView.createNote",
         "title": "Create Note"
@@ -166,7 +162,7 @@
         {
           "id": "SVSmate",
           "title": "SVSmate",
-          "icon": "src/icons/pig.svg"
+          "icon": "src/icons/new/cat.svg"
         }
       ]
     },
@@ -206,8 +202,6 @@
           "when": "view == todoListView",
           "group": "inline"
         },
-
-
         {
           "command": "svsmate.BB-downloadToAiSpace",
           "when": "view == bbMaterialView && viewItem == file",
@@ -228,8 +222,6 @@
           "when": "view == bbMaterialView && viewItem == courseFolder",
           "group": "inline"
         },
-
-
         {
           "command": "notesView.deleteNote",
           "when": "view == notesView",
@@ -284,38 +276,43 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "rm -rf out && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test"
   },
   "dependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@vscode/chat-extension-utils": "^0.0.0-alpha.1",
+    "@vscode/prompt-tsx": "^0.3.0-alpha.12",
     "axios": "^1.6.7",
     "axios-cookiejar-support": "^5.0.5",
     "cheerio": "^1.0.0",
     "fetch-cookie": "^3.1.0",
-    "js-yaml": "^4.1.0",
-    "node-fetch": "^2.7.0",
-    "openai": "^4.87.3",
-    "tough-cookie": "^5.1.2",
-    "xml2js": "^0.6.2",
-    "@types/fs-extra": "^11.0.4",
     "fs-extra": "^11.3.0",
     "ical.js": "^2.1.0",
-    "node-ical": "^0.20.1"
+    "js-yaml": "^4.1.0",
+    "node-fetch": "^2.7.0",
+    "node-ical": "^0.20.1",
+    "openai": "^4.87.3",
+    "tough-cookie": "^5.1.2",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "@types/vscode": "^1.98.0",
     "@types/cheerio": "^0.22.35",
-    "@types/node-fetch": "^2.6.12",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/node-fetch": "^2.6.12",
+    "@types/vscode": "^1.99.1",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
+    "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.21.0",
-    "typescript": "^5.7.3"
+    "mocha": "^11.2.2",
+    "ts-complex": "^1.0.0",
+    "typescript": "^5.7.3",
+    "vscode": "^1.1.37"
   }
 }

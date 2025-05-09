@@ -60,7 +60,7 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem> {
   }
 
   private getFiles(dir: string): FileItem[] {
-    if (!fs.existsSync(dir)) return [];
+    if (!fs.existsSync(dir)) { return []; }
 
     const items = fs.readdirSync(dir)
       .filter(file => !file.startsWith('.')) // 过滤掉隐藏文件

@@ -65,11 +65,11 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
       return [];
     }
 
-    if (!stats.isDirectory()) return [];
+    if (!stats.isDirectory()) { return []; }
 
     const entries = await fs.promises.readdir(targetPath);
     for (const name of entries) {
-      if (name.startsWith('.')) continue;
+      if (name.startsWith('.')) { continue; }
 
       const fullPath = path.join(targetPath, name);
       let stat: fs.Stats;
@@ -136,11 +136,12 @@ export class BBMaterialItem extends vscode.TreeItem {
     super(label, collapsibleState);
 
     const ext = path.extname(filename || label).toLowerCase();
-    this.iconPath = new vscode.ThemeIcon(
-      collapsibleState === vscode.TreeItemCollapsibleState.None
-        ? this.getFileIconName(ext)
-        : 'folder'
-    );
+    // this.iconPath = new vscode.ThemeIcon(
+    //   collapsibleState === vscode.TreeItemCollapsibleState.None
+    //     ? this.getFileIconName(ext)
+    //     : 'folder'
+    // );
+    this.iconPath = vscode.ThemeIcon.Folder;
 
     const bbRoot = PathManager.getDir('bb');
     const fsPath = realPath ?? resourceUri.fsPath;

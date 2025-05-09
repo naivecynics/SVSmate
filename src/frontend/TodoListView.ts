@@ -32,13 +32,14 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
   // 📁 Tree View 显示
   getTreeItem(element: TodoItem): vscode.TreeItem {
     const item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None);
-    item.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");
-    item.tooltip = new vscode.MarkdownString(`**任务:** ${element.label}\n**分类:** ${element.category}\n**截止:** ${element.endTime}`);
+    // item.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");
+    item.iconPath = vscode.ThemeIcon.Folder;
+    item.tooltip = new vscode.MarkdownString(`**任务:** ${element.label}\n**分类:** ${element.category}\n**截止:** ${element.endTime}`).value;
     item.description = `[${element.category}] ❗${element.endTime}`;
     item.resourceUri = vscode.Uri.parse(`date:${element.endTime}`);
-    item.checkboxState = element.checked
-      ? vscode.TreeItemCheckboxState.Checked
-      : vscode.TreeItemCheckboxState.Unchecked;
+    // item.checkboxState = element.checked
+    //   ? vscode.TreeItemCheckboxState.Checked
+    //   : vscode.TreeItemCheckboxState.Unchecked;
     item.command = {
       command: "todoListView.toggleTaskCheckbox",
       title: "Toggle Task",

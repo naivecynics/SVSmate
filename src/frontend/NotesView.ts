@@ -35,7 +35,7 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
     }
 
     const folderPath = element.resourceUri.fsPath;
-    if (!fs.existsSync(folderPath)) return [];
+    if (!fs.existsSync(folderPath)) { return []; }
 
     const entries = await fs.promises.readdir(folderPath);
 
@@ -53,7 +53,7 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
   async createNote(folderPath: string) {
     const name = await vscode.window.showInputBox({ prompt: '输入笔记名称', placeHolder: '例如：学习笔记' });
 
-    if (!name) return;
+    if (!name) { return; }
 
     const fileName = name.endsWith('.md') ? name : name + '.md';
     const fullPath = path.join(folderPath, fileName);

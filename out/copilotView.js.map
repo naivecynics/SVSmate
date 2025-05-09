@@ -1,1 +1,0 @@
-{"version":3,"file":"copilotView.js","sourceRoot":"","sources":["../src/copilotView.ts"],"names":[],"mappings":";;;AAEA,MAAa,mBAAmB;IAC9B,kBAAkB,CAAC,WAA+B;QAChD,WAAW,CAAC,OAAO,CAAC,OAAO,GAAG,EAAE,aAAa,EAAE,IAAI,EAAE,CAAC;QACtD,WAAW,CAAC,OAAO,CAAC,IAAI,GAAG,IAAI,CAAC,OAAO,EAAE,CAAC;IAC5C,CAAC;IAED;;;;;QAKI;IACI,OAAO;QACb,OAAO;;;;;;;;;;;;KAYN,CAAC;IACJ,CAAC;CACF;AA3BD,kDA2BC"}

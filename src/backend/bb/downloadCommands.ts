@@ -48,7 +48,7 @@ export async function downloadToWorkspace(context: vscode.ExtensionContext, item
       `File "${fileName}" already exists in workspace. Overwrite?`,
       'Yes', 'No'
     );
-    if (answer !== 'Yes') return;
+    if (answer !== 'Yes') { return; }
   }
 
   const success = await vscode.window.withProgress({

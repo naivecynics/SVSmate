@@ -10,6 +10,7 @@ import * as tough from 'tough-cookie';
 import { promisify } from 'util';
 import { pipeline } from 'stream';
 import { writeFile } from 'fs/promises';
+type CheerioRoot = ReturnType<typeof cheerio.load>;
 const fetch = require('node-fetch');
 const yaml = require('js-yaml');
 const xml2js = require('xml2js');
@@ -68,7 +69,7 @@ export class BlackboardCrawler {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         };
         this.debug = enableDebug;
-        this.cookieFilePath = PathManager.getFile('bbCookies')
+        this.cookieFilePath = PathManager.getFile('bbCookies');
 
         // Load cookie jar from file or create a new one
         this.cookieJar = this.loadCookieJar();
@@ -206,7 +207,7 @@ export class BlackboardCrawler {
 
     async ensureLogin(context: vscode.ExtensionContext): Promise<boolean> {
         const alreadyLoggedIn = await this.checkLogin();
-        if (alreadyLoggedIn) return true;
+        if (alreadyLoggedIn) { return true; }
 
         const loginSuccess = await this.login(context);
         if (!loginSuccess) {
@@ -590,7 +591,7 @@ export class BlackboardCrawler {
     /**
      * Extract sidebar links from course HTML
      */
-    private extractSidebarLinks($: cheerio.CheerioAPI | cheerio.Root): SidebarCategory {
+    private extractSidebarLinks($: CheerioRoot): SidebarCategory {
         const sidebarMenu: SidebarCategory = {};
 
         // Find course menu ul tag
@@ -607,12 +608,14 @@ export class BlackboardCrawler {
 
         let currentCategory: string | null = null;
 
-        menuUl.find('li').each((_, element) => {
+        menuUl.find('li').each((_: number, element) => {
             // Handle category title (h3)
             const categoryTag = $(element).find('h3');
             if (categoryTag.length) {
                 currentCategory = categoryTag.text().trim();
-                sidebarMenu[currentCategory] = [];
+                if (currentCategory) {
+                  sidebarMenu[currentCategory] = [];
+                }
                 return; // Skip further parsing for this li
             }
 
@@ -673,7 +676,7 @@ export class BlackboardCrawler {
             const $ = cheerio.load(html);
 
             if (this.debug
-                && finalUrl == 'https://bb.sustech.edu.cn/webapps/blackboard/content/listContent.jsp?course_id=_7065_1&content_id=_531840_1&mode=reset') {
+                && finalUrl === 'https://bb.sustech.edu.cn/webapps/blackboard/content/listContent.jsp?course_id=_7065_1&content_id=_531840_1&mode=reset') {
                 const debugDir = PathManager.getDir('debug');
                 const debugFilePath = path.join(debugDir, `page.html`);
                 fs.writeFileSync(debugFilePath, html);
@@ -693,14 +696,14 @@ export class BlackboardCrawler {
     /**
      * Extract file structure from page HTML
      */
-  private extractFileStructure($: cheerio.CheerioAPI | cheerio.Root): PageStructure {
+  private extractFileStructure($: CheerioRoot): PageStructure {
       if (!$) {
           return {};
       }
 
       const fileStructure: PageStructure = {};
 
-      $('li.clearfix.liItem.read').each((_, item) => {
+      $('li.clearfix.liItem.read').each((_: number, item) => {
           const weekTitleTag = $(item).find('h3');
           if (!weekTitleTag.length) {
               return;
@@ -738,7 +741,7 @@ export class BlackboardCrawler {
           const attachedFiles = $(item).find('div.details a[href]');
           if (attachedFiles.length > 1) {
               // 多附件模式
-              attachedFiles.each((_, fileLink) => {
+              attachedFiles.each((_: number, fileLink) => {
                   const $fileLink = $(fileLink);
                   const fileName = $fileLink.text().trim();
                   let fileUrl = $fileLink.attr('href')?.trim() || '';
@@ -775,7 +778,6 @@ export class BlackboardCrawler {
     }
     return fileStructure;
 }
-
 
     /**
      * Download a file with progress tracking

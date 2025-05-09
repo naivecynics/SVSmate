@@ -18,7 +18,7 @@ export async function updateCourse(context: vscode.ExtensionContext, item: BBMat
         outputChannel.error('updateOneCourse', 'Invalid course path format');
         return;
     }
-    if (!(await crawler.ensureLogin(context))) return;
+    if (!(await crawler.ensureLogin(context))) { return; }
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -58,7 +58,7 @@ export async function updateTerm(context: vscode.ExtensionContext, item?: BBMate
             validateInput: (val) => val.trim() === '' ? 'term ID cann\'y be null' : null
         });
 
-        if (!termIdInput) return;
+        if (!termIdInput) { return; }
 
         const bbVaultDir = PathManager.getDir('bb');
         const fakePath = path.join(bbVaultDir, termIdInput);
@@ -70,7 +70,7 @@ export async function updateTerm(context: vscode.ExtensionContext, item?: BBMate
     const termId = path.basename(item.resourceUri.fsPath);
     const bbVaultDir = PathManager.getDir('bb');
 
-    if (!(await crawler.ensureLogin(context))) return;
+    if (!(await crawler.ensureLogin(context))) { return; }
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -110,7 +110,7 @@ export async function updateAll(context: vscode.ExtensionContext) {
     const bbVaultDir = PathManager.getDir('bb');
     const crawler = new BlackboardCrawler();
 
-    if (!(await crawler.ensureLogin(context))) return;
+    if (!(await crawler.ensureLogin(context))) { return; }
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -128,13 +128,13 @@ export async function updateAll(context: vscode.ExtensionContext) {
         }
 
         for (const [termId, termCourses] of Object.entries(allCourses)) {
-            if (token.isCancellationRequested) return;
+            if (token.isCancellationRequested) { return; }
 
             const termPath = safeEnsureDir(bbVaultDir, termId);
             progress.report({ message: `Processing term: ${termId}` });
 
             for (const course of termCourses) {
-                if (token.isCancellationRequested) return;
+                if (token.isCancellationRequested) { return; }
 
                 const coursePath = safeEnsureDir(termPath, course.name);
                 await crawlCourse(course, coursePath, crawler, progress, token, 'updateAll');

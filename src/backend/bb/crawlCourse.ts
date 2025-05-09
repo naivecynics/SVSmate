@@ -39,13 +39,13 @@ export async function crawlCourse(
     if (!sidebar || Object.keys(sidebar).length === 0) { outputChannel.warn(loggerPrefix, `No sidebar content found for course: ${course.name}`); return; }
 
     for (const [category, pages] of Object.entries(sidebar)) {
-        if (token.isCancellationRequested) return;
-        if (!Array.isArray(pages)) continue;
+        if (token.isCancellationRequested) { return; }
+        if (!Array.isArray(pages)) { continue; }
 
         const categoryPath = safeEnsureDir(coursePath, category);
 
         for (const page of pages) {
-            if (token.isCancellationRequested) return;
+            if (token.isCancellationRequested) { return; }
 
             try {
                 progress.report({ message: `Processing: ${page.title}` });
@@ -61,7 +61,7 @@ export async function crawlCourse(
                 const pagePath = safeEnsureDir(categoryPath, page.title);
 
                 for (const [entryName, entryContent] of Object.entries(pageContent)) {
-                    if (token.isCancellationRequested) return;
+                    if (token.isCancellationRequested) { return; }
 
                     if (!entryContent || (!entryContent.text && (!entryContent.files || entryContent.files.length === 0))) {
                         outputChannel.warn(loggerPrefix, `Empty entry skipped: ${entryName}`);
