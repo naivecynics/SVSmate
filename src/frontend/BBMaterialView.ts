@@ -21,6 +21,13 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
     provider.watcher.onDidCreate(() => provider.refresh());
     provider.watcher.onDidDelete(() => provider.refresh());
 
+    const allPattern = new vscode.RelativePattern(provider.rootPath, '**/*');
+    const allWatcher = vscode.workspace.createFileSystemWatcher(allPattern);
+    allWatcher.onDidChange(() => provider.refresh());
+    allWatcher.onDidCreate(() => provider.refresh());
+    allWatcher.onDidDelete(() => provider.refresh());
+
+  (provider as any)._extraWatcher = allWatcher; // 用 symbol 存储
     return provider;
   }
 
@@ -120,6 +127,7 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
 
   dispose(): void {
     this.watcher?.dispose();
+    (this as any)._extraWatcher?.dispose();
   }
 }
 

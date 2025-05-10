@@ -206,17 +206,27 @@ export class BlackboardCrawler {
     }
 
     async ensureLogin(context: vscode.ExtensionContext): Promise<boolean> {
-        const alreadyLoggedIn = await this.checkLogin();
+        let alreadyLoggedIn = await this.checkLogin();
         if (alreadyLoggedIn) { return true; }
 
-        const loginSuccess = await this.login(context);
-        if (!loginSuccess) {
-            vscode.window.showErrorMessage('Failed to login to Blackboard');
+        let loginSuccess = await this.login(context);
+        if (loginSuccess) { return true; }
+
+        try {
+            const cookieFile = getFile('bbCookies');
+            if (fs.existsSync(cookieFile)) {
+                fs.unlinkSync(cookieFile);
+            }
+            vscode.window.showWarningMessage('Login failed once, retrying after clearing cookies...');
+        } catch (err) {
+            console.error('Failed to delete cookie file:', err);
         }
+
+        loginSuccess = await this.login(context);
+        if (!loginSuccess) { vscode.window.showErrorMessage('Failed to login to Blackboard after retry.'); }
 
         return loginSuccess;
     }
-
     /**
      * Get user credentials from storage or prompt
      */
@@ -696,86 +706,79 @@ export class BlackboardCrawler {
     /**
      * Extract file structure from page HTML
      */
-  private extractFileStructure($: CheerioRoot): PageStructure {
-      if (!$) {
-          return {};
-      }
+private extractFileStructure($: CheerioRoot): PageStructure {
+    if (!$) {
+        return {};
+    }
 
-      const fileStructure: PageStructure = {};
+    const fileStructure: PageStructure = {};
 
-      $('li.clearfix.liItem.read').each((_: number, item) => {
-          const weekTitleTag = $(item).find('h3');
-          if (!weekTitleTag.length) {
-              return;
-          }
+    $('li.clearfix.liItem.read').each((_: number, item) => {
+        const weekTitleTag = $(item).find('h3');
+        if (!weekTitleTag.length) return;
 
-          const linkTag = weekTitleTag.find('a[href]');
-          if (!linkTag.length) {
-              return;
-          }
+        const titleText = weekTitleTag.text().trim();
 
-          const titleText = linkTag.text().trim();
-          const vtbDiv = $(item).find('div.vtbegenerated_div');
-          let content = '';
-          if (vtbDiv.length) {
-              let rawText = vtbDiv.html() || '';
+        const vtbDiv = $(item).find('div.vtbegenerated_div');
+        let content = '';
+        if (vtbDiv.length) {
+            let rawText = vtbDiv.html() || '';
+            rawText = rawText.replace(/<br\s*\/?>/gi, '\n')
+                .replace(/<[^>]+>/g, '')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/[ \t]+/g, ' ')
+                .trim();
+            const meaningfulText = rawText.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]+/g, '');
+            content = meaningfulText.length >= 10 ? rawText : '';
+        }
 
-              rawText = rawText.replace(/<br\s*\/?>/gi, '\n')   // br换成换行
-                              .replace(/<[^>]+>/g, '')          // 去掉HTML标签
-                              .replace(/&nbsp;/g, ' ')          // 空格替换
-                              .replace(/[ \t]+/g, ' ')          // 多余空格
-                              .trim();
+        const files: Array<{ name: string; url: string }> = [];
 
-              // 内容质量检测：如果文本很短，或者没有有效中文/英文，就认为是垃圾内容
-              const meaningfulText = rawText.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]+/g, '');
-              if (meaningfulText.length >= 10) {  // 内容有效，长度够
-                  content = rawText;
-              } else {
-                  content = '';  // 太短/没有有效内容，直接置空
-              }
-          }
+        // ✅ 更广泛匹配所有链接（跳过 h3 中的链接）
+        const attachedFiles = $(item).find('a[href]').filter((_, el) => {
+            return !$(el).closest('h3').length;
+        });
 
-          const files: Array<{ name: string; url: string }> = [];
+        if (attachedFiles.length > 0) {
+            attachedFiles.each((_: number, fileLink) => {
+                const $fileLink = $(fileLink);
+                const fileName = $fileLink.text().trim();
+                let fileUrl = $fileLink.attr('href')?.trim() || '';
 
-          // 检测是不是有 Attached Files 这种多附件
-          const attachedFiles = $(item).find('div.details a[href]');
-          if (attachedFiles.length > 1) {
-              // 多附件模式
-              attachedFiles.each((_: number, fileLink) => {
-                  const $fileLink = $(fileLink);
-                  const fileName = $fileLink.text().trim();
-                  let fileUrl = $fileLink.attr('href')?.trim() || '';
+                if (fileUrl && !fileUrl.startsWith('http')) {
+                    fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
+                }
 
-                  if (fileUrl && !fileUrl.startsWith('http')) {
-                      fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
-                  }
+                if (fileName && fileUrl) {
+                    files.push({ name: fileName, url: fileUrl });
+                }
+            });
+        } else {
+            // fallback 单文件模式
+            const linkTag = weekTitleTag.find('a[href]');
+            if (linkTag.length) {
+                let fileUrl = linkTag.attr('href')?.trim() || '';
+                if (fileUrl && !fileUrl.startsWith('http')) {
+                    fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
+                }
+                if (titleText && fileUrl) {
+                    files.push({ name: titleText, url: fileUrl });
+                }
+            }
+        }
 
-                  if (fileName && fileUrl) {
-                      files.push({ name: fileName, url: fileUrl });
-                  }
-              });
-          } else {
-              // 单文件模式
-              let fileUrl = linkTag.attr('href')?.trim() || '';
-              if (fileUrl && !fileUrl.startsWith('http')) {
-                  fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
-              }
-              if (titleText && fileUrl) {
-                  files.push({ name: titleText, url: fileUrl });
-              }
-          }
-
-          if (titleText && files.length > 0) {
-              fileStructure[titleText] = {
-                  text: content,
-                  files: files
-              };
-          }
-      });
+        if (titleText && files.length > 0) {
+            fileStructure[titleText] = {
+                text: content,
+                files: files
+            };
+        }
+    });
 
     if (Object.keys(fileStructure).length === 0) {
         outputChannel.warn('extractFileStructure', `No valid files found on this page`);
     }
+
     return fileStructure;
 }
 

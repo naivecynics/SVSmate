@@ -9,6 +9,7 @@ package-lock.json
 
 # mac
 .DS_Store
+**/.DS_Store
 
 # private info
 login.yaml

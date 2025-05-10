@@ -72,4 +72,4 @@ export function getWorkspaceDir(): string {
     throw new Error('No workspace folder is open.');
   }
   return workspaceFolders[0].uri.fsPath;
-    }
+}

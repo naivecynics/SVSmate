@@ -3,7 +3,7 @@ import * as path from 'path';
 import { writeFile } from 'fs/promises';
 import { outputChannel } from '../../utils/OutputChannel';
 import { BlackboardCrawler } from './BlackboardCrawler';
-import { safeEnsureDir } from '../../utils/pathUtils';
+import { safeEnsureDir,safe } from '../../utils/pathUtils';
 
 export async function crawlCourse(
     course: any,
@@ -62,12 +62,10 @@ export async function crawlCourse(
 
                 for (const [entryName, entryContent] of Object.entries(pageContent)) {
                     if (token.isCancellationRequested) { return; }
-
                     if (!entryContent || (!entryContent.text && (!entryContent.files || entryContent.files.length === 0))) {
                         outputChannel.warn(loggerPrefix, `Empty entry skipped: ${entryName}`);
                         continue;
                     }
-
                     const json: { description: string; files: { name: string; url: string }[]; } = {
                         description: entryContent.text || '',
                         files: entryContent.files.map(file => ({

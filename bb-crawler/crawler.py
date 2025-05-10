@@ -69,15 +69,9 @@ class BlackboardCrawler:
             "username": username,
             "password": password,
             "execution": execution_value,
-<<<<<<< HEAD
             "_eventId": "submit"
             # "geolocation": "",
             # "submit": "登录"
-=======
-            "_eventId": "submit",
-            "geolocation": "",
-            "submit": "登录",
->>>>>>> origin/feat-bb-crawler
         }
 
         cas_login_response = self.session.post(
@@ -88,10 +82,10 @@ class BlackboardCrawler:
 
         # 验证是否登录成功
         if "登出" in cas_login_response.text or "logout" in cas_login_response.text.lower():
-            print("✅ CAS 认证成功，已登录 Blackboard!")
+            print("CAS 认证成功，已登录 Blackboard!")
             return True
         else:
-            print("❌ 登录失败，可能是用户名或密码错误")
+            print("登录失败，可能是用户名或密码错误")
             return False
 
     def print_courses_info(self, courses, which_term=None, annoucement=False):
