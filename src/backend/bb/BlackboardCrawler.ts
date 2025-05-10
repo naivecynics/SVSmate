@@ -213,7 +213,7 @@ export class BlackboardCrawler {
         if (loginSuccess) { return true; }
 
         try {
-            const cookieFile = getFile('bbCookies');
+            const cookieFile = PathManager.getFile('bbCookies');
             if (fs.existsSync(cookieFile)) {
                 fs.unlinkSync(cookieFile);
             }

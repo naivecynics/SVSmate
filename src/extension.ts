@@ -123,8 +123,8 @@ export async function activate(context: vscode.ExtensionContext) {
       await addItem(todoListViewProvider);
     }),
 
-    vscode.commands.registerCommand("todoListView.editTask", async (item: TodoItem) => {
-      await editTask(todoListViewProvider, item);
+    vscode.commands.registerCommand("todoListView.editTask", async (task) => {
+      todoListViewProvider.editTask(task);
     }),
 
     vscode.commands.registerCommand("todoListView.deleteTask", async (item: TodoItem) => {
