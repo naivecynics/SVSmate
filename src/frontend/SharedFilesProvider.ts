@@ -61,7 +61,9 @@ export class SharedFilesProvider implements vscode.TreeDataProvider<string> {
     // Store a remote file in the collaboration directory
     async storeRemoteFile(filePath: string, content: string): Promise<string> {
         const collabDir = PathManager.getDir('collab');
-        const fileName = path.basename(filePath);
+        // Normalize path separators to handle both Windows and Linux formats
+        const normalizedPath = filePath.replace(/\\/g, '/');
+        const fileName = path.basename(normalizedPath);
         const localPath = path.join(collabDir, fileName);
 
         // Create a unique name if file already exists

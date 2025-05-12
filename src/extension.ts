@@ -10,7 +10,6 @@ import { CopilotViewProvider } from "./frontend/CopilotView";
 import { NotesViewProvider } from "./frontend/NotesView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 
-import { listenForDocumentChanges } from './backend/collaboration/getDocumentChange';
 import { ConnectionManager } from './backend/collaboration/ConnectionManager';
 import { FirewallManager } from './backend/collaboration/FireWallManager';
 import { SharedFilesProvider } from './frontend/SharedFilesProvider';
@@ -74,8 +73,6 @@ export async function activate(context: vscode.ExtensionContext) {
   // endregion
 
   // region collaboration
-  const documentChangeListener = listenForDocumentChanges();
-  context.subscriptions.push(documentChangeListener);
 
   const manager = new ConnectionManager();
 
