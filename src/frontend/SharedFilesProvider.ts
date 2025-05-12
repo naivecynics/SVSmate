@@ -4,6 +4,8 @@ import * as fs from 'fs';
 import { outputChannel } from '../utils/OutputChannel';
 import { ConnectionManager } from '../backend/collaboration/ConnectionManager';
 import * as PathManager from '../utils/pathManager';
+import { SharedFileManager } from '../backend/collaboration/SharedFileManager';
+
 
 export class SharedFilesProvider implements vscode.TreeDataProvider<string> {
     private _onDidChangeTreeData = new vscode.EventEmitter<string | void>();
@@ -11,9 +13,12 @@ export class SharedFilesProvider implements vscode.TreeDataProvider<string> {
 
     private sharedFiles: string[] = [];
     private connectionManager: ConnectionManager;
+    private sharedFileManager: SharedFileManager;
+
 
     constructor(connectionManager: ConnectionManager) {
         this.connectionManager = connectionManager;
+        this.sharedFileManager = connectionManager['sharedFileManager'];
     }
 
     static create(connectionManager: ConnectionManager): SharedFilesProvider {
@@ -36,21 +41,14 @@ export class SharedFilesProvider implements vscode.TreeDataProvider<string> {
     }
 
     addFile(filePath: string) {
-        if (!this.sharedFiles.includes(filePath)) {
-            this.sharedFiles.push(filePath);
-            this._onDidChangeTreeData.fire();
-            outputChannel.info('SharedFiles', `Added shared file: ${filePath}`);
-        }
+        const remotePath = path.basename(filePath); // Example: Use file name as remote path
+        this.sharedFileManager.addFile(filePath, remotePath);
+        this._onDidChangeTreeData.fire();
     }
 
     removeFile(filePath: string) {
-        const index = this.sharedFiles.indexOf(filePath);
-        if (index !== -1) {
-            this.sharedFiles.splice(index, 1);
-            this._onDidChangeTreeData.fire();
-            this.connectionManager.unshareFile(filePath);
-            outputChannel.info('SharedFiles', `Removed shared file: ${filePath}`);
-        }
+        this.sharedFileManager.removeFile(filePath);
+        this._onDidChangeTreeData.fire();
     }
 
     syncWithManager(files: string[]) {
@@ -105,6 +103,6 @@ export class SharedFilesProvider implements vscode.TreeDataProvider<string> {
     }
 
     getChildren(): Thenable<string[]> {
-        return Promise.resolve(this.sharedFiles);
+        return Promise.resolve(this.sharedFileManager.getAllLocalPaths());
     }
 }

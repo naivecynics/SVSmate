@@ -3,8 +3,10 @@ import * as dgram from 'dgram';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { outputChannel } from '../../utils/OutputChannel';
 import { YjsDocumentManager } from './YjsDocumentManager';
+import { SharedFileManager } from './SharedFileManager';
 
 const TCP_PORT = 12345;
 const UDP_PORT = 12346;
@@ -26,14 +28,15 @@ export class ConnectionManager {
     private sharedFilesProvider: any = null;
     private sharedFiles: Set<string> = new Set();
     private yjsManager: YjsDocumentManager;
+    private sharedFileManager: SharedFileManager;
 
     constructor() {
+        this.sharedFileManager = new SharedFileManager();
         this.yjsManager = new YjsDocumentManager();
 
         // Listen for document changes
         vscode.commands.registerCommand('svsmate.documentChanged', (filePath: string, changes: vscode.TextDocumentContentChangeEvent[]) => {
-            // Only handle changes for shared files
-            if (this.sharedFiles.has(filePath)) {
+            if (this.sharedFileManager.getRemotePath(filePath)) {
                 this.handleDocumentChanges(filePath, changes);
             }
         });
@@ -179,6 +182,7 @@ export class ConnectionManager {
             this.udpClient = null;
         }
 
+        this.sharedFileManager.clearAllFiles();
         outputChannel.info('Client', 'Disconnected');
         vscode.window.showInformationMessage('Disconnected');
     }
@@ -225,32 +229,33 @@ export class ConnectionManager {
     }
 
     shareFile(filePath: string) {
-        this.sharedFiles.add(filePath);
+        const remotePath = path.basename(filePath); // Example: Use file name as remote path
+        this.sharedFileManager.addFile(filePath, remotePath);
 
-        // Notify all connected clients about the newly shared file
         const message: Message = {
             type: 'fileShare',
-            payload: { path: filePath }
+            payload: { path: remotePath }
         };
 
         this.broadcastTcpMessage(message);
 
-        // Initialize Yjs document for this file - now async
         this.yjsManager.getDocument(filePath).catch(err => {
             outputChannel.error('ConnectionManager', `Error initializing Yjs document: ${err}`);
         });
     }
 
     unshareFile(filePath: string) {
-        this.sharedFiles.delete(filePath);
+        const remotePath = this.sharedFileManager.getRemotePath(filePath);
+        if (remotePath) {
+            this.sharedFileManager.removeFile(filePath);
 
-        // Notify all connected clients about the unshared file
-        const message: Message = {
-            type: 'fileUnshare',
-            payload: { path: filePath }
-        };
+            const message: Message = {
+                type: 'fileUnshare',
+                payload: { path: remotePath }
+            };
 
-        this.broadcastTcpMessage(message);
+            this.broadcastTcpMessage(message);
+        }
     }
 
     private sendFileList(socket?: net.Socket) {
@@ -419,30 +424,11 @@ export class ConnectionManager {
         const { path: remotePath, content } = payload;
 
         if (content && this.sharedFilesProvider) {
-            // Store the file in the collaboration directory
             const localPath = await this.sharedFilesProvider.storeRemoteFile(remotePath, content);
-            this.sharedFiles.add(localPath);
-
+            this.sharedFileManager.addFile(localPath, remotePath);
             outputChannel.info('Files', `Received and stored shared file: ${localPath}`);
         } else {
-            // Legacy or path-only sharing (without content)
-            this.sharedFiles.add(remotePath);
-
-            // Update the shared files view
-            if (this.sharedFilesProvider) {
-                this.sharedFilesProvider.addFile(remotePath);
-            }
-
-            outputChannel.info('Files', `New shared file reference: ${remotePath}`);
-
-            // Request the file content
-            if (this.tcpConnection) {
-                const requestMessage: Message = {
-                    type: 'requestFile',
-                    payload: { path: remotePath }
-                };
-                this.tcpConnection.write(JSON.stringify(requestMessage));
-            }
+            outputChannel.error('Files', `Invalid file share payload: ${JSON.stringify(payload)}`);
         }
     }
 
