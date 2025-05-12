@@ -45,7 +45,6 @@ const TodoListView_1 = require("./frontend/TodoListView");
 const CopilotView_1 = require("./frontend/CopilotView");
 const NotesView_1 = require("./frontend/NotesView");
 const BBMaterialView_1 = require("./frontend/BBMaterialView");
-const getDocumentChange_1 = require("./backend/collaboration/getDocumentChange");
 const ConnectionManager_1 = require("./backend/collaboration/ConnectionManager");
 const FireWallManager_1 = require("./backend/collaboration/FireWallManager");
 const SharedFilesProvider_1 = require("./frontend/SharedFilesProvider");
@@ -81,8 +80,6 @@ async function activate(context) {
     }));
     // endregion
     // region collaboration
-    const documentChangeListener = (0, getDocumentChange_1.listenForDocumentChanges)();
-    context.subscriptions.push(documentChangeListener);
     const manager = new ConnectionManager_1.ConnectionManager();
     // Register SharedFilesProvider
     const sharedFilesProvider = SharedFilesProvider_1.SharedFilesProvider.create(manager);

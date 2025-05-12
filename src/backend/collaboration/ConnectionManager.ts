@@ -393,12 +393,26 @@ export class ConnectionManager {
         vscode.window.showInformationMessage(`Message: ${text}`);
     }
 
-    private handleCursorPosition(line: number, character: number, filePath: string) {
-        // Handle cursor position updates
-        // This could show a remote cursor in the editor
-        outputChannel.info('Cursor', `Remote cursor at ${line}:${character} in ${filePath}`);
+    private async handleCursorPosition(line: number, character: number, filePath: string) {
+        // Check if the file is shared
+        if (!this.sharedFiles.has(filePath)) {
+            outputChannel.error('CursorPosition', `File not shared: ${filePath}`);
+            return;
+        }
 
-        // TODO: Implement showing remote cursor in editor
+        try {
+            // Open the document in VSCode if not already open
+            const document = await vscode.workspace.openTextDocument(filePath);
+            const editor = await vscode.window.showTextDocument(document);
+
+            // Create a new selection at the specified position
+            const position = new vscode.Position(line, character);
+            editor.selections = [new vscode.Selection(position, position)];
+
+            outputChannel.info('CursorPosition', `Cursor moved to line ${line}, character ${character} in file ${filePath}`);
+        } catch (error) {
+            outputChannel.error('CursorPosition', `Error handling cursor position: ${error}`);
+        }
     }
 
     private async handleFileShare(payload: any) {
