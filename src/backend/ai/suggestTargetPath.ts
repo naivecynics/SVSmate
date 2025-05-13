@@ -9,6 +9,13 @@ import { outputChannel } from '../../utils/OutputChannel';
 
 const execAsync = promisify(exec);
 
+/**
+ * Builds a prompt for the AI to suggest the most appropriate folder for a file.
+ * 
+ * @param folderStructure - The folder structure in the workspace.
+ * @param filePath - The path to the file to be organized.
+ * @returns The formatted prompt that will be sent to the AI.
+ */
 function buildUserPrompt(folderStructure: string, filePath: string): string {
   return `
 I have the following folder structure:
@@ -30,6 +37,13 @@ Only respond with the JSON object.
 `;
 }
 
+/**
+ * Suggests the target folder path for a given file item.
+ * 
+ * @param item - The BBMaterialItem that represents the file to be organized.
+ * @returns A promise that resolves to the suggested folder path.
+ * @throws Will throw an error if the AI response is invalid or the folder structure cannot be fetched.
+ */
 export async function suggestTargetPath(item: BBMaterialItem): Promise<string> {
   const bbRoot = PathManager.getDir('bb');
   const workspaceRoot = PathManager.getWorkspaceDir();
@@ -76,6 +90,13 @@ export async function suggestTargetPath(item: BBMaterialItem): Promise<string> {
   }
 }
 
+/**
+ * Parses the raw AI response into a valid JSON object.
+ * 
+ * @param raw - The raw AI response string.
+ * @returns The parsed JSON object.
+ * @throws Will throw an error if the AI response is not valid JSON.
+ */
 function parseAIJsonResponse(raw: string): Record<string, string> {
   let cleaned = raw.trim();
   if (cleaned.startsWith('```json') || cleaned.startsWith('```')) {

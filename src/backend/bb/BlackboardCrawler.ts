@@ -715,7 +715,7 @@ private extractFileStructure($: CheerioRoot): PageStructure {
 
     $('li.clearfix.liItem.read').each((_: number, item) => {
         const weekTitleTag = $(item).find('h3');
-        if (!weekTitleTag.length) return;
+        if (!weekTitleTag.length) { return; }
 
         const titleText = weekTitleTag.text().trim();
 
