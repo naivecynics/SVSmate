@@ -163,6 +163,14 @@
           "dark": "./src/icons/delete-dark.svg",
           "light": "./src/icons/delete-light.svg"
         }
+      },
+      {
+        "command": "todoListView.generateCodeFromPdf",
+        "title": "SVSmate: Generate Code from PDF",
+        "icon": {
+          "dark": "./src/icons/generate_dark.svg",
+          "light": "./src/icons/generate_light.svg"
+        }
       }
     ],
     "chatParticipants": [
@@ -300,6 +308,12 @@
           "title": "Load From .ics File"
         },
         {
+          "command": "todoListView.generateCodeFromPdf",
+          "when": "view == todoListView",
+          "group": "navigation",
+          "title": "Generate Code from PDF"
+        },
+        {
           "command": "svsmate.BB-updateAll",
           "when": "view == bbMaterialView",
           "group": "navigation",
@@ -328,23 +342,29 @@
     "@vscode/prompt-tsx": "^0.3.0-alpha.12",
     "axios": "^1.6.7",
     "axios-cookiejar-support": "^5.0.5",
+    "canvas": "^3.1.0",
     "cheerio": "^1.0.0",
     "fetch-cookie": "^3.1.0",
     "fs-extra": "^11.3.0",
     "ical.js": "^2.1.0",
     "js-yaml": "^4.1.0",
+    "jsdom": "^26.1.0",
     "ms": "^2.1.3",
     "node-fetch": "^2.7.0",
     "node-ical": "^0.20.1",
     "openai": "^4.87.3",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^5.2.133",
     "tough-cookie": "^5.1.2",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.35",
     "@types/mocha": "^10.0.10",
-    "@types/node": "20.x",
+    "@types/node": "^20.17.46",
     "@types/node-fetch": "^2.6.12",
+    "@types/pdfjs-dist": "^2.10.377",
     "@types/vscode": "^1.100.0",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",

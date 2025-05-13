@@ -4,6 +4,7 @@ import { createChatParticipant } from './backend/ai/createChatParticipant';
 import { updateAll, updateCourse, updateTerm } from './backend/bb/updateCommands';
 import { downloadToWorkspace } from './backend/bb/downloadCommands';
 import { addAIGeneratedSubtasks } from './backend/ai/createSubtasks';
+import { generateCodeFromPdf } from './backend/ai/pdfCodeGenerator';
 import { addItem, editTask, deleteTask, toggleTaskCheckbox, sortByEndTime, sortByKinds, searchTasks, clearSearch, addSubTask, loadICSFile } from './backend/todo/todoCommands';
 
 import { FolderViewProvider } from "./frontend/FolderView";
@@ -161,6 +162,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('todoListView.loadICSFile', async () => {
       await loadICSFile(todoListViewProvider);
+    }),
+
+    vscode.commands.registerCommand('todoListView.generateCodeFromPdf', async () => {
+      await generateCodeFromPdf();
     })
   );
 }
