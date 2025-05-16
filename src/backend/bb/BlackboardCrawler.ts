@@ -9,12 +9,10 @@ import fetchCookie from 'fetch-cookie';
 import * as tough from 'tough-cookie';
 import { promisify } from 'util';
 import { pipeline } from 'stream';
-import { writeFile } from 'fs/promises';
-type CheerioRoot = ReturnType<typeof cheerio.load>;
-const fetch = require('node-fetch');
-const yaml = require('js-yaml');
-const xml2js = require('xml2js');
+import fetch from 'node-fetch';
+import xml2js from 'xml2js';
 
+type CheerioRoot = ReturnType<typeof cheerio.load>;
 const pipelineAsync = promisify(pipeline);
 
 // Course interfaces
@@ -48,6 +46,10 @@ interface PageStructure {
     [sectionTitle: string]: PageContent;
 }
 
+/**
+ * The main class for interacting with Blackboard via web scraping and automation.
+ * Handles login, cookie management, and course retrieval.
+ */
 export class BlackboardCrawler {
     private baseUrl: string;
     private loginUrl: string;
@@ -59,8 +61,11 @@ export class BlackboardCrawler {
     private fetch: typeof fetch;
     private cookieFilePath: string;
 
+    /**
+     * Creates a new instance of BlackboardCrawler.
+     * @param enableDebug - Enable or disable debug output (default: false).
+     */
     constructor(enableDebug: boolean = false) {
-        // 初始化相关 URL 与请求头
         this.baseUrl = "https://bb.sustech.edu.cn";
         this.loginUrl = `${this.baseUrl}/webapps/login/`;
         this.casUrl = "https://cas.sustech.edu.cn/cas/login";
@@ -70,16 +75,17 @@ export class BlackboardCrawler {
         };
         this.debug = enableDebug;
         this.cookieFilePath = PathManager.getFile('bbCookies');
-
         // Load cookie jar from file or create a new one
         this.cookieJar = this.loadCookieJar();
-
-        // Use fetch-cookie with the loaded cookie jar
-        this.fetch = fetchCookie(fetch, this.cookieJar);
+        // Explicitly type fetch with the necessary types
+        const fetchWithCookie = fetchCookie(fetch);
+        // Use fetchWithCookie where needed
+        this.fetch = fetchWithCookie as unknown as typeof fetch;
     }
 
     /**
-     * Load cookie jar from file if it exists, or create a new one
+     * Load cookie jar from file if it exists, or create a new one.
+     * @returns The loaded or newly created cookie jar.
      */
     private loadCookieJar(): CookieJar {
         if (fs.existsSync(this.cookieFilePath)) {
@@ -95,7 +101,7 @@ export class BlackboardCrawler {
     }
 
     /**
-     * Save cookie jar to file for persistence between sessions
+     * Save the cookie jar to a file for persistence between sessions.
      */
     private saveCookieJar(): void {
         try {
@@ -116,24 +122,21 @@ export class BlackboardCrawler {
     }
 
     /**
-     * Check if user is already logged in to Blackboard
-     * @returns true if logged in, false otherwise
+     * Checks if the user is already logged into Blackboard.
+     * @returns true if logged in, false otherwise.
      */
     public async checkLogin(): Promise<boolean> {
         try {
-            // Try to access a protected page
             const response = await this.fetch(`${this.baseUrl}/ultra/course`, {
                 headers: this.headers,
                 redirect: 'manual'
             });
 
-            // If we get a 200 response or specific redirect, we're logged in
             if (response.status === 200) {
                 outputChannel.info('checkLogin', 'User is logged in');
                 return true;
             }
 
-            // If we get a 302 redirect to CAS, we're not logged in
             if (response.status === 302) {
                 const location = response.headers.get('location') || '';
                 if (location.includes('cas.sustech.edu.cn')) {
@@ -142,7 +145,6 @@ export class BlackboardCrawler {
                 }
             }
 
-            // Fallback - try another check method
             const checkUrl = `${this.baseUrl}/learn/api/public/v1/users/me`;
             const meResponse = await this.fetch(checkUrl, {
                 headers: this.headers
@@ -156,26 +158,23 @@ export class BlackboardCrawler {
     }
 
     /**
-     * Complete CAS login process for Blackboard
-     * @param context Extension context for credential storage
-     * @returns boolean indicating login success
+     * Completes the CAS login process for Blackboard.
+     * @param context - The extension context used to store credentials.
+     * @returns true if login is successful, false otherwise.
      */
     public async login(context: vscode.ExtensionContext): Promise<boolean> {
         try {
-            // 1. Get credentials
             const credentials = await this.getCredentials(context);
             if (!credentials) {
                 return false;
             }
 
-            // 2. Prepare CAS authentication (get execution parameter)
             const casParams = await this.prepareCasAuthentication();
             if (!casParams) {
                 outputChannel.error('login', 'Failed to prepare CAS authentication');
                 return false;
             }
 
-            // 3. Submit credentials to CAS
             const ticketUrl = await this.authenticateWithCas(
                 credentials.username,
                 credentials.password,
@@ -187,14 +186,12 @@ export class BlackboardCrawler {
                 return false;
             }
 
-            // 4. Follow ticketUrl to validate the service ticket
             const validationSuccess = await this.validateServiceTicket(ticketUrl);
             if (!validationSuccess) {
                 vscode.window.showErrorMessage("Failed to validate CAS ticket");
                 return false;
             }
 
-            // 5. Save cookies after successful login
             this.saveCookieJar();
             vscode.window.showInformationMessage("Successfully logged in to Blackboard!");
             return true;
@@ -205,6 +202,11 @@ export class BlackboardCrawler {
         }
     }
 
+    /**
+     * Ensures the user is logged in, retrying login if necessary after clearing cookies.
+     * @param context - The extension context used to store credentials.
+     * @returns true if login is successful, false otherwise.
+     */
     async ensureLogin(context: vscode.ExtensionContext): Promise<boolean> {
         let alreadyLoggedIn = await this.checkLogin();
         if (alreadyLoggedIn) { return true; }
@@ -227,8 +229,11 @@ export class BlackboardCrawler {
 
         return loginSuccess;
     }
+
     /**
-     * Get user credentials from storage or prompt
+     * Retrieves user credentials from storage or prompts for them if not found.
+     * @param context - The extension context used for credential storage.
+     * @returns The credentials object containing username and password, or null if credentials are not available.
      */
     private async getCredentials(context: vscode.ExtensionContext): Promise<{ username: string, password: string } | null> {
         const secretStorage = context.secrets;
@@ -283,26 +288,29 @@ export class BlackboardCrawler {
     }
 
     /**
-     * Prepare CAS authentication by getting execution parameter
-     */
+    * Prepares the CAS authentication by extracting the execution parameter from the CAS login page.
+    * 
+    * @returns The execution parameter required for CAS login, or null if it fails to retrieve it.
+    */
     private async prepareCasAuthentication(): Promise<{ execution: string } | null> {
         try {
-            // Create the service URL that CAS will redirect back to after authentication
+            // Create the service URL that CAS will redirect to after successful authentication
             const serviceUrl = encodeURIComponent(this.loginUrl);
             const casLoginUrl = `${this.casUrl}?service=${serviceUrl}`;
 
-            // Get the CAS login page
+            // Fetch the CAS login page
             const response = await this.fetch(casLoginUrl, {
                 headers: this.headers,
                 redirect: 'follow'
             });
 
+            // Check if the response is successful
             if (response.status !== 200) {
                 outputChannel.error('prepareCasAuthentication', `Failed to get CAS login page: ${response.status}`);
                 return null;
             }
 
-            // Parse the login page to extract the execution parameter
+            // Parse the HTML to extract the execution parameter
             const html = await response.text();
             const $ = cheerio.load(html);
             const execution = $('input[name="execution"]').val();
@@ -320,15 +328,20 @@ export class BlackboardCrawler {
     }
 
     /**
-     * Submit credentials to CAS server
-     */
+    * Submits user credentials to the CAS server to authenticate the user.
+    * 
+    * @param username - The username to be used for authentication.
+    * @param password - The password associated with the username.
+    * @param execution - The execution parameter obtained from the CAS login page.
+    * @returns The URL containing the service ticket if authentication is successful, or null if authentication fails.
+    */
     private async authenticateWithCas(username: string, password: string, execution: string): Promise<string | null> {
         try {
-            // Service URL for after authentication
+            // Prepare the CAS login URL with the service parameter
             const serviceUrl = encodeURIComponent(this.loginUrl);
             const casLoginUrl = `${this.casUrl}?service=${serviceUrl}`;
 
-            // Prepare form data
+            // Prepare the form data for authentication
             const formData = new URLSearchParams();
             formData.append('username', username);
             formData.append('password', password);
@@ -337,7 +350,7 @@ export class BlackboardCrawler {
             formData.append('geolocation', "");
             formData.append('submit', "登录");
 
-            // Submit the form
+            // Submit the form to CAS
             const response = await this.fetch(casLoginUrl, {
                 method: 'POST',
                 headers: {
@@ -348,7 +361,7 @@ export class BlackboardCrawler {
                 redirect: 'manual' // Don't follow redirects automatically
             });
 
-            // Check for successful authentication (should be a 302 redirect)
+            // Check if authentication was successful (302 redirect to a ticket URL)
             if (response.status === 302) {
                 const location = response.headers.get('location');
 
@@ -362,7 +375,7 @@ export class BlackboardCrawler {
                     return null;
                 }
 
-                // If location contains ticket parameter, authentication successful
+                // If location contains ticket, the authentication was successful
                 if (location.includes('ticket=')) {
                     outputChannel.info('authenticateWithCas', 'CAS authentication successful, received ticket');
                     return location;
@@ -378,20 +391,24 @@ export class BlackboardCrawler {
     }
 
     /**
-     * Validate the service ticket with the service provider
-     */
+    * Validates the CAS service ticket to complete the login process.
+    * 
+    * @param ticketUrl - The URL containing the service ticket received after authentication.
+    * @returns true if ticket validation is successful, false otherwise.
+    */
     private async validateServiceTicket(ticketUrl: string): Promise<boolean> {
         try {
-            // Follow the redirect with the ticket to complete authentication
+            // Follow the redirect with the ticket to complete the authentication process
             const response = await this.fetch(ticketUrl, {
                 headers: this.headers,
                 redirect: 'follow'
             });
 
-            // Check if we're successfully logged in
+            // Check if we were successfully logged in (status 200)
             if (response.status === 200) {
-                // Verify we're actually on BB, not an error page
                 const finalUrl = response.url;
+
+                // Verify we're on Blackboard (not an error page)
                 if (finalUrl.includes('bb.sustech.edu.cn')) {
                     outputChannel.info('validateServiceTicket', `Successfully validated ticket, redirected to: ${finalUrl}`);
                     return true;
@@ -406,8 +423,13 @@ export class BlackboardCrawler {
         }
     }
 
+    /**
+    * Retrieves the list of courses grouped by term from the Blackboard portal.
+    * 
+    * @returns An object with courses grouped by term. Returns an empty object if the request fails.
+    */
     public async getCoursesByTerm(): Promise<CoursesByTerm> {
-        // Prepare request payload for course list
+        // Prepare request payload for the course list
         const payload = new URLSearchParams({
             "action": "refreshAjaxModule",
             "modId": "_3_1",
@@ -434,7 +456,7 @@ export class BlackboardCrawler {
 
             const xmlData = await response.text();
 
-            // Parse XML to extract CDATA content
+            // Parse the XML response to extract HTML content
             const parser = new xml2js.Parser({
                 explicitArray: false,
                 trim: true,
@@ -443,7 +465,6 @@ export class BlackboardCrawler {
             });
 
             if (this.debug) {
-                //save the xmlData to a file in the debug folder
                 const debugFilePath = path.join(PathManager.getDir('debug'), 'courseList.xml');
                 fs.writeFileSync(debugFilePath, xmlData);
                 outputChannel.info('getCoursesByTerm', `XML data saved to ${debugFilePath}`);
@@ -451,7 +472,7 @@ export class BlackboardCrawler {
 
             const result = await parser.parseStringPromise(xmlData);
 
-            // Extract HTML content from CDATA section
+            // Extract HTML content from the parsed XML
             let htmlContent = '';
             if (result && result.contents && result.contents._) {
                 htmlContent = result.contents._;
@@ -462,20 +483,16 @@ export class BlackboardCrawler {
                 return {};
             }
 
-            // Parse HTML content using cheerio
+            // Parse the HTML content with cheerio to extract course data
             const $ = cheerio.load(htmlContent);
-
-            // Store course information
             const courses: CoursesByTerm = {};
 
-            // Iterate through all terms
+            // Iterate through all terms and their courses
             $('h3.termHeading-coursefakeclass').each((_, term) => {
                 const termName = $(term).text().trim();
-
-                // Extract term identifier (year + season)
-                const match = termName.match(/（(Spring|Fall|Summer|Winter) (\d{4})）/);
                 let termId = termName; // Use full term name as fallback
 
+                const match = termName.match(/（(Spring|Fall|Summer|Winter) (\d{4})）/);
                 if (match) {
                     const season = match[1].toLowerCase();
                     const year = match[2].slice(-2);
@@ -493,7 +510,7 @@ export class BlackboardCrawler {
                         const courseListDiv = $(`div#${fullTermId}`);
 
                         if (courseListDiv.length) {
-                            // Find all course items
+                            // Iterate through the course items in the list
                             courseListDiv.find('li').each((_, courseLi) => {
                                 const courseLink = $(courseLi).find('a[href]').first();
 
@@ -502,31 +519,27 @@ export class BlackboardCrawler {
                                     return;
                                 }
 
-                                // const courseName = courseLink.text().trim();
                                 const courseName = courseLink.text().trim();
                                 const courseUrl = courseLink.attr('href')?.trim() || '';
-                                const fullCourseUrl = courseUrl.startsWith('http')
-                                    ? courseUrl
+                                const fullCourseUrl = courseUrl.startsWith('http') 
+                                    ? courseUrl 
                                     : `https://bb.sustech.edu.cn${courseUrl}`;
 
-                                // Find announcement information
                                 const announcement: Announcement = { content: '', url: '' };
                                 const courseDataBlock = $(courseLi).find('div.courseDataBlock');
 
                                 if (courseDataBlock.length) {
-                                    // Remove "公告: " label for cleaner text
                                     const spanLabel = courseDataBlock.find('span.dataBlockLabel');
                                     if (spanLabel.length) {
                                         spanLabel.remove();
                                     }
 
-                                    // Extract announcement details
                                     const annLink = courseDataBlock.find('a[href]');
                                     if (annLink.length) {
                                         announcement.content = annLink.text().trim();
                                         const annUrl = annLink.attr('href')?.trim() || '';
-                                        announcement.url = annUrl.startsWith('http')
-                                            ? annUrl
+                                        announcement.url = annUrl.startsWith('http') 
+                                            ? annUrl 
                                             : `https://bb.sustech.edu.cn${annUrl}`;
                                     }
                                 }
@@ -543,19 +556,10 @@ export class BlackboardCrawler {
                 }
             });
 
-            // After successful course retrieval, save the cookie jar
+            // Save cookies after successful retrieval of courses
             this.saveCookieJar();
 
-          // for (const [termId, termCourses] of Object.entries(courses)) {
-          //   outputChannel.info('getCoursesByTerm', `Term: ${termId}`);
-          //   for (const course of termCourses) {
-          //     outputChannel.info(
-          //       'getCoursesByTerm',
-          //       `  • ${course.name}\n    URL: ${course.url}\n    Announcement: ${course.announcement?.content || '(none)'}`
-          //     );
-          //   }
-          // }
-          outputChannel.info('getCoursesByTerm', `Successfully retrieved ${Object.keys(courses).length} terms with courses`);
+            outputChannel.info('getCoursesByTerm', `Successfully retrieved ${Object.keys(courses).length} terms with courses`);
             return courses;
 
         } catch (error) {
@@ -565,8 +569,11 @@ export class BlackboardCrawler {
     }
 
     /**
-     * Get course sidebar menu structure
-     */
+    * Get course sidebar menu structure.
+    * 
+    * @param url - The URL of the course page from which to extract the sidebar menu.
+    * @returns An object representing the sidebar structure, categorized by the sidebar menu.
+    */
     public async getCourseSidebarMenu(url: string): Promise<SidebarCategory> {
         try {
             // Send request and follow redirects
@@ -577,14 +584,12 @@ export class BlackboardCrawler {
             });
 
             if (response.status !== 200) {
-                // outputChannel.appendLine(`Failed to get course page: ${response.status}`);
                 return {};
             }
 
             const finalUrl = response.url;
-            // outputChannel.appendLine(`Redirected to: ${finalUrl}`);
 
-            // Parse HTML
+            // Parse the HTML content
             const html = await response.text();
             const $ = cheerio.load(html);
 
@@ -593,40 +598,41 @@ export class BlackboardCrawler {
             return sidebarStructure;
 
         } catch (error) {
-            // outputChannel.appendLine(`Failed to get course sidebar: ${error}`);
             return {};
         }
     }
 
     /**
-     * Extract sidebar links from course HTML
-     */
+    * Extract the sidebar links from the course HTML page.
+    * 
+    * @param $ - The cheerio-loaded HTML content.
+    * @returns An object representing the sidebar categories and their corresponding links.
+    */
     private extractSidebarLinks($: CheerioRoot): SidebarCategory {
         const sidebarMenu: SidebarCategory = {};
 
-        // Find course menu ul tag
+        // Find the course menu
         const menuUl = $('#courseMenuPalette_contents');
         if (!menuUl.length) {
-            // outputChannel.appendLine("Course menu not found");
             return {};
         }
 
-        // Course ID (for constructing correct Announcements link)
+        // Extract course ID (for building correct announcements link)
         const htmlString = $.html();
         const courseIdMatch = htmlString.match(/course_id=(_\d+_\d+)/);
         const courseId = courseIdMatch ? courseIdMatch[1] : null;
 
         let currentCategory: string | null = null;
 
+        // Iterate through each menu item
         menuUl.find('li').each((_: number, element) => {
-            // Handle category title (h3)
             const categoryTag = $(element).find('h3');
             if (categoryTag.length) {
                 currentCategory = categoryTag.text().trim();
                 if (currentCategory) {
-                  sidebarMenu[currentCategory] = [];
+                    sidebarMenu[currentCategory] = [];
                 }
-                return; // Skip further parsing for this li
+                return; // Skip further parsing for this item
             }
 
             // Handle course content links
@@ -635,24 +641,23 @@ export class BlackboardCrawler {
                 const linkText = linkTag.text().trim();
                 let linkUrl = linkTag.attr('href') || '';
 
-                // Ensure URL is absolute
+                // Make sure the URL is absolute
                 if (!linkUrl.startsWith('http')) {
                     linkUrl = `https://bb.sustech.edu.cn${linkUrl}`;
                 }
 
-                // Special handling for Announcements (replace URL)
+                // Special handling for announcements (replace URL)
                 if (linkText.includes('Announcements') && courseId) {
                     linkUrl = `https://bb.sustech.edu.cn/webapps/blackboard/execute/announcement?method=search&context=course_entry&course_id=${courseId}&handle=announcements_entry&mode=view`;
                 }
 
-                // Add to current category
+                // Add to the current category
                 if (currentCategory && Array.isArray(sidebarMenu[currentCategory])) {
                     (sidebarMenu[currentCategory] as Array<{ title: string; url: string }>).push({
                         title: linkText,
                         url: linkUrl
                     });
                 } else {
-                    // If no category, store in root structure
                     sidebarMenu[linkText] = linkUrl;
                 }
             }
@@ -662,8 +667,11 @@ export class BlackboardCrawler {
     }
 
     /**
-     * Get content from a page
-     */
+    * Retrieve content from a page and parse its structure.
+    * 
+    * @param url - The URL of the page to fetch and parse.
+    * @returns An object representing the page content structure.
+    */
     public async getPageContent(url: string): Promise<PageStructure> {
         try {
             // Send request and follow redirects
@@ -679,9 +687,8 @@ export class BlackboardCrawler {
             }
 
             const finalUrl = response.url;
-            // outputChannel.appendLine(`Redirected to: ${finalUrl}`);
 
-            // Parse HTML
+            // Parse the HTML content
             const html = await response.text();
             const $ = cheerio.load(html);
 
@@ -693,115 +700,123 @@ export class BlackboardCrawler {
                 outputChannel.info('getPageContent', `HTML data saved to ${debugFilePath}`);
             }
 
-            // Extract file structure
+            // Extract file structure from the page content
             const pageContent = this.extractFileStructure($);
             return pageContent;
 
         } catch (error) {
-            // outputChannel.appendLine(`Failed to get page content: ${error}`);
             return {};
         }
     }
 
     /**
-     * Extract file structure from page HTML
-     */
-private extractFileStructure($: CheerioRoot): PageStructure {
-    if (!$) {
-        return {};
-    }
-
-    const fileStructure: PageStructure = {};
-
-    $('li.clearfix.liItem.read').each((_: number, item) => {
-        const weekTitleTag = $(item).find('h3');
-        if (!weekTitleTag.length) { return; }
-
-        const titleText = weekTitleTag.text().trim();
-
-        const vtbDiv = $(item).find('div.vtbegenerated_div');
-        let content = '';
-        if (vtbDiv.length) {
-            let rawText = vtbDiv.html() || '';
-            rawText = rawText.replace(/<br\s*\/?>/gi, '\n')
-                .replace(/<[^>]+>/g, '')
-                .replace(/&nbsp;/g, ' ')
-                .replace(/[ \t]+/g, ' ')
-                .trim();
-            const meaningfulText = rawText.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]+/g, '');
-            content = meaningfulText.length >= 10 ? rawText : '';
+    * Extract the file structure from the page HTML content.
+    * 
+    * @param $ - The cheerio-loaded HTML content.
+    * @returns An object representing the file structure with text and file links.
+    */
+    private extractFileStructure($: CheerioRoot): PageStructure {
+        if (!$) {
+            return {};
         }
 
-        const files: Array<{ name: string; url: string }> = [];
+        const fileStructure: PageStructure = {};
 
-        // ✅ 更广泛匹配所有链接（跳过 h3 中的链接）
-        const attachedFiles = $(item).find('a[href]').filter((_, el) => {
-            return !$(el).closest('h3').length;
-        });
+        // Iterate through list items containing the content
+        $('li.clearfix.liItem.read').each((_: number, item) => {
+            const weekTitleTag = $(item).find('h3');
+            if (!weekTitleTag.length) { return; }
 
-        if (attachedFiles.length > 0) {
-            attachedFiles.each((_: number, fileLink) => {
-                const $fileLink = $(fileLink);
-                const fileName = $fileLink.text().trim();
-                let fileUrl = $fileLink.attr('href')?.trim() || '';
+            const titleText = weekTitleTag.text().trim();
 
-                if (fileUrl && !fileUrl.startsWith('http')) {
-                    fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
-                }
+            const vtbDiv = $(item).find('div.vtbegenerated_div');
+            let content = '';
+            if (vtbDiv.length) {
+                let rawText = vtbDiv.html() || '';
+                rawText = rawText.replace(/<br\s*\/?>/gi, '\n')
+                    .replace(/<[^>]+>/g, '')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/[ \t]+/g, ' ')
+                    .trim();
+                const meaningfulText = rawText.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]+/g, '');
+                content = meaningfulText.length >= 10 ? rawText : '';
+            }
 
-                if (fileName && fileUrl) {
-                    files.push({ name: fileName, url: fileUrl });
-                }
+            const files: Array<{ name: string; url: string }> = [];
+
+            // Extract all file links (skip those inside h3 tags)
+            const attachedFiles = $(item).find('a[href]').filter((_, el) => {
+                return !$(el).closest('h3').length;
             });
-        } else {
-            // fallback 单文件模式
-            const linkTag = weekTitleTag.find('a[href]');
-            if (linkTag.length) {
-                let fileUrl = linkTag.attr('href')?.trim() || '';
-                if (fileUrl && !fileUrl.startsWith('http')) {
-                    fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
-                }
-                if (titleText && fileUrl) {
-                    files.push({ name: titleText, url: fileUrl });
+
+            if (attachedFiles.length > 0) {
+                attachedFiles.each((_: number, fileLink) => {
+                    const $fileLink = $(fileLink);
+                    const fileName = $fileLink.text().trim();
+                    let fileUrl = $fileLink.attr('href')?.trim() || '';
+
+                    if (fileUrl && !fileUrl.startsWith('http')) {
+                        fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
+                    }
+
+                    if (fileName && fileUrl) {
+                        files.push({ name: fileName, url: fileUrl });
+                    }
+                });
+            } else {
+                // Handle the case for single file (fallback)
+                const linkTag = weekTitleTag.find('a[href]');
+                if (linkTag.length) {
+                    let fileUrl = linkTag.attr('href')?.trim() || '';
+                    if (fileUrl && !fileUrl.startsWith('http')) {
+                        fileUrl = `https://bb.sustech.edu.cn${fileUrl}`;
+                    }
+                    if (titleText && fileUrl) {
+                        files.push({ name: titleText, url: fileUrl });
+                    }
                 }
             }
+
+            // Store the content and files for each week
+            if (titleText && files.length > 0) {
+                fileStructure[titleText] = {
+                    text: content,
+                    files: files
+                };
+            }
+        });
+
+        if (Object.keys(fileStructure).length === 0) {
+            outputChannel.warn('extractFileStructure', `No valid files found on this page`);
         }
 
-        if (titleText && files.length > 0) {
-            fileStructure[titleText] = {
-                text: content,
-                files: files
-            };
-        }
-    });
-
-    if (Object.keys(fileStructure).length === 0) {
-        outputChannel.warn('extractFileStructure', `No valid files found on this page`);
+        return fileStructure;
     }
 
-    return fileStructure;
-}
-
     /**
-     * Download a file with progress tracking
-     */
+    * Download a file with progress tracking and save it to the specified path.
+    * 
+    * @param context - The extension context used for ensuring the login status.
+    * @param url - The URL of the file to be downloaded.
+    * @param savePath - The path where the file will be saved.
+    * @returns true if the file was downloaded successfully, false otherwise.
+    */
     public async downloadFile(context: vscode.ExtensionContext, url: string, savePath: string): Promise<boolean> {
-        // 0. Ensure Login
+        // Ensure user is logged in
         await this.ensureLogin(context);
 
-
-        // 1. Ensure filename is safe
+        // Ensure the filename is safe (e.g., replace spaces with underscores)
         const fileName = path.basename(savePath).replace(/\s+/g, '_');
         const safeFilePath = path.join(path.dirname(savePath), fileName);
 
-        // 2. Ensure directory exists
+        // Ensure directory exists
         const directory = path.dirname(safeFilePath);
         if (!fs.existsSync(directory)) {
             fs.mkdirSync(directory, { recursive: true });
         }
 
         try {
-            // 3. Try normal download
+            // Try to download the file
             const response = await this.fetch(url, {
                 method: 'GET',
                 redirect: 'follow',
@@ -809,39 +824,37 @@ private extractFileStructure($: CheerioRoot): PageStructure {
             });
 
             if (!response.ok) {
-                // outputChannel.appendLine(`Download request failed: ${response.status} ${response.statusText}`);
                 return false;
             }
 
-            // 4. Get content length for progress tracking
+            // Get content length for progress tracking
             const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
 
-            // 5. Create a write stream
+            // Create write stream for the downloaded file
             const fileStream = fs.createWriteStream(safeFilePath);
 
-            // 6. Setup progress tracking in debug mode
+            // Track download progress in debug mode
             if (this.debug && contentLength > 0) {
                 // outputChannel.appendLine(` Downloading: ${fileName} (${(contentLength / 1024 / 1024).toFixed(2)} MB)`);
             }
 
-            // 7. Pipe the response to file
+            // Pipe the file content to the file system
             await pipelineAsync(
                 response.body as unknown as NodeJS.ReadableStream,
                 fileStream
             );
 
-            // Save cookie jar after successful download in case of session updates
+            // Save cookies after successful download
             this.saveCookieJar();
 
             if (this.debug) {
                 // outputChannel.appendLine(`Download complete: ${safeFilePath}`);
             }
+
             return true;
 
         } catch (error) {
-            // outputChannel.appendLine(`Download failed: ${url} - ${error}`);
-
-            // 8. If file was partially created, delete it
+            // Delete incomplete file if it exists
             if (fs.existsSync(safeFilePath)) {
                 try {
                     fs.unlinkSync(safeFilePath);
