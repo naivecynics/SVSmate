@@ -315,12 +315,11 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
     "compile": "rm -rf out && tsc -p ./",
-    "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "docs": "typedoc"
   },
   "dependencies": {
     "@types/fs-extra": "^11.0.4",
@@ -354,6 +353,7 @@
     "eslint": "^9.21.0",
     "mocha": "^11.2.2",
     "ts-complex": "^1.0.0",
+    "typedoc": "^0.28.4",
     "typescript": "^5.7.3",
     "vscode": "^1.1.37"
   }

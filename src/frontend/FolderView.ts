@@ -2,113 +2,144 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
-export class FolderViewProvider implements vscode.TreeDataProvider<FileItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<FileItem | undefined> =
-    new vscode.EventEmitter<FileItem | undefined>();
-  readonly onDidChangeTreeData: vscode.Event<FileItem | undefined> =
-    this._onDidChangeTreeData.event;
+/**
+ * Provides a tree view of files and folders in the current workspace.
+ * Automatically refreshes when files are created, deleted, or modified.
+ */
+export class FolderViewProvider implements vscode.TreeDataProvider<FileItem>, vscode.Disposable {
+    private _onDidChangeTreeData: vscode.EventEmitter<FileItem | undefined> =
+        new vscode.EventEmitter<FileItem | undefined>();
+    readonly onDidChangeTreeData: vscode.Event<FileItem | undefined> =
+        this._onDidChangeTreeData.event;
 
-  private fileSystemWatcher: vscode.FileSystemWatcher;
+    private fileSystemWatcher: vscode.FileSystemWatcher;
 
-  /**
-   * AI-generated-content
-   * tool: vscode-copilot
-   * version: 1.98.0
-   * usage: can refresh the tree view when files are created, deleted or changed
-   */
-  constructor(private workspaceRoot: string | undefined) {
+    /**
+     * Creates a FolderViewProvider for the given workspace root.
+     * 
+     * @param workspaceRoot - The root path of the currently open workspace.
+     */
+    constructor(private workspaceRoot: string | undefined) {
+        // Create a file system watcher to monitor all file changes
+        this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*');
 
-    // 创建文件系统监听器
-    this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*');
-    
-    // 监听文件变化
-    this.fileSystemWatcher.onDidCreate(() => this.refresh());
-    this.fileSystemWatcher.onDidDelete(() => this.refresh());
-    this.fileSystemWatcher.onDidChange(() => this.refresh());
-  }
-
-   static create(): FolderViewProvider | undefined {
-    const folders = vscode.workspace.workspaceFolders;
-    if (!folders || folders.length === 0) {
-      vscode.window.showWarningMessage("No workspace folder is open.");
-      return;
-    }
-    return new FolderViewProvider(folders[0].uri.fsPath);
-  }
-
-  dispose() {
-    // 清理文件系统监听器
-    this.fileSystemWatcher.dispose();
-  }
-
-  refresh(): void {
-    this._onDidChangeTreeData.fire(undefined);
-  }
-
-  getTreeItem(element: FileItem): vscode.TreeItem {
-    return element;
-  }
-
-  getChildren(element?: FileItem): FileItem[] | Thenable<FileItem[]> {
-    if (!this.workspaceRoot) {
-      vscode.window.showInformationMessage("No workspace folder found");
-      return Promise.resolve([]);
+        // Watch for file creation, deletion, or change events
+        this.fileSystemWatcher.onDidCreate(() => this.refresh());
+        this.fileSystemWatcher.onDidDelete(() => this.refresh());
+        this.fileSystemWatcher.onDidChange(() => this.refresh());
     }
 
-    const dirPath = element ? element.resourceUri.fsPath : this.workspaceRoot;
-    return Promise.resolve(this.getFiles(dirPath));
-  }
-
-  private getFiles(dir: string): FileItem[] {
-    if (!fs.existsSync(dir)) { return []; }
-
-    const items = fs.readdirSync(dir)
-      .filter(file => !file.startsWith('.')) // 过滤掉隐藏文件
-      .map((file) => {
-        const filePath = path.join(dir, file);
-        const isDirectory = fs.statSync(filePath).isDirectory();
-        return {
-          name: file,
-          path: filePath,
-          isDirectory: isDirectory
-        };
-      });
-
-    // 先按文件夹在前，文件在后排序
-    // 然后在各自组内按名称排序
-    return items
-      .sort((a, b) => {
-        // 首先按文件夹在前排序
-        if (a.isDirectory !== b.isDirectory) {
-          return a.isDirectory ? -1 : 1;
+    /**
+     * Factory method to create a provider instance for the first workspace folder.
+     * 
+     * @returns A new FolderViewProvider, or undefined if no workspace is open.
+     */
+    static create(): FolderViewProvider | undefined {
+        const folders = vscode.workspace.workspaceFolders;
+        if (!folders || folders.length === 0) {
+            vscode.window.showWarningMessage("No workspace folder is open.");
+            return;
         }
-        // 然后在各自组内按名称排序
-        return a.name.localeCompare(b.name);
-      })
-      .map(item => new FileItem(
-        vscode.Uri.file(item.path),
-        item.isDirectory
-          ? vscode.TreeItemCollapsibleState.Collapsed
-          : vscode.TreeItemCollapsibleState.None
-      ));
-  }
+        return new FolderViewProvider(folders[0].uri.fsPath);
+    }
+
+    /**
+     * Dispose the file system watcher.
+     */
+    dispose(): void {
+        this.fileSystemWatcher.dispose();
+    }
+
+    /**
+     * Refresh the tree view.
+     */
+    refresh(): void {
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
+    getTreeItem(element: FileItem): vscode.TreeItem {
+        return element;
+    }
+
+    /**
+     * Gets children of the given folder, or the root folder if none provided.
+     * 
+     * @param element - The parent folder node, or undefined for the root.
+     * @returns A list of FileItem instances.
+     */
+    getChildren(element?: FileItem): FileItem[] | Thenable<FileItem[]> {
+        if (!this.workspaceRoot) {
+            vscode.window.showInformationMessage("No workspace folder found");
+            return Promise.resolve([]);
+        }
+
+        const dirPath = element ? element.resourceUri.fsPath : this.workspaceRoot;
+        return Promise.resolve(this.getFiles(dirPath));
+    }
+
+    /**
+     * Reads the directory contents and returns file/folder nodes.
+     * 
+     * @param dir - The directory path to read.
+     * @returns An array of FileItem nodes.
+     */
+    private getFiles(dir: string): FileItem[] {
+        if (!fs.existsSync(dir)) return [];
+
+        const items = fs.readdirSync(dir)
+            .filter(file => !file.startsWith('.')) // Exclude hidden files
+            .map((file) => {
+                const filePath = path.join(dir, file);
+                const isDirectory = fs.statSync(filePath).isDirectory();
+                return {
+                    name: file,
+                    path: filePath,
+                    isDirectory: isDirectory
+                };
+            });
+
+        // Sort folders first, then files, both alphabetically
+        return items
+            .sort((a, b) => {
+                if (a.isDirectory !== b.isDirectory) {
+                    return a.isDirectory ? -1 : 1;
+                }
+                return a.name.localeCompare(b.name);
+            })
+            .map(item => new FileItem(
+                vscode.Uri.file(item.path),
+                item.isDirectory
+                    ? vscode.TreeItemCollapsibleState.Collapsed
+                    : vscode.TreeItemCollapsibleState.None
+            ));
+    }
 }
 
+/**
+ * Represents a file or folder node in the folder tree.
+ */
 export class FileItem extends vscode.TreeItem {
+    /**
+     * Creates a FileItem tree node.
+     * 
+     * @param resourceUri - The file or folder URI.
+     * @param collapsibleState - Determines if the node is expandable.
+     */
     constructor(
         public readonly resourceUri: vscode.Uri,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState
     ) {
         super(resourceUri, collapsibleState);
+
         this.tooltip = this.resourceUri.fsPath;
-        this.description = undefined;  // 设置为 undefined 来移除 description 的显示
+        this.description = undefined;
         this.contextValue = collapsibleState === vscode.TreeItemCollapsibleState.Collapsed ? "folder" : "file";
 
-        // 如果不是文件夹，添加点击打开文件的功能
+        // Open file on click if it's not a folder
         if (collapsibleState === vscode.TreeItemCollapsibleState.None) {
             this.command = {
                 command: 'vscode.open',
-                title: '打开文件',
+                title: 'Open File',
                 arguments: [this.resourceUri]
             };
         }
