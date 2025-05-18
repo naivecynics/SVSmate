@@ -72,22 +72,22 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     }
 
     getChildren(element?: TodoItem): vscode.ProviderResult<TodoItem[]> {
-        if (this._searchTerm) return this._filteredItems;
-        if (!element) return this.items;
+        if (this._searchTerm) {return this._filteredItems;}
+        if (!element) {return this.items;}
         return element.children;
     }
 
     getParent(element: TodoItem): vscode.ProviderResult<TodoItem> {
-        if (!element.id.includes("/")) return null;
+        if (!element.id.includes("/")) {return null;}
         const parentId = element.id.split("/").slice(0, -1).join("/");
         return this.findTaskById(parentId);
     }
 
     private findTaskById(id: string, items: TodoItem[] = this.items): TodoItem | undefined {
         for (const item of items) {
-            if (item.id === id) return item;
+            if (item.id === id) {return item;}
             const found = this.findTaskById(id, item.children);
-            if (found) return found;
+            if (found) {return found;}
         }
         return undefined;
     }
@@ -108,8 +108,8 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
     private findMatchingTasks(items: TodoItem[], term: string, results: TodoItem[]) {
         for (const item of items) {
-            if (item.label.toLowerCase().includes(term)) results.push(item);
-            if (item.children.length > 0) this.findMatchingTasks(item.children, term, results);
+            if (item.label.toLowerCase().includes(term)) {results.push(item);}
+            if (item.children.length > 0) {this.findMatchingTasks(item.children, term, results);}
         }
     }
 
@@ -156,7 +156,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
      */
     async addSubTask(parentTask: TodoItem) {
         const label = await vscode.window.showInputBox({ prompt: "Enter subtask name" });
-        if (!label) return;
+        if (!label) {return;}
 
         const subTask: TodoItem = {
             id: `${parentTask.id}/${Date.now()}`,
@@ -200,7 +200,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         if (task.id.includes("/")) {
             const parentId = task.id.split("/").slice(0, -1).join("/");
             const parent = this.findTaskById(parentId);
-            if (parent) parent.children = parent.children.filter(t => t.id !== task.id);
+            if (parent) {parent.children = parent.children.filter(t => t.id !== task.id);}
         } else {
             this.items = this.items.filter(t => t !== task);
         }
@@ -214,7 +214,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
      */
     toggleTaskCheckbox(task: TodoItem) {
         task.checked = !task.checked;
-        if (task.children.length > 0) this.updateChildrenCheckState(task.children, task.checked);
+        if (task.children.length > 0) {this.updateChildrenCheckState(task.children, task.checked);}
         this.updateParentCheckState(task);
         this.saveToDisk();
         this._onDidChangeTreeData.fire(undefined);
@@ -223,12 +223,12 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     private updateChildrenCheckState(children: TodoItem[], checked: boolean) {
         for (const child of children) {
             child.checked = checked;
-            if (child.children.length > 0) this.updateChildrenCheckState(child.children, checked);
+            if (child.children.length > 0) {this.updateChildrenCheckState(child.children, checked);}
         }
     }
 
     private updateParentCheckState(task: TodoItem) {
-        if (!task.id.includes("/")) return;
+        if (!task.id.includes("/")) {return;}
         const parentId = task.id.split("/").slice(0, -1).join("/");
         const parent = this.findTaskById(parentId);
         if (parent) {
@@ -248,7 +248,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     private sortItems(items: TodoItem[], key: "endTime" | "category") {
         items.sort((a, b) => a[key].localeCompare(b[key]));
         for (const item of items) {
-            if (item.children.length > 0) this.sortItems(item.children, key);
+            if (item.children.length > 0) {this.sortItems(item.children, key);}
         }
     }
 
@@ -334,7 +334,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
             if (filePath.startsWith("http")) {
                 const res = await fetch(filePath);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                if (!res.ok) {throw new Error(`HTTP ${res.status}`);}
                 icsContent = await res.text();
             } else {
                 if (!fs.existsSync(filePath)) {

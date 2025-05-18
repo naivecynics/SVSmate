@@ -21,3 +21,6 @@ bb-crawler/cache
 
 # personal bb vault
 bb-crawler/bb-vault
+
+# vscode-test
+testWorkspace/

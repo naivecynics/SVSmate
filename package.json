@@ -370,7 +370,7 @@
         ]
     },
     "scripts": {
-        "compile": "rm -rf out && tsc -p ./",
+        "compile": "npx rimraf out && tsc -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src",
         "test": "vscode-test",
@@ -393,6 +393,7 @@
         "node-fetch": "^2.7.0",
         "node-ical": "^0.20.1",
         "openai": "^4.87.3",
+        "pdf": "^0.1.0",
         "pdf-lib": "^1.17.1",
         "pdf-parse": "^1.1.1",
         "pdfjs-dist": "^5.2.133",
@@ -406,6 +407,7 @@
         "@types/node-fetch": "^2.6.12",
         "@types/pdfjs-dist": "^2.10.377",
         "@types/vscode": "^1.100.0",
+        "@types/xml2js": "^0.4.14",
         "@typescript-eslint/eslint-plugin": "^8.25.0",
         "@typescript-eslint/parser": "^8.25.0",
         "@vscode/test-cli": "^0.0.10",
@@ -413,8 +415,8 @@
         "eslint": "^9.21.0",
         "mocha": "^11.2.2",
         "ts-complex": "^1.0.0",
-        "typescript": "^5.7.3",
         "typedoc": "^0.28.4",
+        "typescript": "^5.7.3",
         "vscode": "^1.1.37"
     }
 }

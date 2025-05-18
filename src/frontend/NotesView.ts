@@ -62,7 +62,7 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
         }
 
         const folderPath = element.resourceUri.fsPath;
-        if (!fs.existsSync(folderPath)) return [];
+        if (!fs.existsSync(folderPath)) {return [];}
 
         const entries = await fs.promises.readdir(folderPath);
 
@@ -89,7 +89,7 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
             placeHolder: 'e.g., Study Notes'
         });
 
-        if (!name) return;
+        if (!name) {return;}
 
         const fileName = name.endsWith('.md') ? name : name + '.md';
         const fullPath = path.join(folderPath, fileName);
