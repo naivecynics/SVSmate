@@ -46,75 +46,76 @@
             {
                 "command": "svsmate.BB-downloadToWorkspace",
                 "title": "SVSmate: Download File to Workspace",
-                "icon": {
-                    "id": "cloud-download"
-                }
+                "icon": "$(cloud-download)"
             },
             {
                 "command": "svsmate.BB-downloadToAiSpace",
                 "title": "SVSmate: Download File to AI Suggested Directory",
-                "icon": {
-                    "id": "symbol-file"
-                }
+                "icon": "$(symbol-file)"
+            },
+            {
+                "command": "todoListView.addItem",
+                "title": "SVSmate: Add Task",
+                "icon": "$(add)"
             },
             {
                 "command": "todoListView.editTask",
-                "title": "Edit Task",
+                "title": "SVSmate: Edit Task",
                 "icon": "$(edit)"
             },
             {
                 "command": "todoListView.deleteTask",
-                "title": "Delete Task",
+                "title": "SVSmate: Delete Task",
                 "icon": "$(trash)"
             },
             {
                 "command": "todoListView.toggleTaskCheckbox",
-                "title": "Toggle Task Checkbox",
+                "title": "SVSmate: Toggle Task Checkbox",
                 "icon": "$(check)"
             },
             {
                 "command": "todoListView.sortByEndTime",
-                "title": "Sort By DDL",
+                "title": "SVSmate: Sort by DDL",
                 "icon": "$(sort-precedence)"
             },
             {
                 "command": "todoListView.sortByKinds",
-                "title": "Sort By Kinds",
+                "title": "SVSmate: Sort by Kinds",
                 "icon": "$(group-by-ref-type)"
             },
             {
                 "command": "todoListView.searchTasks",
-                "title": "Search Tasks",
+                "title": "SVSmate: Search Tasks",
                 "icon": "$(search)"
             },
             {
                 "command": "todoListView.clearSearch",
-                "title": "Clear Search",
+                "title": "SVSmate: Clear Search",
                 "icon": "$(clear-all)"
             },
             {
                 "command": "todoListView.loadICSFile",
-                "title": "Load From .ics File",
+                "title": "SVSmate: Load from .ics File",
                 "icon": "$(file-submodule)"
             },
             {
                 "command": "todoListView.addSubTask",
-                "title": "Add SubTask",
+                "title": "SVSmate: Add Subtask",
                 "icon": "$(add)"
             },
             {
                 "command": "todoList.generateAISubtasks",
-                "title": "Generate AI Subtasks",
+                "title": "SVSmate: Generate AI Subtasks",
                 "icon": "$(sparkle)"
             },
             {
                 "command": "notesView.createNote",
-                "title": "Create Note",
+                "title": "SVSmate: Create Note",
                 "icon": "$(note)"
             },
             {
                 "command": "notesView.deleteNote",
-                "title": "Delete Note",
+                "title": "SVSmate: Delete Note",
                 "icon": "$(trash)"
             }
         ],
