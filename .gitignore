@@ -6,9 +6,6 @@ node_modules/
 *.vsix
 package-lock.json
 
-# dev docs target
-docs/dev/
-
 # mac
 .DS_Store
 **/.DS_Store
