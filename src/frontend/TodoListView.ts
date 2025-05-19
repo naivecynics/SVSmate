@@ -51,10 +51,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
         const item = new vscode.TreeItem(element.label, state);
 
-        item.iconPath = {
-            light: vscode.Uri.file(path.join(__filename, '..', '..', 'resources', element.checked ? 'check-light.svg' : 'circle-outline-light.svg')),
-            dark: vscode.Uri.file(path.join(__filename, '..', '..', 'resources', element.checked ? 'check-dark.svg' : 'circle-outline-dark.svg'))
-        };
+        item.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");
 
         item.tooltip = `Task: ${element.label}\nCategory: ${element.category}\nDue: ${element.endTime}` +
             (hasChildren ? `\nSubtasks: ${element.children.length}` : '');
