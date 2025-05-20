@@ -3,6 +3,10 @@
     "displayName": "SVSmate",
     "description": "SUSTech+VSCode+Mate",
     "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/naivecynics/SVSmate.git"
+    },
     "engines": {
         "vscode": "^1.98.0"
     },
