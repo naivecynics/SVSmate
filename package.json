@@ -125,6 +125,10 @@
                 "command": "notesView.deleteNote",
                 "title": "SVSmate: Delete Note",
                 "icon": "$(trash)"
+            },
+            {
+                "command": "todoListView.generateCodeFromPdf",
+                "title": "Generate Code from PDF"
             }
         ],
         "chatParticipants": [
@@ -268,6 +272,12 @@
                     "when": "view == bbMaterialView",
                     "group": "navigation",
                     "title": "Update Term"
+                },
+                {
+                    "command": "todoListView.generateCodeFromPdf",
+                    "when": "view == todoListView",
+                    "group": "navigation",
+                    "title": "Generate Code from PDF"
                 }
             ]
         }
