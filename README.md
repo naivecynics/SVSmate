@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/naivecynics/SVSmate">
-    <img src="src/icon/telescope_transparent.png" alt="Logo" width="100" height="100">
+    <img src="media/telescope.png" alt="Logo" width="100" height="100">
   </a>
 
   <h1 align="center">SVSmate</h1>
@@ -10,9 +10,9 @@
     The Ultimate VS Code Extension for SUSTechers
     <br />
     <br />
-    <img src="src/icon/sustech.png" alt="SUSTech" width="60" style="margin-right: 40px;">
-    <img src="src/icon/separator.png" alt="dots" width="60" style="margin-right: 40px;">
-    <img src="src/icon/vscode.png" alt="VS Code" width="60" style="margin-left: 40px;">
+    <img src="media/sustech.png" alt="SUSTech" width="60" style="margin-right: 40px;">
+    <img src="media/separator.png" alt="dots" width="60" style="margin-right: 40px;">
+    <img src="/vscode.png" alt="VS Code" width="60" style="margin-left: 40px;">
     <br />
     <!-- <a href="https://github.com/naivecynics/SVSmate/issues/new?labels=enhancement&template=feature-request---.md"><strong>Request Feature »</strong></a> -->
     <!-- &middot; -->
@@ -46,6 +46,14 @@ SVSmate can be installed via the VS Code [Marketplace](https://marketplace.visua
 
 
 ## Usage
+
+### Blackboard Crawler
+
+> [!TIP]
+> Please follow the following setting in your personal [Blackboard](https://bb.sustech.edu.cn/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_1_1&forwardUrl=edit_module/_3_1/bbcourseorg?cmd%3Dedit&recallUrl=/webapps/portal/execute/tabs/tabAction?tab_tab_group_id%3D_1_1x) to make sure this function work.
+> ![bb-setting-1](./media/bb-setting-1.png)
+> ![bb-setting-2](./media/bb-setting-2.png)
+
 
 ## Documentation
 

@@ -1,11 +1,15 @@
 {
     "name": "svsmate",
     "displayName": "SVSmate",
-    "description": "SUSTech+VSCode+Mate",
+    "description": "The Ultimate VS Code Extension for SUSTechers!",
     "version": "0.0.1",
     "repository": {
         "type": "git",
         "url": "https://github.com/naivecynics/SVSmate.git"
+    },
+    "homepage": "https://github.com/naivecynics/SVSmate",
+    "bugs": {
+        "url": "https://github.com/naivecynics/SVSmate/issues"
     },
     "engines": {
         "vscode": "^1.98.0"
@@ -13,8 +17,8 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
-    "main": "./out/extension.js",
+    "activationEvents": ["*"],
+    "main": "./dist/extension",
     "contributes": {
         "configuration": {
             "title": "svsmate",
@@ -121,10 +125,6 @@
                 "command": "notesView.deleteNote",
                 "title": "SVSmate: Delete Note",
                 "icon": "$(trash)"
-            },
-            {
-                "command": "todoListView.generateCodeFromPdf",
-                "title": "SVSmate: Generate Code from PDF"
             }
         ],
         "chatParticipants": [
@@ -148,7 +148,7 @@
                 {
                     "id": "SVSmate",
                     "title": "SVSmate",
-                    "icon": "src/icon/telescope.svg"
+                    "icon": "media/telescope.png"
                 }
             ]
         },
@@ -372,11 +372,17 @@
         ]
     },
     "scripts": {
-        "compile": "npx rimraf out && tsc -p ./",
-        "pretest": "npm run compile && npm run lint",
         "lint": "eslint src",
+        "pretest": "npm run compile && npm run lint",
         "test": "vscode-test",
-        "docs": "typedoc"
+        "docs": "typedoc",
+        "compile": "npm run check-types && node esbuild.js",
+        "check-types": "tsc --noEmit",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "vscode:prepublish": "npm run package",
+        "package": "npm run check-types && node esbuild.js --production"
     },
     "dependencies": {
         "@types/fs-extra": "^11.0.4",
@@ -414,8 +420,10 @@
         "@typescript-eslint/parser": "^8.25.0",
         "@vscode/test-cli": "^0.0.10",
         "@vscode/test-electron": "^2.5.2",
+        "esbuild": "^0.25.4",
         "eslint": "^9.21.0",
         "mocha": "^11.2.2",
+        "npm-run-all": "^4.1.5",
         "ts-complex": "^1.0.0",
         "typedoc": "^0.28.4",
         "typescript": "^5.7.3"

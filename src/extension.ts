@@ -13,15 +13,15 @@ import { CopilotViewProvider } from "./frontend/CopilotView";
 import { NotesViewProvider } from "./frontend/NotesView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 
-// import { outputChannel } from './utils/OutputChannel';
+import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
-import { todo } from 'node:test';
 
 
 export async function activate(context: vscode.ExtensionContext) {
 
   PathManager.initPathManager(context);
 
+  outputChannel.info('SVSmate Main!', 'SVSmate activated!');
   console.log('SVSmate activated!');
 
   // ------------------------------------------------
@@ -72,7 +72,6 @@ export async function activate(context: vscode.ExtensionContext) {
       await downloadToWorkspace(context, item, true);
     }),
 
-    // TODO: Add a init update one term commmand on view/title
   );
 
 
@@ -164,9 +163,9 @@ export async function activate(context: vscode.ExtensionContext) {
       await loadICSFile(todoListViewProvider);
     }),
 
-    vscode.commands.registerCommand('todoListView.generateCodeFromPdf', async () => {
-      await generateCodeFromPdf();
-    })
+    // vscode.commands.registerCommand('todoListView.generateCodeFromPdf', async () => {
+    //   await generateCodeFromPdf();
+    // })
   );
 }
 
