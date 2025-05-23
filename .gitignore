@@ -10,14 +10,8 @@ package-lock.json
 .DS_Store
 **/.DS_Store
 
-# private info
-login.yaml
-
-# debug cache
-bb-crawler/cache
-
-# personal bb vault
-bb-crawler/bb-vault
-
 # vscode-test
 testWorkspace/
+
+# doc
+docs/

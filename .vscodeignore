@@ -17,6 +17,7 @@ src/**
 !media/telescope.png
 
 .gitignore
+.github
 tsconfig.json
 typedoc.json
 .vscode-test.js
