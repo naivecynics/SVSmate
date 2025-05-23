@@ -32,4 +32,4 @@ import * as vscode from 'vscode';
 //     // Add assertions to verify the expected behavior
 //     assert.ok(true, 'Command executed successfully with mock file path');
 //   });
-// });
+    // });

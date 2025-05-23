@@ -225,7 +225,7 @@ export class BlackboardCrawler {
         }
 
         loginSuccess = await this.login(context);
-        if (!loginSuccess) { vscode.window.showErrorMessage('Failed to login to Blackboard after retry.'); }
+        if (!loginSuccess) { vscode.window.showErrorMessage('Failed to login to Blackboard after retry. Check your VPN status.'); }
 
         return loginSuccess;
     }

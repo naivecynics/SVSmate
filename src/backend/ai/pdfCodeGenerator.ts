@@ -1,15 +1,10 @@
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
 import { outputChannel } from '../../utils/OutputChannel';
-import { extractTextFromPdfRange } from '../../utils/pdfUtils';
-import { getWorkspaceDir } from '../../utils/pathManager';
 import { ChatBot } from './ChatBot';
 
 /**
  * Response from the AI code generation service
  */
-interface AICodeResponse {
+export interface AICodeResponse {
   code: string;       // The generated code snippet
   language: string;   // Programming language (e.g., "typescript", "python", "java")
   filename: string;   // Suggested filename with extension
@@ -24,7 +19,7 @@ interface AICodeResponse {
  * @param preferredLanguage - Optional preferred programming language
  * @returns A promise resolving to the generated code response
  */
-async function generateCodeFromText(
+export async function generateCodeFromText(
   text: string, 
   preferredLanguage?: string
 ): Promise<AICodeResponse> {
@@ -103,176 +98,5 @@ async function generateCodeFromText(
       code: `// Error generating code from PDF content\n// ${error}\n\n// PDF Content sample:\n/*\n${text.substring(0, 200)}...\n*/`,
       description: "Error occurred during code generation"
     };
-  }
-}
-
-/**
- * Creates a file with the generated code in the workspace
- */
-async function createCodeFile(response: AICodeResponse): Promise<string> {
-  try {
-    // Get workspace directory
-    const workspaceDir = getWorkspaceDir();
-
-    // Create a directory for generated code if it doesn't exist
-    const generatedCodeDir = path.join(workspaceDir, 'generated-code');
-    if (!fs.existsSync(generatedCodeDir)) {
-      fs.mkdirSync(generatedCodeDir, { recursive: true });
-    }
-
-    // Create the file path
-    const filePath = path.join(generatedCodeDir, response.filename);
-
-    // Write the code to the file
-    fs.writeFileSync(filePath, response.code);
-
-    outputChannel.info('PDF Code Generator', `Created file: ${filePath}`);
-
-    return filePath;
-  } catch (error) {
-    outputChannel.error('PDF Code Generator', `Error creating code file: ${error}`);
-    throw error;
-  }
-}
-
-/**
- * Main function that handles the entire PDF to code process
- * 
- * @param pdfPath - The path to the PDF file
- * @param startPage - The starting page number (zero-based)
- * @param endPage - The ending page number (zero-based)
- * @param preferredLanguage - Optional preferred programming language
- * @returns A promise resolving to the path of the generated code file
- */
-export async function processPdfToCode(
-  pdfPath: string, 
-  startPage: number, 
-  endPage: number,
-  preferredLanguage?: string
-): Promise<string> {
-  try {
-    // 1. Extract text from PDF
-    outputChannel.info('PDF Code Generator', `Extracting text from PDF pages ${startPage + 1}-${endPage + 1}`);
-    const pdfText = await extractTextFromPdfRange(pdfPath, startPage, endPage);
-    // vscode show pdf text
-    vscode.window.showInformationMessage(`Extracted text from PDF: ${pdfText.substring(0, 100)}...`);
-    const aiResponse = await generateCodeFromText(pdfText, preferredLanguage);
-
-    // 3. Create the code file
-    const filePath = await createCodeFile(aiResponse);
-
-    // 4. Show success message
-    vscode.window.showInformationMessage(
-      `Successfully generated ${aiResponse.language} code from PDF: ${aiResponse.description}`,
-      'Open File'
-    ).then(selection => {
-      if (selection === 'Open File') {
-        vscode.workspace.openTextDocument(filePath).then(doc => {
-          vscode.window.showTextDocument(doc);
-        });
-      }
-    });
-
-    return filePath;
-  } catch (error) {
-    outputChannel.error('PDF Code Generator', `Error in PDF code generation process: ${error}`);
-    vscode.window.showErrorMessage(`Error generating code from PDF: ${error}`);
-    throw error;
-  }
-}
-
-/**
- * Command handler for the PDF code generation feature
- * This function prompts the user for a PDF file path and page range,
- * then generates code based on the PDF content
- */
-export async function generateCodeFromPdf(): Promise<void> {
-  try {
-    // 1. Prompt user to select a PDF file
-    const pdfUris = await vscode.window.showOpenDialog({
-      canSelectMany: false,
-      filters: { 'PDF Files': ['pdf'] },
-      title: 'Select a PDF File for Code Generation'
-    });
-
-    if (!pdfUris || pdfUris.length === 0) {
-      return; // User cancelled
-    }
-
-    const pdfPath = pdfUris[0].fsPath;
-
-    // Get PDF information to validate page numbers
-    const pdfBytes = fs.readFileSync(pdfPath);
-    const PDFDocument = (await import('pdf-lib')).PDFDocument;
-    const pdfDoc = await PDFDocument.load(pdfBytes);
-    const pageCount = pdfDoc.getPageCount();
-
-    // 2. Prompt for start page with validation
-    const startPageInput = await vscode.window.showInputBox({
-      prompt: `Enter start page number (0-${pageCount - 1})`,
-      placeHolder: '0',
-      validateInput: (value) => {
-        const num = parseInt(value);
-        if (isNaN(num) || num < 0 || num >= pageCount) {
-          return `Please enter a valid page number between 0 and ${pageCount - 1}`;
-        }
-        return null;
-      }
-    });
-
-    if (startPageInput === undefined) {
-      return; // User cancelled
-    }
-
-    // 3. Prompt for end page with validation
-    const startPage = parseInt(startPageInput);
-    const endPageInput = await vscode.window.showInputBox({
-      prompt: `Enter end page number (${startPage}-${pageCount - 1})`,
-      placeHolder: `${Math.min(startPage + 5, pageCount - 1)}`,
-      validateInput: (value) => {
-        const num = parseInt(value);
-        if (isNaN(num) || num < startPage || num >= pageCount) {
-          return `Please enter a valid page number between ${startPage} and ${pageCount - 1}`;
-        }
-        return null;
-      }
-    });
-
-    if (endPageInput === undefined) {
-      return; // User cancelled
-    }    // 4. Parse page numbers
-    const endPage = parseInt(endPageInput);
-
-    // 5. Prompt for preferred programming language (optional)
-    const languageOptions = ['TypeScript', 'JavaScript', 'Python', 'Java', 'C#', 'C++', 'Go', 'Rust', 'Other'];
-    const preferredLanguage = await vscode.window.showQuickPick(
-      [...languageOptions, '未指定'],
-      { 
-        placeHolder: '选择目标编程语言 (可选)', 
-        canPickMany: false,
-        title: '首选编程语言'
-      }
-    );
-    
-    // If user cancelled or selected "未指定", preferredLanguage will be undefined or "未指定"
-    const languagePref = preferredLanguage && preferredLanguage !== '未指定' ? preferredLanguage : undefined;
-
-    // 6. Show progress indicator
-    await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      title: 'Generating Code from PDF',
-      cancellable: false
-    }, async (progress) => {
-      progress.report({ message: 'Extracting text from PDF...' });
-
-      // Process the PDF and generate code with preferred language
-      await processPdfToCode(pdfPath, startPage, endPage, languagePref);
-
-      return true;
-    });
-
-  } catch (error) {
-    outputChannel.error('PDF Code Generator', `Error in command: ${error}`);
-    vscode.window.showErrorMessage(`Error generating code: ${error}`);
   }
 }

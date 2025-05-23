@@ -12,5 +12,4 @@ module.exports = defineConfig([
       timeout: 20000
     }
   }
-  // you can specify additional test configurations, too
 ]);
