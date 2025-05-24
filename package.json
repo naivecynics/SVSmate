@@ -165,6 +165,38 @@
           "dark": "./src/icons/delete-dark.svg",
           "light": "./src/icons/delete-light.svg"
         }
+      },
+      {
+        "command": "teamCollab.startServer",
+        "title": "Start Collaboration Server"
+      },
+      {
+        "command": "teamCollab.stopServer",
+        "title": "Stop Collaboration Server"
+      },
+      {
+        "command": "teamCollab.connectToServer",
+        "title": "Connect to Collaboration Server"
+      },
+      {
+        "command": "teamCollab.disconnect",
+        "title": "Disconnect from Collaboration Server"
+      },
+      {
+        "command": "teamCollab.openChat",
+        "title": "Open Collaboration Chat"
+      },
+      {
+        "command": "teamCollab.shareCurrentFile",
+        "title": "Share Current File"
+      },
+      {
+        "command": "teamCollab.unshareFile",
+        "title": "Unshare File"
+      },
+      {
+        "command": "teamCollab.refreshSharedFiles",
+        "title": "Refresh Shared Files"
       }
     ],
     "chatParticipants": [

@@ -45,9 +45,9 @@ const TodoListView_1 = require("./frontend/TodoListView");
 const CopilotView_1 = require("./frontend/CopilotView");
 const NotesView_1 = require("./frontend/NotesView");
 const BBMaterialView_1 = require("./frontend/BBMaterialView");
-const ConnectionManager_1 = require("./backend/collaboration/ConnectionManager");
-const FireWallManager_1 = require("./backend/collaboration/FireWallManager");
-const SharedFilesProvider_1 = require("./frontend/SharedFilesProvider");
+const CollaborationManager_1 = require("./frontend/CollaborationManager");
+const SharedFilesView_1 = require("./frontend/SharedFilesView");
+const ChatView_1 = require("./frontend/ChatView");
 // import { outputChannel } from './utils/OutputChannel';
 const PathManager = __importStar(require("./utils/pathManager"));
 async function activate(context) {
@@ -80,55 +80,22 @@ async function activate(context) {
     }));
     // endregion
     // region collaboration
-    const manager = new ConnectionManager_1.ConnectionManager();
-    // Register SharedFilesProvider
-    const sharedFilesProvider = SharedFilesProvider_1.SharedFilesProvider.create(manager);
-    const sharedFilesView = vscode.window.registerTreeDataProvider('sharedFilesView', sharedFilesProvider);
-    // Register drop functionality for shared files view 
-    const registerDropProvider = vscode.window.createTreeView('sharedFilesView', {
-        treeDataProvider: sharedFilesProvider,
-        dragAndDropController: {
-            dropMimeTypes: ['text/uri-list'],
-            dragMimeTypes: [], // Add dragMimeTypes array (empty since we don't need drag functionality)
-            handleDrop: async (target, dataTransfer) => {
-                await sharedFilesProvider.handleDrop(dataTransfer);
-                // Don't return a value, just let it return void
-            }
+    // Initialize the collaboration manager
+    const collaborationManager = (0, CollaborationManager_1.initializeCollaborationManager)(context);
+    // Register the shared files view
+    SharedFilesView_1.SharedFilesView.getInstance(context);
+    // Register the chat view
+    context.subscriptions.push(vscode.commands.registerCommand('teamCollab.openChat', () => {
+        ChatView_1.ChatView.getInstance(context).show();
+    }));
+    // Handle extension deactivation
+    context.subscriptions.push({
+        dispose: () => {
+            collaborationManager.dispose();
         }
     });
-    context.subscriptions.push(registerDropProvider);
-    // Register commands for shared files
-    context.subscriptions.push(vscode.commands.registerCommand('svsmate.removeSharedFile', (filePath) => {
-        sharedFilesProvider.removeFile(filePath);
-    }));
-    FireWallManager_1.FirewallManager.autoConfigure().catch(console.error);
-    // 状态栏显示IP
-    const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
-    statusBar.text = `Local IP: ${manager.getLocalIp()}`;
-    statusBar.show();
-    // 注册命令
-    context.subscriptions.push(vscode.commands.registerCommand('svsmate.startServer', () => {
-        manager.startTcpServer();
-        manager.startUdpServer();
-    }), vscode.commands.registerCommand('svsmate.connect', async () => {
-        const ip = await vscode.window.showInputBox({ prompt: 'Enter target IP' });
-        if (ip) {
-            manager.connectToServer(ip);
-        }
-    }), vscode.commands.registerCommand('svsmate.sendMessage', async () => {
-        const message = await vscode.window.showInputBox({ prompt: 'Enter message' });
-        if (message) {
-            manager.sendMessage(message);
-        }
-    }), vscode.commands.registerCommand('svsmate.disconnect', () => manager.disconnect()));
-    // 自动发送光标位置
-    context.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(e => {
-        if (e.textEditor && e.selections.length > 0) {
-            manager.sendCursorPosition(e.selections[0].active, e.textEditor.document.uri.fsPath);
-        }
-    }));
-    // Connect shared files provider to connection manager
-    manager.setSharedFilesProvider(sharedFilesProvider);
+    // Log activation
+    // outputChannel.info('Extension Activated', 'Team Collaboration extension is now active.');
     // endregion
     // region note
     const notesViewProvider = await NotesView_1.NotesViewProvider.create();
@@ -189,5 +156,10 @@ async function activate(context) {
     }));
     // endregion
 }
-function deactivate() { }
+function deactivate() {
+    const collaborationManager = (0, CollaborationManager_1.getCollaborationManager)();
+    if (collaborationManager) {
+        collaborationManager.dispose();
+    }
+}
 //# sourceMappingURL=extension.js.map
