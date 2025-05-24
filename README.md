@@ -1,3 +1,4 @@
+<a name="readme-top"></a></a>
 <br />
 <div align="center">
   <a href="https://github.com/naivecynics/SVSmate">
@@ -19,7 +20,7 @@
     &middot;
     <a href="https://github.com/naivecynics/SVSmate/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
-    <a href="https://github.com/naivecynics/SVSmate/">中文文档 »</a>
+    <a href="https://github.com/naivecynics/SVSmate/zh">中文文档 »</a>
   </p>
 </div>
 
@@ -40,13 +41,13 @@ Our goal is to develop a powerful and user-friendly **VS Code extension** tailor
 
 - 🔗 Seamlessly connect VS Code with your personal **Blackboard** data  
 - 📅 Automatically **sync your schedule and assignments**, and manage them with ease  
-- 📄 **Extract code snippets** from PDF course materials  
-- 🤝 **Collaborate** on files with teammates in real time  
 - 🤖 Handle tasks more efficiently with **AI-powered assistance**
+- 🤝 **Collaborate** on files with teammates in real time  🚧 *In Development*
+- 📄 **Extract code snippets** from PDF course materials  🚧 *In Development*
 
 ## 💾 Installation
 
-SVSmate can be installed via the VS Code [Marketplace »](https://marketplace.visualstudio.com/items?itemName=vscodevim.vim).
+SVSmate can be installed via the VS Code [Marketplace »](https://marketplace.visualstudio.com/items?itemName=naivecynics.svsmate)
 
 Or download `.vsix` manually in [Release »](https://github.com/naivecynics/SVSmate/releases).
 
@@ -94,11 +95,11 @@ Unlock the power of automation and AI to supercharge your study experience!
 
 ### 📄 Code Extractor
 
-todo
+🚧 *In Development*
 
 ### 🤝 Collaborate Editing
 
-todo
+🚧 *In Development*
 
 ## 📖 Documentation
 
@@ -114,16 +115,16 @@ Don't forget to give our project a ⭐️! Thanks again!
 
 1. Fork the Project
 2. Create your Feature Branch 
-```git checkout -b feature/AmazingFeature```
 3. Commit your Changes
-```git commit -m 'feat: AmazingFeature'```
 4. Push to the Branch
-```git push origin feature/AmazingFeature```
 5. Open a Pull Request
 
-### TODO & Wanting
+### ✅ TODO
+- [ ] Add last update time in BB vault
 
-- [-] Add last update time in BB vault
+### 💡 Planned Features
+- Real-time collaboration (in development)
+- PDF snippet extractor (in development)
 
 ### 👥 Contributors:
 

@@ -13,7 +13,7 @@ async function main() {
     sourcesContent: false,
     platform: 'node',
     outfile: 'dist/extension.js',
-    external: ['vscode', 'pdf-lib', 'pdf-parse'],
+    external: ['vscode', 'fs', 'path', 'os', 'crypto'],
     logLevel: 'warning',
     plugins: [
       /* add to the end of plugins array */
