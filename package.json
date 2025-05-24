@@ -3,6 +3,7 @@
     "displayName": "SVSmate",
     "description": "The Ultimate VS Code Extension for SUSTechers!",
     "publisher": "naivecynics",
+    "icon": "media/telescope.png",
     "version": "1.0.0",
     "repository": {
         "type": "git",

@@ -1,8 +1,7 @@
-<a name="readme-top"></a></a>
 <br />
 <div align="center">
   <a href="https://github.com/naivecynics/SVSmate">
-    <img src="media/telescope.png" alt="Logo" width="100" height="100">
+    <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/telescope.png" alt="Logo" width="100" height="100">
   </a>
 
   <h1 align="center">SVSmate</h1>
@@ -11,18 +10,19 @@
     The Ultimate VS Code Extension for SUSTechers
     <br />
     <div style="text-align: center;">
-        <img src="media/sustech.png" alt="SUSTech" width="60" style="margin: 0 40px;" />
-        <img src="media/separator.png" alt="separator" width="60" />
-        <img src="media/vscode.png" alt="VS Code" width="60" style="margin: 0 40px;" />
+        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/sustech.png" alt="SUSTech" width="60" style="margin: 0 40px;" />
+        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/separator.png" alt="separator" width="60" />
+        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/vscode.png" alt="VS Code" width="60" style="margin: 0 40px;" />
     </div>
     <br />
     <a href="https://github.com/naivecynics/SVSmate/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
     &middot;
     <a href="https://github.com/naivecynics/SVSmate/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
-    <a href="https://github.com/naivecynics/SVSmate/zh">中文文档 »</a>
+    <a href="https://github.com/naivecynics/SVSmate">中文文档 »</a>
   </p>
 </div>
+
 
 
 [![Version](https://img.shields.io/visual-studio-marketplace/v/naivecynics.svsmate?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=naivecynics.svsmate)
@@ -120,7 +120,9 @@ Don't forget to give our project a ⭐️! Thanks again!
 5. Open a Pull Request
 
 ### ✅ TODO
+
 - [ ] Add last update time in BB vault
+- [ ] Add Chinese Document
 
 ### 💡 Planned Features
 - Real-time collaboration (in development)
@@ -135,6 +137,3 @@ Don't forget to give our project a ⭐️! Thanks again!
 ## 📜 License
 
 Distributed under the MIT License. See `LICENSE.txt` for more information.
-
-<p align="right"><a href="#readme-top">back to top</a></p>
-
