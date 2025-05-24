@@ -2,6 +2,7 @@
     "name": "svsmate",
     "displayName": "SVSmate",
     "description": "The Ultimate VS Code Extension for SUSTechers!",
+    "publisher": "naivecynics",
     "version": "1.0.0",
     "repository": {
         "type": "git",
