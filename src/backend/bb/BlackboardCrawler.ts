@@ -12,37 +12,70 @@ import { pipeline } from 'stream';
 import fetch from 'node-fetch';
 import xml2js from 'xml2js';
 
+// Type definition for Cheerio root object
 type CheerioRoot = ReturnType<typeof cheerio.load>;
 const pipelineAsync = promisify(pipeline);
 
-// Course interfaces
+/**
+ * Interface representing an announcement in a Blackboard course.
+ */
 interface Announcement {
+    /** The content/text of the announcement. */
     content: string;
+    /** The URL to the full announcement. */
     url: string;
 }
 
+/**
+ * Interface representing a Blackboard course.
+ */
 interface Course {
+    /** The name/title of the course. */
     name: string;
+    /** The URL to access the course. */
     url: string;
+    /** The latest announcement for the course. */
     announcement: Announcement;
 }
 
+/**
+ * Interface representing the structure of courses organized by academic terms.
+ * @example
+ * {
+ *   "23spring": [{name: "CS101", url: "...", announcement: {...}}],
+ *   "23fall": [{name: "CS102", url: "...", announcement: {...}}]
+ * }
+ */
 interface CoursesByTerm {
+    /** Key is term name (e.g., "23spring"), value is array of courses. */
     [termName: string]: Course[];
 }
 
-// Additional interfaces for course parsing
+/**
+ * Interface representing the structure of a course's sidebar menu.
+ * Contains categories (like "Content", "Assignments") and their associated links.
+ */
 interface SidebarCategory {
+    /** Key is category name, value is either an array of links or a direct URL string. */
     [categoryName: string]: Array<{ title: string; url: string }> | string;
 }
 
-// Enhanced interface for PageContent to match Python implementation
+/**
+ * Interface representing the content of a single page in Blackboard.
+ */
 interface PageContent {
+    /** The text content of the page. */
     text: string;
+    /** Array of files attached to the page. */
     files: Array<{ name: string; url: string }>;
 }
 
+/**
+ * Interface representing the structure of a Blackboard page.
+ * Maps section titles to their content.
+ */
 interface PageStructure {
+    /** Key is section title, value is the content of that section. */
     [sectionTitle: string]: PageContent;
 }
 
@@ -51,14 +84,23 @@ interface PageStructure {
  * Handles login, cookie management, and course retrieval.
  */
 export class BlackboardCrawler {
+    /** Base URL for Blackboard instance. */
     private baseUrl: string;
+    /** URL for login endpoint. */
     private loginUrl: string;
+    /** URL for CAS authentication. */
     private casUrl: string;
+    /** URL for course list. */
     private courseListUrl: string;
+    /** HTTP headers used in requests. */
     private headers: Record<string, string>;
+    /** Flag to enable debug output. */
     private debug: boolean;
+    /** Cookie jar for session management. */
     private cookieJar: CookieJar;
+    /** Fetch function with cookie support. */
     private fetch: typeof fetch;
+    /** Path to cookie storage file. */
     private cookieFilePath: string;
 
     /**
@@ -105,13 +147,8 @@ export class BlackboardCrawler {
      */
     private saveCookieJar(): void {
         try {
-            const cookieDir = path.dirname(this.cookieFilePath);
-            if (!fs.existsSync(cookieDir)) {
-                fs.mkdirSync(cookieDir, { recursive: true });
-            }
-
-            const data = this.cookieJar.serializeSync();
-            fs.writeFileSync(this.cookieFilePath, JSON.stringify(data));
+            const json = this.cookieJar.serializeSync();
+            fs.writeFileSync(this.cookieFilePath, JSON.stringify(json));
 
             if (this.debug) {
                 outputChannel.info('saveCookieJar', 'Cookies saved successfully');
@@ -569,11 +606,10 @@ export class BlackboardCrawler {
     }
 
     /**
-    * Get course sidebar menu structure.
-    * 
-    * @param url - The URL of the course page from which to extract the sidebar menu.
-    * @returns An object representing the sidebar structure, categorized by the sidebar menu.
-    */
+     * Get course sidebar menu structure.
+     * @param url - The URL of the course page from which to extract the sidebar menu.
+     * @returns An object representing the sidebar structure, categorized by the sidebar menu.
+     */
     public async getCourseSidebarMenu(url: string): Promise<SidebarCategory> {
         try {
             // Send request and follow redirects

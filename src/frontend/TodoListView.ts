@@ -9,29 +9,42 @@ import * as aiSubtask from "../backend/ai/createSubtasks";
  * Represents a task or subtask item in the to-do list.
  */
 export interface TodoItem {
-    id: string;             // Unique identifier
+    /** Unique identifier for the task */
+    id: string;
+    /** Display name of the task */
     label: string;
+    /** Due date in YYYY-MM-DD format */
     endTime: string;
+    /** Category or tag for the task */
     category: string;
+    /** Whether the task is completed */
     checked: boolean;
+    /** Array of subtasks */
     children: TodoItem[];
 }
 
 /**
  * Provides a tree view for managing hierarchical to-do tasks in VS Code.
+ * Implements TreeDataProvider to show tasks in a VS Code view and Disposable for cleanup.
  */
 export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, vscode.Disposable {
+    /** Event emitter for notifying VS Code about data changes */
     public _onDidChangeTreeData = new vscode.EventEmitter<TodoItem | undefined>();
+    /** Event that fires when the tree data changes */
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+    /** Array of root-level tasks */
     private items: TodoItem[] = [];
+    /** Current search term for filtering tasks */
     private _searchTerm = "";
+    /** Array of tasks matching the current search term */
     private _filteredItems: TodoItem[] = [];
 
     private constructor() {}
 
     /**
-     * Creates and initializes the provider.
+     * Creates and initializes a new TodoListViewProvider instance.
+     * @returns A Promise that resolves to the initialized provider
      */
     static async create(): Promise<TodoListViewProvider> {
         const provider = new TodoListViewProvider();
@@ -39,10 +52,18 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         return provider;
     }
 
+    /**
+     * Cleans up resources when the provider is disposed
+     */
     dispose(): void {
         this._onDidChangeTreeData.dispose();
     }
 
+    /**
+     * Gets the TreeItem representation of a TodoItem for display in VS Code
+     * @param element - The TodoItem to convert to a TreeItem
+     * @returns A TreeItem configured for display
+     */
     getTreeItem(element: TodoItem): vscode.TreeItem {
         const hasChildren = element.children && element.children.length > 0;
         const state = hasChildren
@@ -50,12 +71,9 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             : vscode.TreeItemCollapsibleState.None;
 
         const item = new vscode.TreeItem(element.label, state);
-
         item.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");
-
         item.tooltip = `Task: ${element.label}\nCategory: ${element.category}\nDue: ${element.endTime}` +
             (hasChildren ? `\nSubtasks: ${element.children.length}` : '');
-
         item.description = `[${element.category}] ❗${element.endTime}${hasChildren ? ` (${element.children.length})` : ''}`;
         item.resourceUri = vscode.Uri.parse(`date:${element.endTime}`);
         item.command = {
@@ -64,22 +82,37 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             arguments: [element]
         };
         item.contextValue = element.id.includes('/') ? 'subtask' : 'task';
-
         return item;
     }
 
+    /**
+     * Gets the child items for a given element or root items if no element is provided
+     * @param element - Optional parent element to get children for
+     * @returns Array of child TodoItems
+     */
     getChildren(element?: TodoItem): vscode.ProviderResult<TodoItem[]> {
-        if (this._searchTerm) {return this._filteredItems;}
-        if (!element) {return this.items;}
+        if (this._searchTerm) { return this._filteredItems; }
+        if (!element) { return this.items; }
         return element.children;
     }
 
+    /**
+     * Gets the parent item of a given element
+     * @param element - The element to find the parent for
+     * @returns The parent TodoItem or null if it's a root item
+     */
     getParent(element: TodoItem): vscode.ProviderResult<TodoItem> {
-        if (!element.id.includes("/")) {return null;}
+        if (!element.id.includes("/")) { return null; }
         const parentId = element.id.split("/").slice(0, -1).join("/");
         return this.findTaskById(parentId);
     }
 
+    /**
+     * Finds a task by its unique identifier.
+     * @param id - The unique identifier of the task to find.
+     * @param items - The list of tasks to search within. Defaults to the root-level tasks.
+     * @returns The TodoItem with the matching ID, or undefined if not found.
+     */
     private findTaskById(id: string, items: TodoItem[] = this.items): TodoItem | undefined {
         for (const item of items) {
             if (item.id === id) {return item;}
@@ -91,6 +124,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
     /**
      * Filters tasks by label (case-insensitive).
+     * @param term - The search term to filter tasks by
      */
     setSearchTerm(term: string) {
         this._searchTerm = term.trim().toLowerCase();
@@ -110,6 +144,9 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         }
     }
 
+    /**
+     * Clears the current search term and resets the task list.
+     */
     clearSearch() {
         this._searchTerm = "";
         this._filteredItems = [];
@@ -118,6 +155,9 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
     /**
      * Adds a new top-level task.
+     * @param label - The name of the task
+     * @param endTime - The due date of the task in YYYY-MM-DD format
+     * @param category - The category or tag of the task
      */
     addItem(label: string, endTime: string, category: string) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(endTime)) {
@@ -150,6 +190,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
     /**
      * Adds a subtask under a given task.
+     * @param parentTask - The parent task to add the subtask under
      */
     async addSubTask(parentTask: TodoItem) {
         const label = await vscode.window.showInputBox({ prompt: "Enter subtask name" });
@@ -171,6 +212,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
     /**
      * Allows editing of a task's label, category, and due date.
+     * @param task - The task to edit
      */
     async editTask(task: TodoItem) {
         const newLabel = await vscode.window.showInputBox({ prompt: "Edit task name", value: task.label });
@@ -192,6 +234,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
     /**
      * Deletes a task or subtask.
+     * @param task - The task to delete
      */
     deleteTask(task: TodoItem) {
         if (task.id.includes("/")) {
@@ -208,6 +251,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
     /**
      * Toggles completion state of a task and updates children and parent accordingly.
+     * @param task - The task to toggle
      */
     toggleTaskCheckbox(task: TodoItem) {
         task.checked = !task.checked;
@@ -236,6 +280,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
     /**
      * Sorts tasks recursively by end date or category.
+     * @param key - The key to sort tasks by (endTime or category)
      */
     sortBy(key: "endTime" | "category") {
         this.sortItems(this.items, key);
@@ -249,6 +294,9 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         }
     }
 
+    /**
+     * Loads tasks from disk and initializes the task list.
+     */
     private async loadFromDisk() {
         const filePath = PathManager.getFile("todoList");
         if (!fs.existsSync(filePath)) {
@@ -298,6 +346,9 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         return rootTasks;
     }
 
+    /**
+     * Saves the current task list to disk.
+     */
     saveToDisk() {
         const filePath = PathManager.getFile("todoList");
         const flattened = this.flattenTaskTree(this.items);
@@ -324,6 +375,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
     /**
      * Loads tasks from a .ics calendar file.
+     * @param filePath - The path to the .ics file to load tasks from
      */
     async loadICSFile(filePath: string) {
         try {

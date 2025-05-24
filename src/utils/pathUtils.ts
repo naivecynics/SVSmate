@@ -3,6 +3,9 @@ import * as path from 'path';
 
 /**
  * Replace illegal characters in a name to make it filesystem-safe.
+ *
+ * @param name - The raw name to sanitize.
+ * @returns A sanitized string safe for use as a filesystem name.
  */
 export function safe(name: string): string {
     // Replace illegal characters
@@ -25,13 +28,14 @@ export function safe(name: string): string {
     // Limit length (255 is usually safe)
     return sanitized.substring(0, 255);
 }
+
 /**
  * Combines a base path with a raw name (with unsafe characters),
  * sanitizes the name, ensures the directory exists, and returns the full path.
- * 
- * @param basePath Parent path
- * @param name Raw folder name (can contain unsafe characters)
- * @returns Full sanitized path (guaranteed to exist)
+ *
+ * @param basePath - The parent path.
+ * @param name - The raw folder name (can contain unsafe characters).
+ * @returns The full sanitized path (guaranteed to exist).
  */
 export function safeEnsureDir(basePath: string, name: string): string {
     const dirPath = path.join(basePath, safe(name));

@@ -7,11 +7,14 @@ import * as path from "path";
  * Automatically refreshes when files are created, deleted, or modified.
  */
 export class FolderViewProvider implements vscode.TreeDataProvider<FileItem>, vscode.Disposable {
+    /** Event emitter for notifying VS Code about data changes */
     private _onDidChangeTreeData: vscode.EventEmitter<FileItem | undefined> =
         new vscode.EventEmitter<FileItem | undefined>();
+    /** Event that fires when the tree data changes */
     readonly onDidChangeTreeData: vscode.Event<FileItem | undefined> =
         this._onDidChangeTreeData.event;
 
+    /** File system watcher for monitoring file changes */
     private fileSystemWatcher: vscode.FileSystemWatcher;
 
     /**
@@ -57,6 +60,12 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem>, vs
         this._onDidChangeTreeData.fire(undefined);
     }
 
+    /**
+     * Gets the TreeItem representation of a file or folder.
+     * 
+     * @param element - The FileItem to convert to a TreeItem.
+     * @returns A TreeItem configured for display.
+     */
     getTreeItem(element: FileItem): vscode.TreeItem {
         return element;
     }

@@ -8,16 +8,22 @@ import * as PathManager from '../utils/pathManager';
  * Watches `.json` files and course content folders for live updates.
  */
 export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMaterialItem>, vscode.Disposable {
+    /** Event emitter for notifying VS Code about data changes */
     private _onDidChangeTreeData = new vscode.EventEmitter<BBMaterialItem | undefined>();
+    /** Event that fires when the tree data changes */
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+    /** Root path for Blackboard materials */
     private rootPath: string = '';
+    /** File system watcher for monitoring changes */
     private watcher?: vscode.FileSystemWatcher;
 
     private constructor() {}
 
     /**
      * Factory method to create and initialize the view provider.
+     * Sets up file watchers for `.json` files and all other files/folders.
+     * @returns A new instance of BBMaterialViewProvider
      */
     public static create(): BBMaterialViewProvider {
         const provider = new BBMaterialViewProvider();
@@ -50,6 +56,11 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
         this._onDidChangeTreeData.fire(undefined);
     }
 
+    /**
+     * Gets the TreeItem representation of a Blackboard material item.
+     * @param element - The Blackboard material item to convert to a TreeItem
+     * @returns A TreeItem configured for display
+     */
     getTreeItem(element: BBMaterialItem): vscode.TreeItem {
         return element;
     }
@@ -59,6 +70,7 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
      * it expands its embedded metadata. Otherwise, loads the file/folder structure from disk.
      * 
      * @param element - Optional tree item (if undefined, returns root level).
+     * @returns A promise resolving to an array of child items
      */
     async getChildren(element?: BBMaterialItem): Promise<BBMaterialItem[]> {
         // Expand metadata if the item represents a parsed JSON node
@@ -163,6 +175,7 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
  * Can be a file, folder, or a virtual folder parsed from a JSON file.
  */
 export class BBMaterialItem extends vscode.TreeItem {
+    /** Metadata for virtual folders parsed from JSON */
     meta?: any[];
 
     constructor(

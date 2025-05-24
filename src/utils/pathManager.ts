@@ -21,6 +21,11 @@ const files: Record<FileKey, string> = {
   todoList: ''
 };
 
+/**
+ * Initializes the path manager with the given VS Code extension context.
+ * Sets up root paths and folder/file mappings based on configuration or defaults.
+ * @param context - The VS Code extension context.
+ */
 export function initPathManager(context: vscode.ExtensionContext) {
   let root = vscode.workspace.getConfiguration('svsmate').get('root') as string | undefined;
 
@@ -42,6 +47,12 @@ export function initPathManager(context: vscode.ExtensionContext) {
   files.todoList = path.join(folders.todo, 'tasks.json');
 }
 
+/**
+ * Retrieves the directory path for a given folder key.
+ * Ensures the directory exists by creating it if necessary.
+ * @param key - The key representing the folder.
+ * @returns The absolute path to the folder.
+ */
 export function getDir(key: FolderKey): string {
   const folderPath = folders[key];
   if (!fs.existsSync(folderPath)) {
@@ -50,6 +61,13 @@ export function getDir(key: FolderKey): string {
   return folderPath;
 }
 
+/**
+ * Retrieves the file path for a given file key.
+ * Ensures the file and its parent directory exist, creating them if necessary.
+ * @param key - The key representing the file.
+ * @param defaultContent - The default content to write if the file does not exist.
+ * @returns The absolute path to the file.
+ */
 export function getFile(key: FileKey, defaultContent: object = {}): string {
   const filePath = files[key];
   const dir = path.dirname(filePath);
@@ -62,10 +80,19 @@ export function getFile(key: FileKey, defaultContent: object = {}): string {
   return filePath;
 }
 
+/**
+ * Retrieves the root path set by the path manager.
+ * @returns The root path as a string.
+ */
 export function getRoot(): string {
   return rootPath;
 }
 
+/**
+ * Retrieves the path of the first workspace folder.
+ * Throws an error if no workspace folder is open.
+ * @returns The absolute path to the workspace folder.
+ */
 export function getWorkspaceDir(): string {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {

@@ -8,13 +8,22 @@ import { getDir } from '../utils/pathManager';
  * Notes are grouped under predefined folders: crawled course notes and personal notes.
  */
 export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vscode.Disposable {
+    /** Event emitter for notifying VS Code about data changes */
     private _onDidChangeTreeData = new vscode.EventEmitter<NoteItem | undefined>();
+    /** Event that fires when the tree data changes */
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+    /**
+     * Creates a new NotesViewProvider instance.
+     * 
+     * @param notesPath - The root path where notes are stored.
+     */
     private constructor(private notesPath: string) {}
 
     /**
      * Factory method to create an instance of the NotesViewProvider.
+     * 
+     * @returns A new instance of NotesViewProvider.
      */
     static create(): NotesViewProvider {
         const notesPath = getDir('notes');
@@ -35,6 +44,12 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
         this._onDidChangeTreeData.fire(undefined);
     }
 
+    /**
+     * Gets the TreeItem representation of a note or folder.
+     * 
+     * @param element - The NoteItem to convert to a TreeItem.
+     * @returns A TreeItem configured for display.
+     */
     getTreeItem(element: NoteItem): vscode.TreeItem {
         return element;
     }
@@ -122,6 +137,13 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
  * Represents a file or folder item in the notes tree view.
  */
 class NoteItem extends vscode.TreeItem {
+    /**
+     * Creates a NoteItem tree node.
+     * 
+     * @param label - The display name of the note or folder.
+     * @param collapsibleState - Determines if the node is expandable.
+     * @param resourceUri - The URI of the file or folder.
+     */
     constructor(
         public readonly label: string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,

@@ -17,6 +17,11 @@ import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
 
 
+/**
+ * Activates the SVSmate extension.
+ * Initializes path manager, registers tree data providers, and sets up commands.
+ * @param context - The VS Code extension context.
+ */
 export async function activate(context: vscode.ExtensionContext) {
 
     PathManager.initPathManager(context);
@@ -113,11 +118,11 @@ export async function activate(context: vscode.ExtensionContext) {
     //                      pdf
     // ------------------------------------------------
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand("svsmate.PDF-generateFromPDF", async () => {
-                await generateCodeFromPdf();
-        }),
-    );
+    // context.subscriptions.push(
+    //     vscode.commands.registerCommand("svsmate.PDF-generateFromPDF", async () => {
+    //             await generateCodeFromPdf();
+    //     }),
+    // );
 
     // ------------------------------------------------
     //                      todo
@@ -176,4 +181,8 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 }
 
+/**
+ * Deactivates the SVSmate extension.
+ * Cleans up resources when the extension is deactivated.
+ */
 export function deactivate() { }
