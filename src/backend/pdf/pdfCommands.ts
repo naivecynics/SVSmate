@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { outputChannel } from '../../utils/OutputChannel';
 import { processPdfToCode } from './pdfUtils';
-
+import { PDFDocument } from 'pdf-lib';
 /**
  * Command handler for the PDF code generation feature.
  * Handles the process of generating code from PDF content by:
@@ -37,7 +37,6 @@ export async function generateCodeFromPdf(): Promise<void> {
          * Loads the PDF document to verify its validity and get page count
          */
         const pdfBytes = fs.readFileSync(pdfPath);
-        const PDFDocument = (await import('pdf-lib')).PDFDocument;
         const pdfDoc = await PDFDocument.load(pdfBytes);
         const pageCount = pdfDoc.getPageCount();
 

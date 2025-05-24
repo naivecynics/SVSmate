@@ -4,7 +4,7 @@ import * as path from 'path';
 import { getWorkspaceDir } from '../../utils/pathManager';
 import { AICodeResponse, generateCodeFromText } from '../ai/pdfCodeGenerator';
 import { outputChannel } from '../../utils/OutputChannel';
-const pdfParse = require('pdf-parse');
+import pdfParse from 'pdf-parse';
 
 /**
  * Extracts text from a specific page range of a PDF file
