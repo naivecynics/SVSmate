@@ -1,0 +1,396 @@
+{
+    "name": "svsmate",
+    "displayName": "SVSmate",
+    "description": "The Ultimate VS Code Extension for SUSTechers!",
+    "publisher": "naivecynics",
+    "icon": "media/telescope.png",
+    "version": "1.0.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/naivecynics/SVSmate.git"
+    },
+    "homepage": "https://github.com/naivecynics/SVSmate",
+    "bugs": {
+        "url": "https://github.com/naivecynics/SVSmate/issues"
+    },
+    "engines": {
+        "vscode": "^1.98.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "*"
+    ],
+    "main": "./dist/extension",
+    "contributes": {
+        "configuration": {
+            "title": "svsmate",
+            "properties": {
+                "svsmate.root": {
+                    "type": "string",
+                    "default": "~/.svsmate",
+                    "description": "Enter a directory path if you want to costomize the cache location."
+                },
+                "svsmate.apikey": {
+                    "type": "string",
+                    "default": "",
+                    "description": "API key to enpower the extension (deepseek api available only)."
+                }
+            }
+        },
+        "commands": [
+            {
+                "command": "svsmate.BB-updateAll",
+                "title": "SVSmate: Update All Materials",
+                "icon": "$(sync)"
+            },
+            {
+                "command": "svsmate.BB-updateTerm",
+                "title": "SVSmate: Update One Term",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "svsmate.BB-updateCourse",
+                "title": "SVSmate: Update One Course",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "svsmate.BB-downloadToWorkspace",
+                "title": "SVSmate: Download File to Workspace",
+                "icon": "$(cloud-download)"
+            },
+            {
+                "command": "svsmate.BB-downloadToAiSpace",
+                "title": "SVSmate: Download File to AI Suggested Directory",
+                "icon": "$(symbol-file)"
+            },
+            {
+                "command": "todoListView.addItem",
+                "title": "SVSmate: Add Task",
+                "icon": "$(add)"
+            },
+            {
+                "command": "todoListView.editTask",
+                "title": "SVSmate: Edit Task",
+                "icon": "$(edit)"
+            },
+            {
+                "command": "todoListView.deleteTask",
+                "title": "SVSmate: Delete Task",
+                "icon": "$(trash)"
+            },
+            {
+                "command": "todoListView.toggleTaskCheckbox",
+                "title": "SVSmate: Toggle Task Checkbox",
+                "icon": "$(check)"
+            },
+            {
+                "command": "todoListView.sortByEndTime",
+                "title": "SVSmate: Sort by DDL",
+                "icon": "$(sort-precedence)"
+            },
+            {
+                "command": "todoListView.sortByKinds",
+                "title": "SVSmate: Sort by Kinds",
+                "icon": "$(group-by-ref-type)"
+            },
+            {
+                "command": "todoListView.searchTasks",
+                "title": "SVSmate: Search Tasks",
+                "icon": "$(search)"
+            },
+            {
+                "command": "todoListView.clearSearch",
+                "title": "SVSmate: Clear Search",
+                "icon": "$(clear-all)"
+            },
+            {
+                "command": "todoListView.loadICSFile",
+                "title": "SVSmate: Load from .ics File",
+                "icon": "$(file-submodule)"
+            },
+            {
+                "command": "todoListView.addSubTask",
+                "title": "SVSmate: Add Subtask",
+                "icon": "$(add)"
+            },
+            {
+                "command": "todoList.generateAISubtasks",
+                "title": "SVSmate: Generate AI Subtasks",
+                "icon": "$(sparkle)"
+            }
+        ],
+        "chatParticipants": [
+            {
+                "id": "svsmate.ChatBot-API",
+                "fullName": "svsmate-ChatBot-API",
+                "name": "mate-API",
+                "description": "What can I assist you?",
+                "isSticky": true
+            },
+            {
+                "id": "svsmate.ChatBot",
+                "fullName": "svsmate-ChatBot",
+                "name": "mate",
+                "description": "What can I assist you?",
+                "isSticky": true
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "SVSmate",
+                    "title": "SVSmate",
+                    "icon": "media/telescope.png"
+                }
+            ]
+        },
+        "views": {
+            "SVSmate": [
+                {
+                    "id": "folderView",
+                    "name": "File Explorer"
+                },
+                {
+                    "id": "bbMaterialView",
+                    "name": "BB Materials"
+                },
+                {
+                    "id": "todoListView",
+                    "name": "To-Do List"
+                }
+            ]
+        },
+        "menus": {
+            "view/item/context": [
+                {
+                    "command": "todoListView.editTask",
+                    "when": "view == todoListView",
+                    "group": "inline"
+                },
+                {
+                    "command": "todoListView.deleteTask",
+                    "when": "view == todoListView",
+                    "group": "inline"
+                },
+                {
+                    "command": "todoListView.addSubTask",
+                    "when": "view == todoListView && viewItem == task",
+                    "group": "inline"
+                },
+                {
+                    "command": "todoList.generateAISubtasks",
+                    "when": "view == todoListView && viewItem == task",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.BB-downloadToAiSpace",
+                    "when": "view == bbMaterialView && viewItem == file",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.BB-downloadToWorkspace",
+                    "when": "view == bbMaterialView && viewItem == file",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.BB-updateTerm",
+                    "when": "view == bbMaterialView && viewItem == termFolder",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.BB-updateCourse",
+                    "when": "view == bbMaterialView && viewItem == courseFolder",
+                    "group": "inline"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "todoListView.addItem",
+                    "when": "view == todoListView",
+                    "group": "navigation",
+                    "title": "Add Item"
+                },
+                {
+                    "command": "todoListView.sortByEndTime",
+                    "when": "view == todoListView",
+                    "group": "navigation",
+                    "title": "Sort By End Time"
+                },
+                {
+                    "command": "todoListView.sortByKinds",
+                    "when": "view == todoListView",
+                    "group": "navigation",
+                    "title": "Sort By Kinds"
+                },
+                {
+                    "command": "todoListView.searchTasks",
+                    "when": "view == todoListView",
+                    "group": "navigation",
+                    "title": "Search Tasks"
+                },
+                {
+                    "command": "todoListView.clearSearch",
+                    "when": "view == todoListView ",
+                    "group": "navigation",
+                    "title": "Clear Search"
+                },
+                {
+                    "command": "todoListView.loadICSFile",
+                    "when": "view == todoListView",
+                    "group": "navigation",
+                    "title": "Load From .ics File"
+                },
+                {
+                    "command": "svsmate.BB-updateAll",
+                    "when": "view == bbMaterialView",
+                    "group": "navigation",
+                    "title": "Update All"
+                },
+                {
+                    "command": "svsmate.BB-updateTerm",
+                    "when": "view == bbMaterialView",
+                    "group": "navigation",
+                    "title": "Update Term"
+                }
+            ]
+        }
+    },
+    "menus": {
+        "view/item/context": [
+            {
+                "command": "todoListView.editTask",
+                "when": "view == todoListView",
+                "group": "inline"
+            },
+            {
+                "command": "todoListView.deleteTask",
+                "when": "view == todoListView",
+                "group": "inline"
+            },
+            {
+                "command": "todoListView.addSubTask",
+                "when": "view == todoListView && viewItem == task",
+                "group": "inline"
+            },
+            {
+                "command": "todoList.generateAISubtasks",
+                "when": "view == todoListView && viewItem == task",
+                "group": "inline"
+            },
+            {
+                "command": "svsmate.BB-downloadToAiSpace",
+                "when": "view == bbMaterialView && viewItem == file",
+                "group": "inline"
+            },
+            {
+                "command": "svsmate.BB-downloadToWorkspace",
+                "when": "view == bbMaterialView && viewItem == file",
+                "group": "inline"
+            },
+            {
+                "command": "svsmate.BB-updateTerm",
+                "when": "view == bbMaterialView && viewItem == termFolder",
+                "group": "inline"
+            },
+            {
+                "command": "svsmate.BB-updateCourse",
+                "when": "view == bbMaterialView && viewItem == courseFolder",
+                "group": "inline"
+            }
+        ],
+        "view/title": [
+            {
+                "command": "todoListView.addItem",
+                "when": "view == todoListView",
+                "group": "navigation",
+                "title": "Add Item"
+            },
+            {
+                "command": "todoListView.sortByEndTime",
+                "when": "view == todoListView",
+                "group": "navigation",
+                "title": "Sort By End Time"
+            },
+            {
+                "command": "todoListView.sortByKinds",
+                "when": "view == todoListView",
+                "group": "navigation",
+                "title": "Sort By Kinds"
+            },
+            {
+                "command": "todoListView.searchTasks",
+                "when": "view == todoListView",
+                "group": "navigation",
+                "title": "Search Tasks"
+            },
+            {
+                "command": "todoListView.clearSearch",
+                "when": "view == todoListView ",
+                "group": "navigation",
+                "title": "Clear Search"
+            },
+            {
+                "command": "todoListView.loadICSFile",
+                "when": "view == todoListView",
+                "group": "navigation",
+                "title": "Load From .ics File"
+            },
+            {
+                "command": "svsmate.BB-updateAll",
+                "when": "view == bbMaterialView",
+                "group": "navigation",
+                "title": "Update All"
+            },
+            {
+                "command": "svsmate.BB-updateTerm",
+                "when": "view == bbMaterialView",
+                "group": "navigation",
+                "title": "Update Term"
+            }
+        ]
+    },
+    "dependencies": {
+        "cheerio": "^1.0.0",
+        "fetch-cookie": "^3.1.0",
+        "node-fetch": "^2.7.0",
+        "node-ical": "^0.20.1",
+        "openai": "^4.87.3",
+        "tough-cookie": "^5.1.2",
+        "xml2js": "^0.6.2"
+    },
+    "devDependencies": {
+        "@types/cheerio": "^0.22.35",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^20.17.46",
+        "@types/node-fetch": "^2.6.12",
+        "@types/sinon": "^17.0.4",
+        "@types/vscode": "^1.98.0",
+        "@types/xml2js": "^0.4.14",
+        "@typescript-eslint/eslint-plugin": "^8.25.0",
+        "@typescript-eslint/parser": "^8.25.0",
+        "@vscode/test-cli": "^0.0.10",
+        "@vscode/test-electron": "^2.5.2",
+        "esbuild": "^0.25.4",
+        "eslint": "^9.21.0",
+        "mocha": "^11.2.2",
+        "npm-run-all": "^4.1.5",
+        "sinon": "^20.0.0",
+        "typedoc": "^0.28.4",
+        "typescript": "^5.7.3"
+    },
+    "scripts": {
+        "lint": "eslint src --fix",
+        "dev:compile": "npx rimraf out && npx tsc -p ./ && npm run lint",
+        "test": "vscode-test",
+        "docs": "typedoc",
+        "compile": "npm run check-types && node esbuild.js",
+        "check-types": "tsc --noEmit",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "vscode:prepublish": "npm run package",
+        "package": "npm run check-types && node esbuild.js --production"
+    }
+}

@@ -1,0 +1,18 @@
+# vscode
+out/
+dist/
+node_modules/
+.vscode-test/
+*.vsix
+package-lock.json
+# .vscode/
+
+# mac
+.DS_Store
+**/.DS_Store
+
+# vscode-test
+testWorkspace/
+
+# doc
+docs/

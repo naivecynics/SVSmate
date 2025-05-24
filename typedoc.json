@@ -1,0 +1,8 @@
+{
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "out": "typedoc/",
+  "includeVersion": true,
+  "excludePrivate": true
+}
+
