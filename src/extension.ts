@@ -118,11 +118,11 @@ export async function activate(context: vscode.ExtensionContext) {
     //                      pdf
     // ------------------------------------------------
 
-    // context.subscriptions.push(
-    //     vscode.commands.registerCommand("svsmate.PDF-generateFromPDF", async () => {
-    //             await generateCodeFromPdf();
-    //     }),
-    // );
+    context.subscriptions.push(
+        vscode.commands.registerCommand("svsmate.PDF-generateFromPDF", async () => {
+                await generateCodeFromPdf();
+        }),
+    );
 
     // ------------------------------------------------
     //                      todo

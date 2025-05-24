@@ -94,7 +94,31 @@ Unlock the power of automation and AI to supercharge your study experience!
 
 ### 📄 Code Extractor
 
-todo
+Quickly generate runnable code based on selected PDF content using AI.
+
+To use this feature:
+
+1. Click the icon on the right side of the Explorer.
+
+> ![bb-ics](./media/bb-pdf-1.png)
+
+2. Select the desired PDF file.
+
+3. Input the start and end page numbers of the PDF.
+
+> ![bb-ics](./media/bb-pdf-3.png)
+> ![bb-ics](./media/bb-pdf-4.png)
+
+4. Specify the type of code to generate.
+
+> ![bb-ics](./media/bb-pdf-5.png)
+
+5. Result will be generated in the current workspace.
+
+
+The AI will process the selected content and generate runnable code directly into your open workspace. Simplify your workflow and save time with this powerful feature!
+
+
 
 ### 🤝 Collaborate Editing
 
