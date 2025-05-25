@@ -193,9 +193,7 @@ export class CollabServer extends EventEmitter {
                 case 'requestDocument':
                     this.handleDocumentRequest(clientId, message.payload.fileId);
                     break;
-                case 'shareDocument':
-                    this.handleShareDocument(clientId, message.payload);
-                    break;
+                // Remove shareDocument case - clients can't share documents
                 case 'unshareDocument':
                     this.handleUnshareDocument(clientId, message.payload.fileId);
                     break;
@@ -249,52 +247,8 @@ export class CollabServer extends EventEmitter {
         return this.documentManager.getDocumentContent(fileId);
     }
 
-    private async handleShareDocument(clientId: string, payload: any) {
-        const { filePath, name, content } = payload;
-        const fileId = `${clientId}_${Date.now()}_${name}`;
-        const client = this.clients.get(clientId);
-
-        if (client) {
-            // Create document on server (server doesn't own this document)
-            const doc = await this.documentManager.createDocumentFromContent(fileId, name, content || '', client.name);
-
-            if (doc) {
-                const metadata = this.documentManager.getDocumentMetadata(fileId);
-
-                // Broadcast to ALL clients with document content
-                this.broadcastToClients({
-                    type: 'documentShared',
-                    payload: {
-                        ...metadata,
-                        content: content || ''
-                    },
-                    timestamp: Date.now()
-                });
-
-                // Send updated document list with content to all clients
-                const documents = this.documentManager.getAllDocumentMetadata();
-                const documentsWithContent = documents.map(doc => ({
-                    ...doc,
-                    content: this.documentManager.getDocumentContent(doc.id)
-                }));
-
-                this.broadcastToClients({
-                    type: 'documentList',
-                    payload: documentsWithContent,
-                    timestamp: Date.now()
-                });
-
-                // Emit event for server UI update
-                this.emit('documentShared', metadata);
-
-                outputChannel.info('Document Shared by Client',
-                    `${name} shared by ${client.name} (${(content || '').length} chars)`);
-            }
-        }
-    }
-
     /**
-     * Share a file from the server side
+     * Share a file from the server side (ONLY server can share)
      */
     async shareFile(filePath: string): Promise<boolean> {
         try {
@@ -338,6 +292,7 @@ export class CollabServer extends EventEmitter {
                 this.emit('documentShared', metadata);
 
                 vscode.window.showInformationMessage(`File "${fileName}" is now being shared from server`);
+                outputChannel.info('Server File Shared', `${fileName} shared from server with ${content.length} chars`);
                 return true;
             }
             return false;
@@ -375,19 +330,26 @@ export class CollabServer extends EventEmitter {
     private async handleDocumentUpdate(clientId: string, payload: any) {
         const { fileId, update } = payload;
         const updateArray = new Uint8Array(update);
+        const client = this.clients.get(clientId);
+
+        outputChannel.info('Document Update Received',
+            `Update from ${client?.name || clientId} for document ${fileId}`);
 
         if (await this.documentManager.applyUpdate(fileId, updateArray, clientId)) {
-            // Save to disk only if server owns the document
-            if (this.documentManager.isDocumentOwned(fileId)) {
-                this.documentManager.saveDocument(fileId);
-            }
+            // Always save to disk since server owns all shared documents
+            const saved = this.documentManager.saveDocument(fileId);
+            outputChannel.info('Document Saved',
+                `Document ${fileId} saved to disk: ${saved}`);
 
-            // Broadcast to other clients
+            // Broadcast to other clients (excluding sender)
             this.broadcastToClients({
                 type: 'documentUpdate',
                 payload: { fileId, update, origin: clientId },
                 timestamp: Date.now()
             }, clientId);
+
+            outputChannel.info('Update Broadcasted',
+                `Broadcasted update for ${fileId} to ${this.clients.size - 1} other clients`);
         }
     }
 

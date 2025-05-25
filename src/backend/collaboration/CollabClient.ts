@@ -183,48 +183,12 @@ export class CollabClient extends EventEmitter {
         return this.documentManager.applyEditorChange(fileId, change);
     }
 
+    /**
+     * Clients cannot share files - only server can share
+     */
     async shareFile(filePath: string): Promise<boolean> {
-        if (!this.isConnected || !this.socket) {
-            vscode.window.showErrorMessage('Not connected to a collaboration server');
-            return false;
-        }
-
-        if (!fs.existsSync(filePath)) {
-            vscode.window.showErrorMessage('File does not exist');
-            return false;
-        }
-
-        try {
-            const fileName = path.basename(filePath);
-            const fileId = `client_${Date.now()}_${fileName}`;
-
-            // Read file content
-            const content = fs.readFileSync(filePath, 'utf-8');
-
-            // Create local document (owned by this client)
-            const doc = await this.documentManager.createDocument(fileId, filePath, 'local', true);
-
-            if (doc) {
-                // Send share request to server with content
-                this.sendToServer({
-                    type: 'shareDocument',
-                    payload: {
-                        filePath: filePath,
-                        name: fileName,
-                        content: content
-                    },
-                    timestamp: Date.now()
-                });
-
-                vscode.window.showInformationMessage(`Sharing file "${fileName}"...`);
-                return true;
-            }
-            return false;
-        } catch (error) {
-            outputChannel.error('Share File Error', error instanceof Error ? error.message : String(error));
-            vscode.window.showErrorMessage(`Failed to share file: ${error}`);
-            return false;
-        }
+        vscode.window.showErrorMessage('Only the server can share files. Please ask the server host to share this file.');
+        return false;
     }
 
     /**
@@ -423,16 +387,16 @@ export class CollabClient extends EventEmitter {
 
         // Apply updates from server or other clients
         if (origin !== 'local') {
+            outputChannel.info('Applying Remote Update',
+                `Applying update from ${origin} for document ${fileId}`);
+
             const updateArray = new Uint8Array(update);
             this.documentManager.applyUpdate(fileId, updateArray, 'remote');
 
             // Update VS Code editor if it's open
-            this.documentManager.updateEditor(fileId);
-
-            // Save to original file only if this client owns the document
-            if (this.documentManager.isDocumentOwned(fileId)) {
-                this.documentManager.saveDocument(fileId);
-            }
+            const updated = this.documentManager.updateEditor(fileId);
+            outputChannel.info('Editor Updated',
+                `VS Code editor updated for ${fileId}: ${updated}`);
         }
     }
 
@@ -444,11 +408,11 @@ export class CollabClient extends EventEmitter {
             this.documentManager.createDocumentFromContent(payload.id, payload.name, payload.content, payload.owner);
         }
 
-        // Add to local shared files
+        // Add to local shared files (clients can't own documents)
         const sharedFile: SharedFile = {
             id: payload.id,
             name: payload.name,
-            path: this.documentManager.getDocumentDisplayPath(payload.id),
+            path: `[Remote] ${payload.name}`, // Always show as remote for clients
             owner: payload.owner,
             sharedAt: payload.sharedAt,
             size: payload.content ? payload.content.length : 0,
@@ -465,7 +429,7 @@ export class CollabClient extends EventEmitter {
         this.sharedFiles.clear();
 
         payload.forEach(doc => {
-            // Create document with content if available
+            // Create document with content if available (clients never own documents)
             if (doc.content !== undefined) {
                 this.documentManager.createDocumentFromContent(doc.id, doc.name, doc.content, doc.owner);
             }
@@ -473,7 +437,7 @@ export class CollabClient extends EventEmitter {
             const sharedFile: SharedFile = {
                 id: doc.id,
                 name: doc.name,
-                path: this.documentManager.getDocumentDisplayPath(doc.id),
+                path: `[Remote] ${doc.name}`, // Always show as remote for clients
                 owner: doc.owner,
                 sharedAt: doc.sharedAt,
                 size: doc.content ? doc.content.length : 0,

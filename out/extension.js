@@ -179,12 +179,12 @@ async function activate(context) {
             return;
         }
         const filePath = activeEditor.document.uri.fsPath;
-        // Check if we're hosting a server
+        // Only server can share files
         if (collabServer.isServerRunning()) {
             await collabServer.shareFile(filePath);
         }
         else if (collabClient.isClientConnected()) {
-            await collabClient.shareFile(filePath);
+            vscode.window.showWarningMessage('Only the server can share files. Please ask the server host to share files.');
         }
         else {
             vscode.window.showWarningMessage('Not connected to a collaboration session');
@@ -201,12 +201,12 @@ async function activate(context) {
             if (collabServer.isServerRunning()) {
                 // Server side - get document content
                 content = collabServer.getDocumentContent(file.id);
-                isOwned = collabServer.documentManager.isDocumentOwned(file.id);
+                isOwned = true; // Server always owns all shared documents
             }
             else if (collabClient.isClientConnected()) {
                 // Client side - get document content (should already be loaded)
                 content = collabClient.getDocumentContent(file.id);
-                isOwned = collabClient.documentManager.isDocumentOwned(file.id);
+                isOwned = false; // Clients never own documents
                 // If no content, request it from server
                 if (!content) {
                     await collabClient.requestDocument(file.id);
@@ -245,7 +245,7 @@ async function activate(context) {
                 }
             });
             context.subscriptions.push(changeListener);
-            const ownershipText = isOwned ? '(Your file)' : `(by ${file.owner})`;
+            const ownershipText = isOwned ? '(Server file)' : '(Read/Write access)';
             vscode.window.showInformationMessage(`Opened shared file: ${file.name} ${ownershipText} - ${content.length} characters`);
         }
         catch (error) {

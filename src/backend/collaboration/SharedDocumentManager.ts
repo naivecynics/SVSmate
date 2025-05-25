@@ -400,6 +400,61 @@ export class SharedDocumentManager extends EventEmitter {
     }
 
     /**
+     * Update VS Code editor with Yjs document changes
+     */
+    updateEditor(fileId: string): boolean {
+        const editor = this.activeEditors.get(fileId);
+        const doc = this.documents.get(fileId);
+
+        if (!editor || !doc) {
+            outputChannel.warn('Editor Update Failed',
+                `No editor (${!!editor}) or document (${!!doc}) found for ${fileId}`);
+            return false;
+        }
+
+        try {
+            const content = doc.getText('content').toString();
+            const document = editor.document;
+
+            outputChannel.info('Updating Editor',
+                `Updating editor for ${fileId} with ${content.length} chars`);
+
+            // Check if content is different to avoid unnecessary updates
+            const currentContent = document.getText();
+            if (currentContent === content) {
+                outputChannel.info('Content Same', 'No update needed - content is identical');
+                return true;
+            }
+
+            // Apply the edit without triggering document change events
+            const fullRange = new vscode.Range(
+                document.positionAt(0),
+                document.positionAt(document.getText().length)
+            );
+
+            const edit = new vscode.WorkspaceEdit();
+            edit.replace(document.uri, fullRange, content);
+
+            // Apply the edit and wait for completion
+            vscode.workspace.applyEdit(edit).then((success) => {
+                if (success) {
+                    outputChannel.info('Editor Update Success',
+                        `Successfully updated editor for ${fileId}`);
+                } else {
+                    outputChannel.error('Editor Update Failed',
+                        `Failed to apply workspace edit for ${fileId}`);
+                }
+            });
+
+            return true;
+        } catch (error) {
+            outputChannel.error('Editor Update Error',
+                error instanceof Error ? error.message : String(error));
+            return false;
+        }
+    }
+
+    /**
      * Apply an editor change to a Yjs document
      */
     applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {
@@ -410,57 +465,32 @@ export class SharedDocumentManager extends EventEmitter {
 
         try {
             const yText = doc.getText('content');
+            const metadata = this.metadata.get(fileId);
 
-            // Calculate start and end positions
-            const startPos = change.rangeOffset;
-            const endPos = change.rangeOffset + change.rangeLength;
+            outputChannel.info('Editor Change',
+                `Applying change to ${fileId}: ${change.text.length} chars at offset ${change.rangeOffset}`);
 
-            // Delete text if needed
-            if (change.rangeLength > 0) {
-                yText.delete(startPos, change.rangeLength);
-            }
+            // Use transaction to group changes
+            doc.transact(() => {
+                // Delete text if needed
+                if (change.rangeLength > 0) {
+                    yText.delete(change.rangeOffset, change.rangeLength);
+                }
 
-            // Insert new text
-            if (change.text.length > 0) {
-                yText.insert(startPos, change.text);
+                // Insert new text
+                if (change.text.length > 0) {
+                    yText.insert(change.rangeOffset, change.text);
+                }
+            }, 'local'); // Mark as local origin
+
+            if (metadata) {
+                metadata.version++;
+                metadata.lastModified = Date.now();
             }
 
             return true;
         } catch (error) {
             outputChannel.error('Editor Change Application Error',
-                error instanceof Error ? error.message : String(error));
-            return false;
-        }
-    }
-
-    /**
-     * Update VS Code editor with Yjs document changes
-     */
-    updateEditor(fileId: string): boolean {
-        const editor = this.activeEditors.get(fileId);
-        const doc = this.documents.get(fileId);
-
-        if (!editor || !doc) {
-            return false;
-        }
-
-        try {
-            const content = doc.getText('content').toString();
-            const document = editor.document;
-
-            // Apply the edit
-            const edit = new vscode.WorkspaceEdit();
-            edit.replace(
-                document.uri,
-                new vscode.Range(0, 0, document.lineCount, 0),
-                content
-            );
-
-            // Apply the edit
-            vscode.workspace.applyEdit(edit);
-            return true;
-        } catch (error) {
-            outputChannel.error('Editor Update Error',
                 error instanceof Error ? error.message : String(error));
             return false;
         }
