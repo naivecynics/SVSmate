@@ -24,120 +24,113 @@
     "main": "./dist/extension",
     "contributes": {
         "configuration": {
-            "title": "%svsmate.configuration.title%",
+            "title": "svsmate",
             "properties": {
                 "svsmate.root": {
                     "type": "string",
                     "default": "~/.svsmate",
-                    "description": "%svsmate.configuration.root.description%"
+                    "description": "Enter a directory path if you want to customize the cache location."
                 },
                 "svsmate.apikey": {
                     "type": "string",
                     "default": "sk-c0e9243de07945c28e782f57929909b0",
-                    "description": "%svsmate.configuration.apikey.description%"
+                    "description": "API key to empower the extension (deepseek api available only)."
                 }
             }
         },
         "commands": [
             {
                 "command": "svsmate.BB-updateAll",
-                "title": "%svsmate.BB-updateAll.title%",
+                "title": "SVSmate: Update All Materials",
                 "icon": "$(sync)"
             },
             {
                 "command": "svsmate.BB-updateTerm",
-                "title": "%svsmate.BB-updateTerm.title%",
+                "title": "SVSmate: Update One Term",
                 "icon": "$(refresh)"
             },
             {
                 "command": "svsmate.BB-updateCourse",
-                "title": "%svsmate.BB-updateCourse.title%",
+                "title": "SVSmate: Update One Course",
                 "icon": "$(refresh)"
             },
             {
                 "command": "svsmate.BB-downloadToWorkspace",
-                "title": "%svsmate.BB-downloadToWorkspace.title%",
+                "title": "SVSmate: Download File to Workspace",
                 "icon": "$(cloud-download)"
             },
             {
                 "command": "svsmate.BB-downloadToAiSpace",
-                "title": "%svsmate.BB-downloadToAiSpace.title%",
-                "icon": "$(symbol-file)"
+                "title": "SVSmate: Download File to AI Suggested Directory",
+                "icon": "$(debug-step-into)"
             },
             {
                 "command": "svsmate.TODO-addItem",
-                "title": "%todoListView.addItem.title%",
+                "title": "SVSmate: Add Task",
                 "icon": "$(add)"
             },
             {
                 "command": "svsmate.TODO-editTask",
-                "title": "%todoListView.editTask.title%",
+                "title": "SVSmate: Edit Task",
                 "icon": "$(edit)"
             },
             {
                 "command": "svsmate.TODO-deleteTask",
-                "title": "%todoListView.deleteTask.title%",
+                "title": "SVSmate: Delete Task",
                 "icon": "$(trash)"
             },
             {
                 "command": "svsmate.TODO-toggleTaskCheckbox",
-                "title": "%todoListView.toggleTaskCheckbox.title%",
+                "title": "SVSmate: Toggle Task Checkbox",
                 "icon": "$(check)"
             },
             {
                 "command": "svsmate.TODO-sortByEndTime",
-                "title": "%todoListView.sortByEndTime.title%",
+                "title": "SVSmate: Sort by DDL",
                 "icon": "$(sort-precedence)"
             },
             {
                 "command": "svsmate.TODO-sortByKinds",
-                "title": "%todoListView.sortByKinds.title%",
+                "title": "SVSmate: Sort by Kinds",
                 "icon": "$(group-by-ref-type)"
             },
             {
                 "command": "svsmate.TODO-searchTasks",
-                "title": "%todoListView.searchTasks.title%",
+                "title": "SVSmate: Search Tasks",
                 "icon": "$(search)"
             },
             {
                 "command": "svsmate.TODO-clearSearch",
-                "title": "%todoListView.clearSearch.title%",
+                "title": "SVSmate: Clear Search",
                 "icon": "$(clear-all)"
             },
             {
                 "command": "svsmate.TODO-loadICSFile",
-                "title": "%todoListView.loadICSFile.title%",
+                "title": "SVSmate: Load from .ics File",
                 "icon": "$(file-submodule)"
             },
             {
                 "command": "svsmate.TODO-addSubTask",
-                "title": "%todoListView.addSubTask.title%",
+                "title": "SVSmate: Add Subtask",
                 "icon": "$(add)"
             },
             {
                 "command": "svsmate.TODO-generateAISubtasks",
-                "title": "%todoList.generateAISubtasks.title%",
+                "title": "SVSmate: Generate AI Subtasks",
                 "icon": "$(sparkle)"
             },
             {
                 "command": "svsmate.PDF-generateFromPDF",
-                "title": "%svsmate.PDF-generateFromPDF.title%",
+                "title": "SVSmate: Generate Code from PDF",
                 "icon": "$(note)"
             }
         ],
         "chatParticipants": [
             {
-                "id": "svsmate.ChatBot-API",
-                "fullName": "svsmate-ChatBot-API",
-                "name": "mate-API",
-                "description": "%svsmate.chatParticipant.mate-API.description%",
-                "isSticky": true
-            },
-            {
                 "id": "svsmate.ChatBot",
                 "fullName": "svsmate-ChatBot",
                 "name": "mate",
-                "description": "%svsmate.chatParticipant.mate.description%",
+                "description": "Hi SUSTechers, what can I assist you?",
                 "isSticky": true
             }
         ],
@@ -145,7 +138,7 @@
             "activitybar": [
                 {
                     "id": "SVSmate",
-                    "title": "%svsmate.viewsContainer.SVSmate.title%",
+                    "title": "SVSmate",
                     "icon": "media/telescope.png"
                 }
             ]
@@ -154,15 +147,15 @@
             "SVSmate": [
                 {
                     "id": "folderView",
-                    "name": "%svsmate.view.folderView.name%"
+                    "name": "File Explorer"
                 },
                 {
                     "id": "bbMaterialView",
-                    "name": "%svsmate.view.bbMaterialView.name%"
+                    "name": "BB Materials"
                 },
                 {
                     "id": "todoListView",
-                    "name": "%svsmate.view.todoListView.name%"
+                    "name": "To-Do List"
                 }
             ]
         },
@@ -276,7 +269,6 @@
         "pdf-lib": "^1.17.1",
         "pdf-parse": "^1.1.1",
         "tough-cookie": "^5.1.2",
-        "vscode-nls": "^5.2.0",
         "xml2js": "^0.6.2"
     },
     "devDependencies": {
@@ -299,8 +291,7 @@
         "npm-run-all": "^4.1.5",
         "sinon": "^20.0.0",
         "typedoc": "^0.28.4",
-        "typescript": "^5.7.3",
-        "vscode-nls-dev": "^4.0.4"
+        "typescript": "^5.7.3"
     },
     "scripts": {
         "lint": "eslint src --fix",
@@ -314,7 +305,6 @@
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
         "vscode:prepublish": "npm run package",
         "package": "npm run check-types && node esbuild.js --production",
-        "generate-nls": "npx vscode-nls-dev generate --out l10n src",
         "esbuild-base": "node esbuild.js",
         "esbuild": "npm run esbuild-base -- --sourcemap",
         "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",

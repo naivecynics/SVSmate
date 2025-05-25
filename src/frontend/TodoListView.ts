@@ -1,10 +1,7 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import * as fs from "fs";
 import * as ical from "node-ical";
 import * as PathManager from "../utils/pathManager";
-import * as aiSubtask from "../backend/ai/createSubtasks";
-import { localize } from "../utils/i18n";
 
 /**
  * Represents a task or subtask item in the to-do list.
@@ -92,13 +89,14 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             : vscode.TreeItemCollapsibleState.None;
 
         const item = new vscode.TreeItem(element.label, state);
-        item.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");        item.tooltip = localize("todoListView.taskTooltip", 
+        item.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");
+        item.tooltip =  
             `Task: ${element.label}\nCategory: ${element.category}\nDue: ${element.endTime}` +
-            (hasChildren ? `\nSubtasks: ${element.children.length}` : ''));
+            (hasChildren ? `\nSubtasks: ${element.children.length}` : '');
         item.description = `[${element.category}] ❗${element.endTime}${hasChildren ? ` (${element.children.length})` : ''}`;
         item.resourceUri = vscode.Uri.parse(`date:${element.endTime}`);        item.command = {
             command: 'todoListView.toggleTaskCheckbox',
-            title: localize("todoListView.toggleTask", "Toggle Task"),
+            title: "Toggle Task",
             arguments: [element]
         };
         item.contextValue = element.id.includes('/') ? 'subtask' : 'task';
@@ -303,7 +301,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
      */
     private async loadFromDisk() {        const filePath = PathManager.getFile("todoList");
         if (!fs.existsSync(filePath)) {
-            vscode.window.showWarningMessage(localize("todoListView.fileNotFound", "Task file not found. A new file will be created."));
+            vscode.window.showWarningMessage("Task file not found. A new file will be created.");
             this.items = [];
             this.saveToDisk();
             return;
@@ -313,7 +311,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             const raw = fs.readFileSync(filePath, "utf8");
             const rawData = JSON.parse(raw);
             this.items = this.buildTaskTree(rawData);        } catch (err) {
-            vscode.window.showErrorMessage(localize("todoListView.loadError", `Failed to load tasks: ${err}`));
+            vscode.window.showErrorMessage(`Failed to load tasks: ${err}`);
             this.items = [];
         }
     }
@@ -324,9 +322,9 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
 
         for (const item of data) {                const task: TodoItem = {
                 id: item.id || `task_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-                label: item.Name || localize("todoListView.untitled", "Untitled"),
-                endTime: item.DDL || localize("todoListView.noDate", "N/A"),
-                category: item.Variety || localize("todoListView.uncategorized", "Uncategorized"),
+                label: item.Name || "Untitled",
+                endTime: item.DDL || "N/A",
+                category: item.Variety || "Uncategorized",
                 checked: item.Finish || false,
                 children: []
             };
@@ -387,7 +385,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
                 if (!res.ok) {throw new Error(`HTTP ${res.status}`);}
                 icsContent = await res.text();
             } else {                if (!fs.existsSync(filePath)) {
-                    vscode.window.showErrorMessage(localize("todoListView.icsFileNotFound", `.ics file not found: ${filePath}`));
+                    vscode.window.showErrorMessage(`.ics file not found: ${filePath}`);
                     return;
                 }
                 icsContent = fs.readFileSync(filePath, "utf8");

@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { localize } from "../utils/i18n";
 
 /**
  * Provides a tree view of files and folders in the current workspace.
@@ -46,7 +45,7 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem>, vs
      */
     static create(): FolderViewProvider | undefined {        const folders = vscode.workspace.workspaceFolders;
         if (!folders || folders.length === 0) {
-            vscode.window.showWarningMessage(localize("folderView.noWorkspace", "No workspace folder is open."));
+            vscode.window.showWarningMessage("No workspace folder is open.");
             return;
         }
         return new FolderViewProvider(folders[0].uri.fsPath);
@@ -95,7 +94,7 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem>, vs
      * @returns A list of FileItem instances.
      */
     getChildren(element?: FileItem): FileItem[] | Thenable<FileItem[]> {        if (!this.workspaceRoot) {
-            vscode.window.showInformationMessage(localize("folderView.noWorkspaceRoot", "No workspace folder found"));
+            vscode.window.showInformationMessage("No workspace folder found");
             return Promise.resolve([]);
         }
 
@@ -164,7 +163,7 @@ export class FileItem extends vscode.TreeItem {
         // Open file on click if it's not a folder
         if (collapsibleState === vscode.TreeItemCollapsibleState.None) {
             this.command = {                command: 'vscode.open',
-                title: localize("folderView.openFile", "Open File"),
+                title: "Open File",
                 arguments: [this.resourceUri]
             };
         }

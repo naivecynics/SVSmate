@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as PathManager from '../utils/pathManager';
-import { localize } from "../utils/i18n";
 
 /**
  * Provides a tree view of parsed Blackboard course materials.
@@ -86,11 +85,11 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
                     element.realPath
                 );
                 item.command = {                    command: 'vscode.open',
-                    title: localize("bbMaterialView.openInBrowser", "Open in Browser"),
+                    title: "Open in Browser",
                     arguments: [vscode.Uri.parse(f.url)]
                 };
                 item.tooltip = f.url;
-                item.description = localize("bbMaterialView.remote", "(remote)");
+                item.description = "(remote)";
                 return item;
             });
         }
@@ -101,7 +100,7 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
         let stats: fs.Stats;
         try {
             stats = await fs.promises.stat(targetPath);
-        } catch {            vscode.window.showWarningMessage(localize("bbMaterialView.cannotAccessPath", `Cannot access path: ${targetPath}`));
+        } catch {            vscode.window.showWarningMessage(`Cannot access path: ${targetPath}`);
             return [];
         }
 
@@ -152,7 +151,7 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
                     virtualFolder.meta = parsed.files || [];
 
                     result.push(virtualFolder);                } catch {
-                    vscode.window.showWarningMessage(localize("bbMaterialView.failedToReadJson", `Failed to read json: ${name}`));
+                    vscode.window.showWarningMessage(`Failed to read json: ${name}`);
                 }
             }
         }

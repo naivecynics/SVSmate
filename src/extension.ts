@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { createChatParticipantAPI } from './backend/ai/createChatParticipantAPI';
 import { createChatParticipant } from './backend/ai/createChatParticipant';
 import { updateAll, updateCourse, updateTerm } from './backend/bb/updateCommands';
 import { downloadToWorkspace } from './backend/bb/downloadCommands';
@@ -12,7 +11,6 @@ import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialVie
 
 import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
-import { localize } from './utils/i18n';
 
 
 /**
@@ -43,13 +41,11 @@ export async function activate(context: vscode.ExtensionContext) {
     // ------------------------------------------------
     //                       ai
     // ------------------------------------------------
-    // copilot ai chatbot @mate-API & @mate
-    const chatParticipantAPI = createChatParticipantAPI();
+    // copilot ai chatbot @mate
     const chatParticipant = createChatParticipant();
-    context.subscriptions.push(
-        chatParticipantAPI,
-        chatParticipant,
-    );
+    if (chatParticipant) {
+        context.subscriptions.push(chatParticipant);
+    }
     console.log(`After AI components registration: ${context.subscriptions.length} subscriptions`);
 
     // ------------------------------------------------
@@ -100,9 +96,9 @@ export async function activate(context: vscode.ExtensionContext) {
                 const { generateCodeFromPdf } = await import('./backend/pdf/pdfCommands.js');
                 await generateCodeFromPdf();
             } catch (error) {
-                if (error instanceof Error) {                    vscode.window.showErrorMessage(localize('pdf.loadError', `Failed to load PDF module: ${error.message}`));
+                if (error instanceof Error) {                    vscode.window.showErrorMessage(`Failed to load PDF module: ${error.message}`);
                 } else {
-                    vscode.window.showErrorMessage(localize('pdf.loadErrorUnknown', 'Failed to load PDF module: Unknown error'));
+                    vscode.window.showErrorMessage('Failed to load PDF module: Unknown error');
                 }
             }
         })
