@@ -214,36 +214,41 @@ export async function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        // First, ensure we have the document in our document manager
         let content = '';
+        let isOwned = false;
+
         if (collabServer.isServerRunning()) {
-          // Server side - get existing document or create it
+          // Server side - get or create document
           let doc = collabServer.getDocument(file.id);
           if (!doc) {
-            // Create document from file if it doesn't exist
-            doc = await collabServer.createDocument(file.id, file.path, 'Server');
+            // If document doesn't exist and we have the file path, create it
+            if (fs.existsSync(file.path)) {
+              doc = await collabServer.createDocument(file.id, file.path, 'Server');
+            }
           }
           content = collabServer.getDocumentContent(file.id);
+          isOwned = collabServer.documentManager.isDocumentOwned(file.id);
         } else if (collabClient.isClientConnected()) {
-          // Client side - request document from server and wait for response
+          // Client side - request document content first
           await collabClient.requestDocument(file.id);
 
-          // Wait a bit for the document to sync
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Wait for response
+          await new Promise(resolve => setTimeout(resolve, 1000));
 
-          // Try to get content, if not available create local document
           let doc = collabClient.getDocument(file.id);
           if (!doc) {
-            doc = await collabClient.getOrCreateDocument(file.id, file.path);
+            // Create empty document if not received
+            doc = await collabClient.documentManager.createDocumentFromContent(file.id, file.name, '', file.owner);
           }
           content = collabClient.getDocumentContent(file.id);
+          isOwned = collabClient.documentManager.isDocumentOwned(file.id);
         }
 
-        // Create a unique temporary file path for collaboration
+        // Create temporary file for editing
         const tempDir = os.tmpdir();
         const tempFilePath = path.join(tempDir, `svsmate_collab_${file.id}_${file.name}`);
 
-        // Write the actual content to temp file
+        // Write content to temp file
         fs.writeFileSync(tempFilePath, content, 'utf-8');
         const uri = vscode.Uri.file(tempFilePath);
 
@@ -251,7 +256,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const document = await vscode.workspace.openTextDocument(uri);
         const editor = await vscode.window.showTextDocument(document);
 
-        // Set up collaboration for this document
+        // Register editor with document manager
         if (collabServer.isServerRunning()) {
           collabServer.registerEditor(file.id, editor);
         } else if (collabClient.isClientConnected()) {
@@ -271,10 +276,12 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         });
 
-        // Store the listener for cleanup
         context.subscriptions.push(changeListener);
 
-        vscode.window.showInformationMessage(`Opened shared file: ${file.name} (${content.length} characters)`);
+        const ownershipText = isOwned ? '(Your file)' : `(by ${file.owner})`;
+        vscode.window.showInformationMessage(
+          `Opened shared file: ${file.name} ${ownershipText} - ${content.length} characters`
+        );
       } catch (error) {
         outputChannel.error('Open Shared File Error', error instanceof Error ? error.message : String(error));
         vscode.window.showErrorMessage(`Failed to open shared file: ${error}`);

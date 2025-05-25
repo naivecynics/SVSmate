@@ -20,7 +20,7 @@ interface ClientConnection {
 }
 
 interface ServerMessage {
-    type: 'documentUpdate' | 'documentList' | 'clientJoined' | 'clientLeft' | 'error' | 'documentShared';
+    type: 'documentUpdate' | 'documentList' | 'clientJoined' | 'clientLeft' | 'error' | 'documentShared' | 'documentContent';
     payload: any;
     timestamp: number;
 }
@@ -29,7 +29,7 @@ export class CollabServer extends EventEmitter {
     private tcpServer: net.Server | null = null;
     private udpServer: dgram.Socket | null = null;
     private clients: Map<string, ClientConnection> = new Map();
-    private documentManager: SharedDocumentManager;
+    public documentManager: SharedDocumentManager;
     private isRunning: boolean = false;
     private serverName: string;
 
@@ -202,27 +202,6 @@ export class CollabServer extends EventEmitter {
     }
 
     /**
-     * Get all shared documents metadata
-     */
-    getAllDocuments() {
-        return this.documentManager.getAllDocumentMetadata();
-    }
-
-    /**
-     * Register an editor with a shared document
-     */
-    registerEditor(fileId: string, editor: vscode.TextEditor): boolean {
-        return this.documentManager.registerEditor(fileId, editor);
-    }
-
-    /**
-     * Get document content
-     */
-    getDocumentContent(fileId: string): string {
-        return this.documentManager.getDocumentContent(fileId);
-    }
-
-    /**
      * Get existing document by ID
      */
     getDocument(fileId: string): any | null {
@@ -233,7 +212,7 @@ export class CollabServer extends EventEmitter {
      * Create a new document
      */
     async createDocument(fileId: string, filePath: string, owner: string): Promise<any | null> {
-        return await this.documentManager.createDocument(fileId, filePath, owner);
+        return await this.documentManager.createDocument(fileId, filePath, owner, true);
     }
 
     /**
@@ -243,38 +222,41 @@ export class CollabServer extends EventEmitter {
         return this.documentManager.applyEditorChange(fileId, change);
     }
 
-    private async handleDocumentUpdate(clientId: string, payload: any) {
-        const { fileId, update } = payload;
-        const updateArray = new Uint8Array(update);
+    private async handleShareDocument(clientId: string, payload: any) {
+        const { filePath, name, content } = payload;
+        const fileId = `${clientId}_${Date.now()}_${name}`;
+        const client = this.clients.get(clientId);
 
-        if (await this.documentManager.applyUpdate(fileId, updateArray, clientId)) {
-            // Update the original file on disk
-            this.documentManager.saveDocument(fileId);
+        if (client) {
+            // Create document on server (server doesn't own this document)
+            const doc = await this.documentManager.createDocumentFromContent(fileId, name, content || '', client.name);
 
-            // Broadcast to other clients
-            this.broadcastToClients({
-                type: 'documentUpdate',
-                payload: { fileId, update, origin: clientId },
-                timestamp: Date.now()
-            }, clientId);
-        }
-    }
+            if (doc) {
+                const metadata = this.documentManager.getDocumentMetadata(fileId);
 
-    private async handleDocumentRequest(clientId: string, fileId: string) {
-        const state = await this.documentManager.getDocumentState(fileId);
-        if (state) {
-            this.sendToClient(clientId, {
-                type: 'documentUpdate',
-                payload: { fileId, update: Array.from(state), origin: 'server' },
-                timestamp: Date.now()
-            });
-        } else {
-            // If document doesn't exist, send empty state
-            this.sendToClient(clientId, {
-                type: 'documentUpdate',
-                payload: { fileId, update: [], origin: 'server' },
-                timestamp: Date.now()
-            });
+                // Broadcast to ALL clients with document content
+                this.broadcastToClients({
+                    type: 'documentShared',
+                    payload: {
+                        ...metadata,
+                        content: content || ''
+                    },
+                    timestamp: Date.now()
+                });
+
+                // Also send updated document list to all clients
+                this.broadcastToClients({
+                    type: 'documentList',
+                    payload: this.documentManager.getAllDocumentMetadata(),
+                    timestamp: Date.now()
+                });
+
+                // Emit event for server UI update
+                this.emit('documentShared', metadata);
+
+                outputChannel.info('Document Shared by Client',
+                    `${name} shared by ${client.name} (${(content || '').length} chars)`);
+            }
         }
     }
 
@@ -286,17 +268,23 @@ export class CollabServer extends EventEmitter {
             const fileName = path.basename(filePath);
             const fileId = `server_${Date.now()}_${fileName}`;
 
-            const doc = await this.documentManager.createDocument(fileId, filePath, 'Server');
+            // Server owns this document
+            const doc = await this.documentManager.createDocument(fileId, filePath, 'Server', true);
             if (!doc) {
                 return false;
             }
 
             const metadata = this.documentManager.getDocumentMetadata(fileId);
+            const content = this.documentManager.getDocumentContent(fileId);
+
             if (metadata) {
-                // Broadcast to all clients
+                // Broadcast to all clients with content
                 this.broadcastToClients({
                     type: 'documentShared',
-                    payload: metadata,
+                    payload: {
+                        ...metadata,
+                        content: content
+                    },
                     timestamp: Date.now()
                 });
 
@@ -311,6 +299,44 @@ export class CollabServer extends EventEmitter {
             outputChannel.error('Server Share File Error', error instanceof Error ? error.message : String(error));
             vscode.window.showErrorMessage(`Failed to share file: ${error}`);
             return false;
+        }
+    }
+
+    private async handleDocumentUpdate(clientId: string, payload: any) {
+        const { fileId, update } = payload;
+        const updateArray = new Uint8Array(update);
+
+        if (await this.documentManager.applyUpdate(fileId, updateArray, clientId)) {
+            // Save to disk only if server owns the document
+            if (this.documentManager.isDocumentOwned(fileId)) {
+                this.documentManager.saveDocument(fileId);
+            }
+
+            // Broadcast to other clients
+            this.broadcastToClients({
+                type: 'documentUpdate',
+                payload: { fileId, update, origin: clientId },
+                timestamp: Date.now()
+            }, clientId);
+        }
+    }
+
+    private async handleDocumentRequest(clientId: string, fileId: string) {
+        const doc = this.documentManager.getDocument(fileId);
+        if (doc) {
+            const content = this.documentManager.getDocumentContent(fileId);
+            this.sendToClient(clientId, {
+                type: 'documentContent',
+                payload: { fileId, content, origin: 'server' },
+                timestamp: Date.now()
+            });
+        } else {
+            // If document doesn't exist, send empty content
+            this.sendToClient(clientId, {
+                type: 'documentContent',
+                payload: { fileId, content: '', origin: 'server' },
+                timestamp: Date.now()
+            });
         }
     }
 
@@ -331,34 +357,25 @@ export class CollabServer extends EventEmitter {
         return false;
     }
 
-    private async handleShareDocument(clientId: string, payload: any) {
-        const { filePath, name } = payload;
-        const fileId = `${clientId}_${Date.now()}_${name}`;
-        const client = this.clients.get(clientId);
+    /**
+     * Get all shared documents metadata
+     */
+    getAllDocuments() {
+        return this.documentManager.getAllDocumentMetadata();
+    }
 
-        if (client) {
-            const doc = await this.documentManager.createDocument(fileId, filePath, client.name);
-            if (doc) {
-                const metadata = this.documentManager.getDocumentMetadata(fileId);
+    /**
+     * Register an editor with a shared document
+     */
+    registerEditor(fileId: string, editor: vscode.TextEditor): boolean {
+        return this.documentManager.registerEditor(fileId, editor);
+    }
 
-                // Broadcast to ALL clients (including the sender)
-                this.broadcastToClients({
-                    type: 'documentShared',
-                    payload: metadata,
-                    timestamp: Date.now()
-                });
-
-                // Also send updated document list to all clients
-                this.broadcastToClients({
-                    type: 'documentList',
-                    payload: this.documentManager.getAllDocumentMetadata(),
-                    timestamp: Date.now()
-                });
-
-                // Emit event for server UI update
-                this.emit('documentShared', metadata);
-            }
-        }
+    /**
+     * Get document content
+     */
+    getDocumentContent(fileId: string): string {
+        return this.documentManager.getDocumentContent(fileId);
     }
 
     private handleUnshareDocument(clientId: string, fileId: string) {

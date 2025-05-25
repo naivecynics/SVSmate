@@ -13,6 +13,7 @@ interface DocumentMetadata {
     version: number;
     lastModified: number;
     lastModifiedBy: string;
+    isOwner: boolean; // 是否为当前用户拥有的文档
 }
 
 export class SharedDocumentManager extends EventEmitter {
@@ -61,7 +62,7 @@ export class SharedDocumentManager extends EventEmitter {
     /**
      * Create a new shared document
      */
-    async createDocument(fileId: string, filePath: string, owner: string): Promise<any | null> {
+    async createDocument(fileId: string, filePath: string, owner: string, isOwner: boolean = true): Promise<any | null> {
         await this.ensureInitialized();
         try {
             // Check if document already exists
@@ -72,15 +73,17 @@ export class SharedDocumentManager extends EventEmitter {
             // Create a new Yjs document
             const doc = new this.Y.Doc();
 
-            // Read file content if it exists
+            // Read file content if it exists and is owned by current user
             let content = '';
-            if (fs.existsSync(filePath)) {
+            if (isOwner && fs.existsSync(filePath)) {
                 content = fs.readFileSync(filePath, 'utf-8');
             }
 
             // Initialize document with content
             const yText = doc.getText('content');
-            yText.insert(0, content);
+            if (content) {
+                yText.insert(0, content);
+            }
 
             // Store the document
             this.documents.set(fileId, doc);
@@ -96,18 +99,77 @@ export class SharedDocumentManager extends EventEmitter {
                 sharedAt: Date.now(),
                 version: 0,
                 lastModified: Date.now(),
-                lastModifiedBy: owner
+                lastModifiedBy: owner,
+                isOwner: isOwner
             });
 
             // Set up document change observation
             this.observeDocument(fileId, doc);
 
             outputChannel.info('Document Created',
-                `Document ${fileName} (${fileId}) created by ${owner}`);
+                `Document ${fileName} (${fileId}) created by ${owner}, isOwner: ${isOwner}`);
 
             return doc;
         } catch (error) {
             outputChannel.error('Document Creation Error',
+                error instanceof Error ? error.message : String(error));
+            return null;
+        }
+    }
+
+    /**
+     * Create a document from received content (for remote documents)
+     */
+    async createDocumentFromContent(fileId: string, fileName: string, content: string, owner: string): Promise<any | null> {
+        await this.ensureInitialized();
+        try {
+            // Check if document already exists
+            if (this.documents.has(fileId)) {
+                const doc = this.documents.get(fileId);
+                // Update existing document with new content
+                const yText = doc.getText('content');
+                const currentContent = yText.toString();
+                if (currentContent !== content) {
+                    yText.delete(0, currentContent.length);
+                    yText.insert(0, content);
+                }
+                return doc;
+            }
+
+            // Create a new Yjs document
+            const doc = new this.Y.Doc();
+
+            // Initialize document with received content
+            const yText = doc.getText('content');
+            if (content) {
+                yText.insert(0, content);
+            }
+
+            // Store the document
+            this.documents.set(fileId, doc);
+
+            // Store metadata (not owned by current user)
+            this.metadata.set(fileId, {
+                id: fileId,
+                name: fileName,
+                path: '', // No local path for remote documents
+                owner: owner,
+                sharedAt: Date.now(),
+                version: 0,
+                lastModified: Date.now(),
+                lastModifiedBy: owner,
+                isOwner: false
+            });
+
+            // Set up document change observation
+            this.observeDocument(fileId, doc);
+
+            outputChannel.info('Remote Document Created',
+                `Remote document ${fileName} (${fileId}) from ${owner} with ${content.length} chars`);
+
+            return doc;
+        } catch (error) {
+            outputChannel.error('Remote Document Creation Error',
                 error instanceof Error ? error.message : String(error));
             return null;
         }
@@ -242,21 +304,21 @@ export class SharedDocumentManager extends EventEmitter {
     }
 
     /**
-     * Save a document's content to disk
+     * Save a document's content to disk (only for owned documents)
      */
     saveDocument(fileId: string): boolean {
         try {
             const doc = this.documents.get(fileId);
             const metadata = this.metadata.get(fileId);
 
-            if (!doc || !metadata) {
+            if (!doc || !metadata || !metadata.isOwner) {
                 return false;
             }
 
             const content = doc.getText('content').toString();
 
             // Only save if file path exists and is writable
-            if (fs.existsSync(metadata.path)) {
+            if (metadata.path && fs.existsSync(metadata.path)) {
                 fs.writeFileSync(metadata.path, content, 'utf-8');
                 outputChannel.info('Document Saved',
                     `Document ${metadata.name} (${fileId}) saved to disk`);
@@ -268,6 +330,30 @@ export class SharedDocumentManager extends EventEmitter {
             outputChannel.error('Document Save Error',
                 error instanceof Error ? error.message : String(error));
             return false;
+        }
+    }
+
+    /**
+     * Check if document is owned by current user
+     */
+    isDocumentOwned(fileId: string): boolean {
+        const metadata = this.metadata.get(fileId);
+        return metadata ? metadata.isOwner : false;
+    }
+
+    /**
+     * Get document display path for UI
+     */
+    getDocumentDisplayPath(fileId: string): string {
+        const metadata = this.metadata.get(fileId);
+        if (!metadata) {
+            return '';
+        }
+
+        if (metadata.isOwner && metadata.path) {
+            return metadata.path;
+        } else {
+            return `[Remote] ${metadata.name} (by ${metadata.owner})`;
         }
     }
 
@@ -314,6 +400,40 @@ export class SharedDocumentManager extends EventEmitter {
     }
 
     /**
+     * Apply an editor change to a Yjs document
+     */
+    applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {
+        const doc = this.documents.get(fileId);
+        if (!doc) {
+            return false;
+        }
+
+        try {
+            const yText = doc.getText('content');
+
+            // Calculate start and end positions
+            const startPos = change.rangeOffset;
+            const endPos = change.rangeOffset + change.rangeLength;
+
+            // Delete text if needed
+            if (change.rangeLength > 0) {
+                yText.delete(startPos, change.rangeLength);
+            }
+
+            // Insert new text
+            if (change.text.length > 0) {
+                yText.insert(startPos, change.text);
+            }
+
+            return true;
+        } catch (error) {
+            outputChannel.error('Editor Change Application Error',
+                error instanceof Error ? error.message : String(error));
+            return false;
+        }
+    }
+
+    /**
      * Update VS Code editor with Yjs document changes
      */
     updateEditor(fileId: string): boolean {
@@ -328,12 +448,7 @@ export class SharedDocumentManager extends EventEmitter {
             const content = doc.getText('content').toString();
             const document = editor.document;
 
-            // Check if content actually changed to avoid infinite loops
-            if (document.getText() === content) {
-                return true;
-            }
-
-            // Apply the edit without triggering our own update handlers
+            // Apply the edit
             const edit = new vscode.WorkspaceEdit();
             edit.replace(
                 document.uri,
@@ -342,49 +457,10 @@ export class SharedDocumentManager extends EventEmitter {
             );
 
             // Apply the edit
-            vscode.workspace.applyEdit(edit).then(() => {
-                outputChannel.info('Editor Updated', `Updated editor for document ${fileId}`);
-            });
-
+            vscode.workspace.applyEdit(edit);
             return true;
         } catch (error) {
             outputChannel.error('Editor Update Error',
-                error instanceof Error ? error.message : String(error));
-            return false;
-        }
-    }
-
-    /**
-     * Apply editor change to a Yjs document
-     */
-    applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {
-        const doc = this.documents.get(fileId);
-        if (!doc) {
-            return false;
-        }
-
-        try {
-            const yText = doc.getText('content');
-
-            // Calculate positions properly
-            const startPos = change.rangeOffset;
-
-            // Delete text if needed
-            if (change.rangeLength > 0) {
-                yText.delete(startPos, change.rangeLength);
-            }
-
-            // Insert new text if any
-            if (change.text.length > 0) {
-                yText.insert(startPos, change.text);
-            }
-
-            outputChannel.info('Editor Change Applied',
-                `Applied change to document ${fileId}: offset=${startPos}, length=${change.rangeLength}, text="${change.text}"`);
-
-            return true;
-        } catch (error) {
-            outputChannel.error('Editor Change Application Error',
                 error instanceof Error ? error.message : String(error));
             return false;
         }

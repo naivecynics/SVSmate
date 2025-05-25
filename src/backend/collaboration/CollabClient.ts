@@ -37,7 +37,7 @@ interface ClientMessage {
 export class CollabClient extends EventEmitter {
     private socket: net.Socket | null = null;
     private udpSocket: dgram.Socket | null = null;
-    private documentManager: SharedDocumentManager;
+    public documentManager: SharedDocumentManager;
     private isConnected: boolean = false;
     private currentServer: ServerInfo | null = null;
     private sharedFiles: Map<string, SharedFile> = new Map();
@@ -169,6 +169,20 @@ export class CollabClient extends EventEmitter {
         this.emit('disconnected');
     }
 
+    /**
+     * Get existing document by ID
+     */
+    getDocument(fileId: string): any | null {
+        return this.documentManager.getDocument(fileId);
+    }
+
+    /**
+     * Apply editor change to document
+     */
+    applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {
+        return this.documentManager.applyEditorChange(fileId, change);
+    }
+
     async shareFile(filePath: string): Promise<boolean> {
         if (!this.isConnected || !this.socket) {
             vscode.window.showErrorMessage('Not connected to a collaboration server');
@@ -182,19 +196,30 @@ export class CollabClient extends EventEmitter {
 
         try {
             const fileName = path.basename(filePath);
+            const fileId = `client_${Date.now()}_${fileName}`;
 
-            // Send share request to server
-            this.sendToServer({
-                type: 'shareDocument',
-                payload: {
-                    filePath: filePath,
-                    name: fileName
-                },
-                timestamp: Date.now()
-            });
+            // Read file content
+            const content = fs.readFileSync(filePath, 'utf-8');
 
-            vscode.window.showInformationMessage(`Sharing file "${fileName}"...`);
-            return true;
+            // Create local document (owned by this client)
+            const doc = await this.documentManager.createDocument(fileId, filePath, 'local', true);
+
+            if (doc) {
+                // Send share request to server with content
+                this.sendToServer({
+                    type: 'shareDocument',
+                    payload: {
+                        filePath: filePath,
+                        name: fileName,
+                        content: content
+                    },
+                    timestamp: Date.now()
+                });
+
+                vscode.window.showInformationMessage(`Sharing file "${fileName}"...`);
+                return true;
+            }
+            return false;
         } catch (error) {
             outputChannel.error('Share File Error', error instanceof Error ? error.message : String(error));
             vscode.window.showErrorMessage(`Failed to share file: ${error}`);
@@ -243,26 +268,12 @@ export class CollabClient extends EventEmitter {
     }
 
     /**
-     * Get existing document by ID
-     */
-    getDocument(fileId: string): any | null {
-        return this.documentManager.getDocument(fileId);
-    }
-
-    /**
-     * Apply editor change to document
-     */
-    applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {
-        return this.documentManager.applyEditorChange(fileId, change);
-    }
-
-    /**
      * Create or get document for collaboration
      */
     async getOrCreateDocument(fileId: string, filePath: string): Promise<any | null> {
         let doc = this.documentManager.getDocument(fileId);
         if (!doc) {
-            // Create document locally with empty content initially
+            // Create document locally
             doc = await this.documentManager.createDocument(fileId, filePath, 'remote');
             if (doc) {
                 // Request latest state from server
@@ -366,6 +377,9 @@ export class CollabClient extends EventEmitter {
                     case 'documentUpdate':
                         this.handleDocumentUpdate(message.payload);
                         break;
+                    case 'documentContent':
+                        this.handleDocumentContent(message.payload);
+                        break;
                     case 'documentList':
                         this.handleDocumentList(message.payload);
                         break;
@@ -390,28 +404,60 @@ export class CollabClient extends EventEmitter {
         }
     }
 
+    private handleDocumentContent(payload: any) {
+        const { fileId, content } = payload;
+
+        // Get metadata to find document name
+        const sharedFile = this.sharedFiles.get(fileId);
+        const fileName = sharedFile ? sharedFile.name : 'unknown';
+
+        // Create or update document with received content
+        this.documentManager.createDocumentFromContent(fileId, fileName, content, 'remote');
+
+        outputChannel.info('Document Content Received',
+            `Received content for ${fileName} (${content.length} chars)`);
+    }
+
     private handleDocumentUpdate(payload: any) {
         const { fileId, update, origin } = payload;
 
-        // Always apply updates from server
-        if (origin === 'server' || origin !== 'local') {
+        // Apply updates from server or other clients
+        if (origin !== 'local') {
             const updateArray = new Uint8Array(update);
             this.documentManager.applyUpdate(fileId, updateArray, 'remote');
 
             // Update VS Code editor if it's open
             this.documentManager.updateEditor(fileId);
 
-            // Save to original file if this client owns the document
-            const sharedFile = this.sharedFiles.get(fileId);
-            if (sharedFile && fs.existsSync(sharedFile.path)) {
-                const content = this.documentManager.getDocumentContent(fileId);
-                try {
-                    fs.writeFileSync(sharedFile.path, content, 'utf-8');
-                } catch (error) {
-                    outputChannel.error('File Save Error', error instanceof Error ? error.message : String(error));
-                }
+            // Save to original file only if this client owns the document
+            if (this.documentManager.isDocumentOwned(fileId)) {
+                this.documentManager.saveDocument(fileId);
             }
         }
+    }
+
+    private handleDocumentShared(payload: any) {
+        outputChannel.info('Document Shared', `${payload.name} by ${payload.owner}`);
+
+        // Create local document from received content
+        if (payload.content !== undefined) {
+            this.documentManager.createDocumentFromContent(payload.id, payload.name, payload.content, payload.owner);
+        }
+
+        // Add to local shared files
+        const sharedFile: SharedFile = {
+            id: payload.id,
+            name: payload.name,
+            path: this.documentManager.getDocumentDisplayPath(payload.id),
+            owner: payload.owner,
+            sharedAt: payload.sharedAt,
+            size: payload.content ? payload.content.length : 0,
+            collaborators: []
+        };
+        this.sharedFiles.set(payload.id, sharedFile);
+
+        this.emit('documentShared', payload);
+        this.emit('fileShared', sharedFile);
     }
 
     private handleDocumentList(payload: any[]) {
@@ -421,7 +467,7 @@ export class CollabClient extends EventEmitter {
             const sharedFile: SharedFile = {
                 id: doc.id,
                 name: doc.name,
-                path: doc.path,
+                path: this.documentManager.getDocumentDisplayPath(doc.id),
                 owner: doc.owner,
                 sharedAt: doc.sharedAt,
                 size: 0,
@@ -432,25 +478,8 @@ export class CollabClient extends EventEmitter {
 
         // Emit event for UI update
         this.emit('documentListUpdated', payload);
-    }
 
-    private handleDocumentShared(payload: any) {
-        outputChannel.info('Document Shared', `${payload.name} by ${payload.owner}`);
-
-        // Add to local shared files
-        const sharedFile: SharedFile = {
-            id: payload.id,
-            name: payload.name,
-            path: payload.path,
-            owner: payload.owner,
-            sharedAt: payload.sharedAt,
-            size: 0,
-            collaborators: []
-        };
-        this.sharedFiles.set(payload.id, sharedFile);
-
-        this.emit('documentShared', payload);
-        this.emit('fileShared', sharedFile);
+        outputChannel.info('Document List Updated', `Received ${payload.length} shared documents`);
     }
 
     private handleClientJoined(payload: any) {
