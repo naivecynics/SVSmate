@@ -202,6 +202,62 @@ export class CollabClient extends EventEmitter {
         }
     }
 
+    /**
+     * Request document content from server
+     */
+    async requestDocument(fileId: string): Promise<boolean> {
+        if (!this.isConnected || !this.socket) {
+            return false;
+        }
+
+        try {
+            this.sendToServer({
+                type: 'requestDocument',
+                payload: { fileId },
+                timestamp: Date.now()
+            });
+            return true;
+        } catch (error) {
+            outputChannel.error('Request Document Error', error instanceof Error ? error.message : String(error));
+            return false;
+        }
+    }
+
+    /**
+     * Register an editor with a shared document
+     */
+    registerEditor(fileId: string, editor: vscode.TextEditor): boolean {
+        const success = this.documentManager.registerEditor(fileId, editor);
+        if (success) {
+            // Set up document change listener for this specific file
+            this.setupDocumentListener(editor.document.uri.fsPath, fileId);
+        }
+        return success;
+    }
+
+    /**
+     * Get document content
+     */
+    getDocumentContent(fileId: string): string {
+        return this.documentManager.getDocumentContent(fileId);
+    }
+
+    /**
+     * Create or get document for collaboration
+     */
+    async getOrCreateDocument(fileId: string, filePath: string): Promise<any | null> {
+        let doc = this.documentManager.getDocument(fileId);
+        if (!doc) {
+            // Create document locally
+            doc = await this.documentManager.createDocument(fileId, filePath, 'remote');
+            if (doc) {
+                // Request latest state from server
+                await this.requestDocument(fileId);
+            }
+        }
+        return doc;
+    }
+
     async unshareFile(fileId: string): Promise<boolean> {
         if (!this.isConnected || !this.socket) {
             return false;
@@ -326,9 +382,8 @@ export class CollabClient extends EventEmitter {
             const updateArray = new Uint8Array(update);
             this.documentManager.applyUpdate(fileId, updateArray, 'remote');
 
-            // Update the content in VS Code
-            const content = this.documentManager.getDocumentContent(fileId);
-            this.updateFile(fileId, content);
+            // Update VS Code editor if it's open
+            this.documentManager.updateEditor(fileId);
         }
     }
 

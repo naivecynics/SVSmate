@@ -1,4 +1,7 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { createChatParticipantAPI } from './backend/ai/createChatParticipantAPI';
 import { createChatParticipant } from './backend/ai/createChatParticipant';
 import { updateAll, updateCourse, updateTerm } from './backend/bb/updateCommands';
@@ -16,7 +19,7 @@ import { CollabClient } from "./backend/collaboration/CollabClient";
 
 
 
-// import { outputChannel } from './utils/OutputChannel';
+import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
 
 
@@ -203,9 +206,65 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     }),
 
+    vscode.commands.registerCommand('teamCollab.openSharedFile', async (file: any) => {
+      try {
+        // Check if we're connected to a collaboration session
+        if (!collabServer.isServerRunning() && !collabClient.isClientConnected()) {
+          vscode.window.showWarningMessage('Not connected to a collaboration session');
+          return;
+        }
+
+        // Request the latest document state from server if we're a client
+        if (collabClient.isClientConnected()) {
+          await collabClient.requestDocument(file.id);
+        }
+
+        // Try to open the file if it exists locally
+        let uri: vscode.Uri;
+        if (fs.existsSync(file.path)) {
+          uri = vscode.Uri.file(file.path);
+        } else {
+          // Create a temporary file with the shared content
+          const tempDir = os.tmpdir();
+          const tempFilePath = path.join(tempDir, `svsmate_${file.id}_${file.name}`);
+
+          // Get content from document manager
+          let content = '';
+          if (collabServer.isServerRunning()) {
+            content = collabServer.getDocumentContent(file.id);
+          } else if (collabClient.isClientConnected()) {
+            content = collabClient.getDocumentContent(file.id);
+          }
+
+          fs.writeFileSync(tempFilePath, content, 'utf-8');
+          uri = vscode.Uri.file(tempFilePath);
+        }
+
+        // Open the document
+        const document = await vscode.workspace.openTextDocument(uri);
+        const editor = await vscode.window.showTextDocument(document);
+
+        // Set up collaboration for this document
+        if (collabServer.isServerRunning()) {
+          collabServer.registerEditor(file.id, editor);
+        } else if (collabClient.isClientConnected()) {
+          collabClient.registerEditor(file.id, editor);
+        }
+
+        vscode.window.showInformationMessage(`Opened shared file: ${file.name}`);
+      } catch (error) {
+        outputChannel.error('Open Shared File Error', error instanceof Error ? error.message : String(error));
+        vscode.window.showErrorMessage(`Failed to open shared file: ${error}`);
+      }
+    }),
+
     vscode.commands.registerCommand('teamCollab.unshareFile', async (item) => {
       if (item && item.id) {
-        await collabClient.unshareFile(item.id);
+        if (collabServer.isServerRunning()) {
+          await collabServer.unshareFile(item.id);
+        } else if (collabClient.isClientConnected()) {
+          await collabClient.unshareFile(item.id);
+        }
       }
     }),
 
@@ -215,7 +274,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('svsmate.removeSharedFile', async (item) => {
       if (item && item.id) {
-        await collabClient.unshareFile(item.id);
+        if (collabServer.isServerRunning()) {
+          await collabServer.unshareFile(item.id);
+        } else if (collabClient.isClientConnected()) {
+          await collabClient.unshareFile(item.id);
+        }
       }
     })
   );

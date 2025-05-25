@@ -225,6 +225,10 @@
           "dark": "./src/icons/refresh-dark.svg",
           "light": "./src/icons/refresh-light.svg"
         }
+      },
+      {
+        "command": "teamCollab.openSharedFile",
+        "title": "Open Shared File"
       }
     ],
     "chatParticipants": [

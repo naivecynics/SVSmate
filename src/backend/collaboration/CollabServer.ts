@@ -286,6 +286,20 @@ export class CollabServer extends EventEmitter {
         return this.documentManager.getAllDocumentMetadata();
     }
 
+    /**
+     * Register an editor with a shared document
+     */
+    registerEditor(fileId: string, editor: vscode.TextEditor): boolean {
+        return this.documentManager.registerEditor(fileId, editor);
+    }
+
+    /**
+     * Get document content
+     */
+    getDocumentContent(fileId: string): string {
+        return this.documentManager.getDocumentContent(fileId);
+    }
+
     private async handleShareDocument(clientId: string, payload: any) {
         const { filePath, name } = payload;
         const fileId = `${clientId}_${Date.now()}_${name}`;

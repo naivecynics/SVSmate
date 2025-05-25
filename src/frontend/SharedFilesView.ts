@@ -67,6 +67,13 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
                 item.contextValue = 'sharedFile';
                 item.id = file.id;
 
+                // Make file clickable to open
+                item.command = {
+                    command: 'teamCollab.openSharedFile',
+                    title: 'Open Shared File',
+                    arguments: [file]
+                };
+
                 // Set icon based on file type
                 const ext = path.extname(file.name).toLowerCase();
                 if (ext === '.ts' || ext === '.js') {
