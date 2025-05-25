@@ -2,8 +2,8 @@
     "name": "svsmate",
     "displayName": "SVSmate",
     "description": "The Ultimate VS Code Extension for SUSTechers!",
-    "version": "0.0.1",
-    "publisher": "svsmate-team",
+    "version": "0.0.2",
+    "publisher": "naivecynics",
     "repository": {
         "type": "git",
         "url": "https://github.com/naivecynics/SVSmate.git"
@@ -120,16 +120,6 @@
                 "icon": "$(sparkle)"
             },
             {
-                "command": "notesView.createNote",
-                "title": "%notesView.createNote.title%",
-                "icon": "$(note)"
-            },
-            {
-                "command": "notesView.deleteNote",
-                "title": "%notesView.deleteNote.title%",
-                "icon": "$(trash)"
-            },
-            {
                 "command": "svsmate.PDF-generateFromPDF",
                 "title": "%svsmate.PDF-generateFromPDF.title%",
                 "icon": "$(note)"
@@ -173,10 +163,6 @@
                 {
                     "id": "todoListView",
                     "name": "%svsmate.view.todoListView.name%"
-                },
-                {
-                    "id": "notesView",
-                    "name": "%svsmate.view.notesView.name%"
                 }
             ]
         },
@@ -221,13 +207,7 @@
                     "command": "svsmate.BB-updateCourse",
                     "when": "view == bbMaterialView && viewItem == courseFolder",
                     "group": "inline"
-                },
-                {
-                    "command": "notesView.deleteNote",
-                    "when": "view == notesView",
-                    "group": "inline"
-                }
-            ],
+                }            ],
             "view/title": [
                 {
                     "command": "todoListView.addItem",

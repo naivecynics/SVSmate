@@ -10,11 +10,9 @@ build/**
 test/**
 typings/**
 out/**
-media/**
 node_modules/**
 src/**
-
-!media/telescope.png
+l10n/
 
 .gitignore
 .github

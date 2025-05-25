@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/naivecynics/SVSmate">
-    <img src="media/telescope.png" alt="Logo" width="100" height="100">
+    <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/telescope.png" alt="Logo" width="100" height="100">
   </a>
 
   <h1 align="center">SVSmate</h1>
@@ -10,16 +10,16 @@
     The Ultimate VS Code Extension for SUSTechers
     <br />
     <div style="text-align: center;">
-        <img src="media/sustech.png" alt="SUSTech" width="60" style="margin: 0 40px;" />
-        <img src="media/separator.png" alt="separator" width="60" />
-        <img src="media/vscode.png" alt="VS Code" width="60" style="margin: 0 40px;" />
+        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/sustech.png" alt="SUSTech" width="60" style="margin: 0 40px;" />
+        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/separator.png" alt="separator" width="60" />
+        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/vscode.png" alt="VS Code" width="60" style="margin: 0 40px;" />
     </div>
     <br />
     <a href="https://github.com/naivecynics/SVSmate/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
     &middot;
     <a href="https://github.com/naivecynics/SVSmate/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
-    <a href="https://github.com/naivecynics/SVSmate/">中文文档 »</a>
+    <a href="https://github.com/naivecynics/SVSmate">中文文档 »</a>
   </p>
 </div>
 
@@ -32,7 +32,7 @@
 
 ## 🚀 About the Project
 
-This project originated as the final project for the Spring 2025 **CS304 - Software Engineering**.  
+> This project originated as the final project for the **25Spring CS304 - Software Engineering**.  
 
 Our goal is to develop a powerful and user-friendly **VS Code extension** tailored for SUSTechers, aiming to simplify their academic workflows — particularly operations related to [Blackboard](https://bb.sustech.edu.cn/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_1_1).
 
@@ -40,15 +40,15 @@ Our goal is to develop a powerful and user-friendly **VS Code extension** tailor
 
 - 🔗 Seamlessly connect VS Code with your personal **Blackboard** data  
 - 📅 Automatically **sync your schedule and assignments**, and manage them with ease  
-- 📄 **Extract code snippets** from PDF course materials  
-- 🤝 **Collaborate** on files with teammates in real time  
 - 🤖 Handle tasks more efficiently with **AI-powered assistance**
+- 📄 **Extract code snippets** from PDF course materials
+- 🤝 **Collaborate** on files with teammates in real time  🚧 *In Development*
 
 ## 💾 Installation
 
-SVSmate can be installed via the VS Code [Marketplace »](https://marketplace.visualstudio.com/items?itemName=vscodevim.vim).
+SVSmate can be installed via the VS Code [Marketplace »](https://marketplace.visualstudio.com/items?itemName=naivecynics.svsmate)
 
-Or download `.vsix` manually in [Release »](https://github.com/naivecynics/SVSmate/releases).
+Or download `.vsix` manually in [Release »](https://github.com/naivecynics/SVSmate/releases)
 
 ## 🛠️ Usage
 
@@ -106,23 +106,18 @@ To use this feature:
 
 3. Input the start and end page numbers of the PDF.
 
+> ![bb-ics](./media/bb-pdf-2.png)
 > ![bb-ics](./media/bb-pdf-3.png)
-> ![bb-ics](./media/bb-pdf-4.png)
 
 4. Specify the type of code to generate.
 
-> ![bb-ics](./media/bb-pdf-5.png)
-
 5. Result will be generated in the current workspace.
-
 
 The AI will process the selected content and generate runnable code directly into your open workspace. Simplify your workflow and save time with this powerful feature!
 
-
-
 ### 🤝 Collaborate Editing
 
-todo
+🚧 *In Development*
 
 ## 📖 Documentation
 
@@ -138,16 +133,18 @@ Don't forget to give our project a ⭐️! Thanks again!
 
 1. Fork the Project
 2. Create your Feature Branch 
-```git checkout -b feature/AmazingFeature```
 3. Commit your Changes
-```git commit -m 'feat: AmazingFeature'```
 4. Push to the Branch
-```git push origin feature/AmazingFeature```
 5. Open a Pull Request
 
-### TODO & Wanting
+### ✅ TODO
 
-- [-] Add last update time in BB vault
+- [ ] Add last update time in BB vault
+- [ ] Add Chinese Document
+
+### 💡 Planned Features
+
+- Real-time collaboration 🚧 *In Development* 
 
 ### 👥 Contributors:
 
@@ -158,6 +155,3 @@ Don't forget to give our project a ⭐️! Thanks again!
 ## 📜 License
 
 Distributed under the MIT License. See `LICENSE.txt` for more information.
-
-<p align="right"><a href="#readme-top">back to top</a></p>
-

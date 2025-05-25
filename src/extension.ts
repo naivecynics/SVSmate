@@ -4,13 +4,10 @@ import { createChatParticipant } from './backend/ai/createChatParticipant';
 import { updateAll, updateCourse, updateTerm } from './backend/bb/updateCommands';
 import { downloadToWorkspace } from './backend/bb/downloadCommands';
 import { addAIGeneratedSubtasks } from './backend/ai/createSubtasks';
-import { generateCodeFromPdf } from './backend/pdf/pdfCommands';
 import { addItem, editTask, deleteTask, toggleTaskCheckbox, sortByEndTime, sortByKinds, searchTasks, clearSearch, addSubTask, loadICSFile } from './backend/todo/todoCommands';
 
 import { FolderViewProvider } from "./frontend/FolderView";
 import { TodoListViewProvider, TodoItem } from "./frontend/TodoListView";
-import { CopilotViewProvider } from "./frontend/CopilotView";
-import { NotesViewProvider } from "./frontend/NotesView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 
 import { outputChannel } from './utils/OutputChannel';
@@ -41,18 +38,17 @@ export async function activate(context: vscode.ExtensionContext) {
             folderViewProvider
         );
         console.log(`After folderView registration: ${context.subscriptions.length} subscriptions`);
-    }// ------------------------------------------------
+    }
+
+    // ------------------------------------------------
     //                       ai
     // ------------------------------------------------
-
     // copilot ai chatbot @mate-API & @mate
     const chatParticipantAPI = createChatParticipantAPI();
     const chatParticipant = createChatParticipant();
-
     context.subscriptions.push(
         chatParticipantAPI,
         chatParticipant,
-        vscode.window.registerWebviewViewProvider("copilotView", CopilotViewProvider.create())
     );
     console.log(`After AI components registration: ${context.subscriptions.length} subscriptions`);
 
@@ -95,48 +91,11 @@ export async function activate(context: vscode.ExtensionContext) {
     // TODO: How? 
 
     // ------------------------------------------------
-    //                      note
-    // ------------------------------------------------
-    const notesViewProvider = await NotesViewProvider.create();
-    if (notesViewProvider) {
-        context.subscriptions.push(
-            vscode.window.registerTreeDataProvider("notesView", notesViewProvider),
-            notesViewProvider
-        );
-    }
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('notesView.createNote', async (folderPath: string) => {
-            if (notesViewProvider) {
-                await notesViewProvider.createNote(folderPath);
-            }
-        }),
-
-        vscode.commands.registerCommand('notesView.deleteNote', async (item: any) => {
-            if (!notesViewProvider) {
-                return;
-            }
-            try {                const answer = await vscode.window.showWarningMessage(
-                    localize('notesView.deleteConfirmation', `Are you sure you want to delete the note "${item.label}"?`),
-                    localize('common.yes', 'Yes'),
-                    localize('common.no', 'No')
-                );                if (answer === localize('common.yes', 'Yes')) {
-                    await notesViewProvider.deleteNote(item.resourceUri.fsPath);
-                    vscode.window.showInformationMessage(localize('notesView.deleteSuccess', `Note "${item.label}" has been deleted`));
-                }            } catch (error) {
-                vscode.window.showErrorMessage(localize('notesView.deleteError', `Failed to delete note: ${error}`));
-            }
-        })
-    );
-    console.log(`After notes components registration: ${context.subscriptions.length} subscriptions`);
-
-    // ------------------------------------------------
     //                      pdf
     // ------------------------------------------------
 
     context.subscriptions.push(
         vscode.commands.registerCommand("svsmate.PDF-generateFromPDF", async () => {
-            // 动态导入 PDF 功能
             try {
                 const { generateCodeFromPdf } = await import('./backend/pdf/pdfCommands.js');
                 await generateCodeFromPdf();
@@ -152,6 +111,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // ------------------------------------------------
     //                      todo
     // ------------------------------------------------
+
     const todoListViewProvider = await TodoListViewProvider.create();
     if (todoListViewProvider) {
         context.subscriptions.push(vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider),

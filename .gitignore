@@ -14,5 +14,4 @@ package-lock.json
 testWorkspace/
 
 # doc
-docs/
 typedoc/

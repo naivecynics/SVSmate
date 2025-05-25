@@ -8,19 +8,16 @@ const watch = process.argv.includes('--watch');
 function copyL10nFiles() {
   console.log('Copying localization files...');
   
-  // 确保目标目录存在
   if (!fs.existsSync('dist')) {
     fs.mkdirSync('dist', { recursive: true });
   }
   
-  // 复制 package.nls*.json
   const nlsFiles = fs.readdirSync('.').filter(f => f.startsWith('package.nls'));
   for (const file of nlsFiles) {
     fs.copyFileSync(file, path.join('dist', file));
     console.log(`Copied: ${file} -> dist/${file}`);
   }
   
-  // 复制 l10n 目录
   const distL10nDir = path.join('dist', 'l10n');
   if (!fs.existsSync(distL10nDir)) {
     fs.mkdirSync(distL10nDir, { recursive: true });
@@ -41,7 +38,6 @@ function copyL10nFiles() {
 
 
 async function main() {
-  // 先复制国际化文件
   copyL10nFiles();
 
   const ctx = await esbuild.context({
