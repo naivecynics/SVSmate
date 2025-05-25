@@ -9,8 +9,9 @@ If the user asks a non-programming question, politely decline to respond.`;
 /**
  * Creates a new chat participant that handles code-related queries.
  * This participant interacts with the user by guiding them through programming concepts.
+ * @returns The created chat participant for registration in extension context
  */
-export function createChatParticipant(): void {
+export function createChatParticipant(): vscode.ChatParticipant {
   /**
    * Handles chat requests for the participant.
    * 
@@ -56,10 +57,11 @@ export function createChatParticipant(): void {
     }
     return;
   };
-
   // Create the chat participant using the handler defined above
   const mateParticipant = vscode.chat.createChatParticipant("svsmate.ChatBot", handler);
 
   // Optional: You can set the participant's icon path here if needed
   // mateParticipant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'tutor.jpeg');
+  
+  return mateParticipant;
 }

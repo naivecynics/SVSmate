@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { outputChannel } from '../../utils/OutputChannel';
 import { processPdfToCode } from './pdfUtils';
-import { PDFDocument } from 'pdf-lib';
+import { localize } from '../../utils/i18n';
+// import { PDFDocument } from 'pdf-lib';
 /**
  * Command handler for the PDF code generation feature.
  * Handles the process of generating code from PDF content by:
@@ -19,11 +20,10 @@ export async function generateCodeFromPdf(): Promise<void> {
         /**
          * Step 1: PDF File Selection
          * Shows a file picker dialog filtered to PDF files only
-         */
-        const pdfUris = await vscode.window.showOpenDialog({
+         */        const pdfUris = await vscode.window.showOpenDialog({
             canSelectMany: false,
-            filters: { 'PDF Files': ['pdf'] },
-            title: 'Select a PDF File for Code Generation'
+            filters: { [localize('pdf.pdfFiles', 'PDF Files')]: ['pdf'] },
+            title: localize('pdf.selectPdfTitle', 'Select a PDF File for Code Generation')
         });
 
         if (!pdfUris || pdfUris.length === 0) {
@@ -37,19 +37,19 @@ export async function generateCodeFromPdf(): Promise<void> {
          * Loads the PDF document to verify its validity and get page count
          */
         const pdfBytes = fs.readFileSync(pdfPath);
+        const { PDFDocument } = await import('pdf-lib');
         const pdfDoc = await PDFDocument.load(pdfBytes);
         const pageCount = pdfDoc.getPageCount();
 
         /**
          * Step 2: Page Range Selection
          * Prompts for start and end pages with validation
-         */
-        const startPageInput = await vscode.window.showInputBox({
-            prompt: `Enter start page number (1-${pageCount})`,
+         */        const startPageInput = await vscode.window.showInputBox({
+            prompt: localize('pdf.enterStartPage', `Enter start page number (1-${pageCount})`),
             validateInput: (value) => {
                 const num = parseInt(value);
                 if (isNaN(num) || num < 1 || num > pageCount) {
-                    return `Please enter a valid page number between 1 and ${pageCount}`;
+                    return localize('pdf.invalidPageNumber', `Please enter a valid page number between 1 and ${pageCount}`);
                 }
                 return null;
             }
@@ -59,14 +59,12 @@ export async function generateCodeFromPdf(): Promise<void> {
             return; // User cancelled
         }
 
-        const startPage = parseInt(startPageInput);
-
-        const endPageInput = await vscode.window.showInputBox({
-            prompt: `Enter end page number (${startPage}-${pageCount})`,
+        const startPage = parseInt(startPageInput);        const endPageInput = await vscode.window.showInputBox({
+            prompt: localize('pdf.enterEndPage', `Enter end page number (${startPage}-${pageCount})`),
             validateInput: (value) => {
                 const num = parseInt(value);
                 if (isNaN(num) || num < startPage || num > pageCount) {
-                    return `Please enter a valid page number between ${startPage} and ${pageCount}`;
+                    return localize('pdf.invalidEndPageNumber', `Please enter a valid page number between ${startPage} and ${pageCount}`);
                 }
                 return null;
             }
@@ -80,38 +78,34 @@ export async function generateCodeFromPdf(): Promise<void> {
         /**
          * Step 3: Target Language Selection
          * Prompts user to select a preferred programming language
-         */
-        const languageOptions = ['TypeScript', 'JavaScript', 'Python', 'Java', 'C#', 'C++', 'Go', 'Rust', 'Other'];
+         */        const languageOptions = ['TypeScript', 'JavaScript', 'Python', 'Java', 'C#', 'C++', 'Go', 'Rust', 'Other'];
         const preferredLanguage = await vscode.window.showQuickPick(
-            [...languageOptions, 'Unspecified'],
+            [...languageOptions, localize('pdf.unspecified', 'Unspecified')],
             { 
-                placeHolder: 'Please select your target language', 
+                placeHolder: localize('pdf.selectTargetLanguage', 'Please select your target language'), 
                 canPickMany: false,
-                title: 'Target Language'
+                title: localize('pdf.targetLanguage', 'Target Language')
             }
         );
         
-        const languagePref = preferredLanguage && preferredLanguage !== 'Unspecified' ? preferredLanguage : undefined;
+        const languagePref = preferredLanguage && preferredLanguage !== localize('pdf.unspecified', 'Unspecified') ? preferredLanguage : undefined;
 
         /**
          * Step 4: Code Generation
          * Processes the PDF and generates code based on the extracted content
-         */
-        await vscode.window.withProgress({
+         */        await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Generating Code from PDF',
+            title: localize('pdf.generatingCode', 'Generating Code from PDF'),
             cancellable: false
         }, async (progress) => {
-            progress.report({ message: 'Extracting text from PDF...' });
+            progress.report({ message: localize('pdf.extractingText', 'Extracting text from PDF...') });
 
             // Process the PDF and generate code with preferred language
             await processPdfToCode(pdfPath, startPage - 1, endPage - 1, languagePref);
 
             return true;
-        });
-
-    } catch (error) {
+        });    } catch (error) {
         outputChannel.error('PDF Code Generator', `Error in command: ${error}`);
-        vscode.window.showErrorMessage(`Error generating code: ${error}`);
+        vscode.window.showErrorMessage(localize('pdf.generationError', `Error generating code: ${error}`));
     }
 }

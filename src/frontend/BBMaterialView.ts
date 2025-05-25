@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as PathManager from '../utils/pathManager';
+import { localize } from "../utils/i18n";
 
 /**
  * Provides a tree view of parsed Blackboard course materials.
@@ -14,9 +15,11 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     /** Root path for Blackboard materials */
-    private rootPath: string = '';
-    /** File system watcher for monitoring changes */
-    private watcher?: vscode.FileSystemWatcher;
+    private rootPath: string = '';    /** File system watcher for monitoring changes */
+    private watcher?: vscode.FileSystemWatcher;    /** Additional file system watcher for all files */
+    private allWatcher?: vscode.FileSystemWatcher;
+    /** Flag to track if the provider is disposed */
+    private _disposed: boolean = false;
 
     private constructor() {}
 
@@ -34,26 +37,25 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
         provider.watcher = vscode.workspace.createFileSystemWatcher(pattern);
         provider.watcher.onDidChange(() => provider.refresh());
         provider.watcher.onDidCreate(() => provider.refresh());
-        provider.watcher.onDidDelete(() => provider.refresh());
-
-        // Watch all file/folder changes (for folders and subfiles)
+        provider.watcher.onDidDelete(() => provider.refresh());        // Watch all file/folder changes (for folders and subfiles)
         const allPattern = new vscode.RelativePattern(provider.rootPath, '**/*');
-        const allWatcher = vscode.workspace.createFileSystemWatcher(allPattern);
-        allWatcher.onDidChange(() => provider.refresh());
-        allWatcher.onDidCreate(() => provider.refresh());
-        allWatcher.onDidDelete(() => provider.refresh());
-
-        // Attach watcher to instance to prevent GC (as a symbol-like private field)
-        (provider as any)._extraWatcher = allWatcher;
+        provider.allWatcher = vscode.workspace.createFileSystemWatcher(allPattern);
+        provider.allWatcher.onDidChange(() => provider.refresh());
+        provider.allWatcher.onDidCreate(() => provider.refresh());
+        provider.allWatcher.onDidDelete(() => provider.refresh());
 
         return provider;
-    }
-
-    /**
+    }    /**
      * Triggers a refresh of the entire tree view.
      */
     refresh(): void {
-        this._onDidChangeTreeData.fire(undefined);
+        try {
+            if (!this._disposed && this._onDidChangeTreeData) {
+                this._onDidChangeTreeData.fire(undefined);
+            }
+        } catch (error) {
+            console.error('Error refreshing BBMaterialView:', error);
+        }
     }
 
     /**
@@ -83,13 +85,12 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
                     f.name,
                     element.realPath
                 );
-                item.command = {
-                    command: 'vscode.open',
-                    title: 'Open in Browser',
+                item.command = {                    command: 'vscode.open',
+                    title: localize("bbMaterialView.openInBrowser", "Open in Browser"),
                     arguments: [vscode.Uri.parse(f.url)]
                 };
                 item.tooltip = f.url;
-                item.description = '(remote)';
+                item.description = localize("bbMaterialView.remote", "(remote)");
                 return item;
             });
         }
@@ -100,8 +101,7 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
         let stats: fs.Stats;
         try {
             stats = await fs.promises.stat(targetPath);
-        } catch {
-            vscode.window.showWarningMessage(`Cannot access path: ${targetPath}`);
+        } catch {            vscode.window.showWarningMessage(localize("bbMaterialView.cannotAccessPath", `Cannot access path: ${targetPath}`));
             return [];
         }
 
@@ -151,22 +151,29 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
                     virtualFolder.contextValue = 'jsonFolder';
                     virtualFolder.meta = parsed.files || [];
 
-                    result.push(virtualFolder);
-                } catch {
-                    vscode.window.showWarningMessage(`Failed to read json: ${name}`);
+                    result.push(virtualFolder);                } catch {
+                    vscode.window.showWarningMessage(localize("bbMaterialView.failedToReadJson", `Failed to read json: ${name}`));
                 }
             }
         }
 
         return result;
-    }
-
-    /**
-     * Disposes all file watchers.
+    }    /**
+     * Disposes all file watchers and event emitter.
      */
     dispose(): void {
-        this.watcher?.dispose();
-        (this as any)._extraWatcher?.dispose();
+        if (this._disposed) {
+            return;
+        }
+        
+        try {
+            this._disposed = true;
+            this.watcher?.dispose();
+            this.allWatcher?.dispose();
+            this._onDidChangeTreeData?.dispose();
+        } catch (error) {
+            console.error('Error disposing BBMaterialViewProvider:', error);
+        }
     }
 }
 

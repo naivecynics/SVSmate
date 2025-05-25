@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { getDir } from '../utils/pathManager';
+import { localize } from "../utils/i18n";
 
 /**
  * Provides a tree view for managing Markdown notes within the extension.
@@ -12,6 +13,8 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
     private _onDidChangeTreeData = new vscode.EventEmitter<NoteItem | undefined>();
     /** Event that fires when the tree data changes */
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+    /** Flag to track if the provider is disposed */
+    private _disposed: boolean = false;
 
     /**
      * Creates a new NotesViewProvider instance.
@@ -28,20 +31,38 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
     static create(): NotesViewProvider {
         const notesPath = getDir('notes');
         return new NotesViewProvider(notesPath);
-    }
-
-    /**
+    }    /**
      * Clean up event listeners.
-     */
-    dispose(): void {
-        this._onDidChangeTreeData.dispose();
+     */    dispose(): void {
+        if (this._disposed) {
+            return;
+        }
+        
+        try {
+            this._disposed = true;
+            this._onDidChangeTreeData?.dispose();
+        } catch (error) {
+            console.error('Error disposing NotesViewProvider:', error);
+        }
     }
 
     /**
-     * Refresh the entire notes tree.
+     * Safely refresh the tree view
      */
+    private safeRefresh(): void {
+        try {
+            if (!this._disposed && this._onDidChangeTreeData) {
+                this._onDidChangeTreeData.fire(undefined);
+            }
+        } catch (error) {
+            console.error('Error refreshing NotesView:', error);
+        }
+    }
+
+    /**
+     * Refresh the entire notes tree.     */
     refresh(): void {
-        this._onDidChangeTreeData.fire(undefined);
+        this.safeRefresh();
     }
 
     /**
@@ -61,15 +82,14 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
      * @returns A list of NoteItem children.
      */
     async getChildren(element?: NoteItem): Promise<NoteItem[]> {
-        if (!element) {
-            return [
+        if (!element) {            return [
                 new NoteItem(
-                    'Crawled Course Notes',
+                    localize('notesView.crawledCourseNotes', 'Crawled Course Notes'),
                     vscode.TreeItemCollapsibleState.Collapsed,
                     vscode.Uri.file(path.join(this.notesPath, 'crawled_courses_notes'))
                 ),
                 new NoteItem(
-                    'Personal Notes',
+                    localize('notesView.personalNotes', 'Personal Notes'),
                     vscode.TreeItemCollapsibleState.Collapsed,
                     vscode.Uri.file(path.join(this.notesPath, 'personal_notes'))
                 )
@@ -98,27 +118,22 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
      * 
      * @param folderPath - The path to the folder where the note should be created.
      */
-    async createNote(folderPath: string): Promise<void> {
-        const name = await vscode.window.showInputBox({
-            prompt: 'Enter note name',
-            placeHolder: 'e.g., Study Notes'
+    async createNote(folderPath: string): Promise<void> {        const name = await vscode.window.showInputBox({
+            prompt: localize('notesView.enterNoteName', 'Enter note name'),
+            placeHolder: localize('notesView.notePlaceholder', 'e.g., Study Notes')
         });
 
         if (!name) {return;}
 
         const fileName = name.endsWith('.md') ? name : name + '.md';
-        const fullPath = path.join(folderPath, fileName);
-
-        if (fs.existsSync(fullPath)) {
-            vscode.window.showErrorMessage('Note already exists!');
+        const fullPath = path.join(folderPath, fileName);        if (fs.existsSync(fullPath)) {
+            vscode.window.showErrorMessage(localize('notesView.noteAlreadyExists', 'Note already exists!'));
             return;
         }
 
         await fs.promises.writeFile(fullPath, `# ${name.replace('.md', '')}\n\n`);
         this.refresh();
-    }
-
-    /**
+    }    /**
      * Deletes a note file.
      * 
      * @param filePath - Full file path of the note to delete.
@@ -126,9 +141,8 @@ export class NotesViewProvider implements vscode.TreeDataProvider<NoteItem>, vsc
     async deleteNote(filePath: string): Promise<void> {
         try {
             await fs.promises.unlink(filePath);
-            this._onDidChangeTreeData.fire(undefined);
-        } catch (err) {
-            vscode.window.showErrorMessage(`Failed to delete note: ${err}`);
+            this.safeRefresh();        } catch (err) {
+            vscode.window.showErrorMessage(localize('notesView.deleteError', `Failed to delete note: ${err}`));
         }
     }
 }

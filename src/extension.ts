@@ -15,6 +15,7 @@ import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialVie
 
 import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
+import { localize } from './utils/i18n';
 
 
 /**
@@ -28,35 +29,42 @@ export async function activate(context: vscode.ExtensionContext) {
 
     outputChannel.info('SVSmate Main!', 'SVSmate activated!');
     console.log('SVSmate activated!');
+    console.log(`Initial subscriptions count: ${context.subscriptions.length}`);
 
     // ------------------------------------------------
     //                      file
-    // ------------------------------------------------
+    // ------------------------------------------------    
     const folderViewProvider = FolderViewProvider.create();
-    folderViewProvider && vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
-    folderViewProvider && context.subscriptions.push(folderViewProvider);
-
-    // ------------------------------------------------
+    if (folderViewProvider) {
+        context.subscriptions.push(
+            vscode.window.registerTreeDataProvider("folderView", folderViewProvider),
+            folderViewProvider
+        );
+        console.log(`After folderView registration: ${context.subscriptions.length} subscriptions`);
+    }// ------------------------------------------------
     //                       ai
     // ------------------------------------------------
 
     // copilot ai chatbot @mate-API & @mate
-    createChatParticipantAPI();
-    createChatParticipant();
+    const chatParticipantAPI = createChatParticipantAPI();
+    const chatParticipant = createChatParticipant();
 
     context.subscriptions.push(
+        chatParticipantAPI,
+        chatParticipant,
         vscode.window.registerWebviewViewProvider("copilotView", CopilotViewProvider.create())
     );
+    console.log(`After AI components registration: ${context.subscriptions.length} subscriptions`);
 
     // ------------------------------------------------
     //                   blaskboard
     // ------------------------------------------------
     const bbMaterialViewProvider = BBMaterialViewProvider.create();
-    vscode.window.registerTreeDataProvider("bbMaterialView", bbMaterialViewProvider);
     context.subscriptions.push(
-
-        bbMaterialViewProvider,
-
+        vscode.window.registerTreeDataProvider("bbMaterialView", bbMaterialViewProvider),
+        bbMaterialViewProvider
+    );
+    context.subscriptions.push(
         vscode.commands.registerCommand('svsmate.BB-updateAll', async () => {
             await updateAll(context);
         }),
@@ -78,7 +86,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }),
 
     );
-
+    console.log(`After BB components registration: ${context.subscriptions.length} subscriptions`);
 
     // ------------------------------------------------
     //                 collaboration
@@ -90,29 +98,37 @@ export async function activate(context: vscode.ExtensionContext) {
     //                      note
     // ------------------------------------------------
     const notesViewProvider = await NotesViewProvider.create();
-    vscode.window.registerTreeDataProvider("notesView", notesViewProvider);
-    context.subscriptions.push(notesViewProvider);
+    if (notesViewProvider) {
+        context.subscriptions.push(
+            vscode.window.registerTreeDataProvider("notesView", notesViewProvider),
+            notesViewProvider
+        );
+    }
 
-    vscode.commands.registerCommand('notesView.createNote', async (folderPath: string) => {
-        await notesViewProvider.createNote(folderPath);
-    });
-
-    vscode.commands.registerCommand('notesView.deleteNote', async (item: any) => {
-        try {
-            const answer = await vscode.window.showWarningMessage(
-                `Are you sure you want to delete the note "${item.label}"?`,
-                'Yes',
-                'No'
-            );
-
-            if (answer === 'Yes') {
-                await notesViewProvider.deleteNote(item.resourceUri.fsPath);
-                vscode.window.showInformationMessage(`Note "${item.label}" has been deleted`);
+    context.subscriptions.push(
+        vscode.commands.registerCommand('notesView.createNote', async (folderPath: string) => {
+            if (notesViewProvider) {
+                await notesViewProvider.createNote(folderPath);
             }
-        } catch (error) {
-            vscode.window.showErrorMessage(`Failed to delete note: ${error}`);
-        }
-    });
+        }),
+
+        vscode.commands.registerCommand('notesView.deleteNote', async (item: any) => {
+            if (!notesViewProvider) {
+                return;
+            }
+            try {                const answer = await vscode.window.showWarningMessage(
+                    localize('notesView.deleteConfirmation', `Are you sure you want to delete the note "${item.label}"?`),
+                    localize('common.yes', 'Yes'),
+                    localize('common.no', 'No')
+                );                if (answer === localize('common.yes', 'Yes')) {
+                    await notesViewProvider.deleteNote(item.resourceUri.fsPath);
+                    vscode.window.showInformationMessage(localize('notesView.deleteSuccess', `Note "${item.label}" has been deleted`));
+                }            } catch (error) {
+                vscode.window.showErrorMessage(localize('notesView.deleteError', `Failed to delete note: ${error}`));
+            }
+        })
+    );
+    console.log(`After notes components registration: ${context.subscriptions.length} subscriptions`);
 
     // ------------------------------------------------
     //                      pdf
@@ -120,19 +136,29 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand("svsmate.PDF-generateFromPDF", async () => {
+            // 动态导入 PDF 功能
+            try {
+                const { generateCodeFromPdf } = await import('./backend/pdf/pdfCommands.js');
                 await generateCodeFromPdf();
-        }),
+            } catch (error) {
+                if (error instanceof Error) {                    vscode.window.showErrorMessage(localize('pdf.loadError', `Failed to load PDF module: ${error.message}`));
+                } else {
+                    vscode.window.showErrorMessage(localize('pdf.loadErrorUnknown', 'Failed to load PDF module: Unknown error'));
+                }
+            }
+        })
     );
 
     // ------------------------------------------------
     //                      todo
     // ------------------------------------------------
     const todoListViewProvider = await TodoListViewProvider.create();
-    vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider);
+    if (todoListViewProvider) {
+        context.subscriptions.push(vscode.window.registerTreeDataProvider("todoListView", todoListViewProvider),
+            todoListViewProvider);
+    }
 
     context.subscriptions.push(
-
-        todoListViewProvider,
 
         vscode.commands.registerCommand("todoListView.addItem", async () => {
             await addItem(todoListViewProvider);
@@ -179,10 +205,20 @@ export async function activate(context: vscode.ExtensionContext) {
         }),
 
     );
+    console.log(`Final subscriptions count: ${context.subscriptions.length} subscriptions`);
 }
 
 /**
  * Deactivates the SVSmate extension.
  * Cleans up resources when the extension is deactivated.
  */
-export function deactivate() { }
+export function deactivate() {
+    outputChannel.info('SVSmate Main!', 'SVSmate deactivated!');
+    console.log('SVSmate deactivated!');
+
+    // Force garbage collection if available
+    if (global.gc) {
+        global.gc();
+        console.log('Forced garbage collection');
+    }
+}

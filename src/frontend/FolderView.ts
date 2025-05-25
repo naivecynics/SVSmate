@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
+import { localize } from "../utils/i18n";
 
 /**
  * Provides a tree view of files and folders in the current workspace.
@@ -16,20 +17,26 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem>, vs
 
     /** File system watcher for monitoring file changes */
     private fileSystemWatcher: vscode.FileSystemWatcher;
-
-    /**
+    /** Flag to track if the provider is disposed */
+    private _disposed: boolean = false;/**
      * Creates a FolderViewProvider for the given workspace root.
      * 
      * @param workspaceRoot - The root path of the currently open workspace.
      */
     constructor(private workspaceRoot: string | undefined) {
-        // Create a file system watcher to monitor all file changes
-        this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/*');
+        if (workspaceRoot) {
+            // Create a file system watcher to monitor file changes only in the workspace
+            const pattern = new vscode.RelativePattern(workspaceRoot, '**/*');
+            this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher(pattern);
 
-        // Watch for file creation, deletion, or change events
-        this.fileSystemWatcher.onDidCreate(() => this.refresh());
-        this.fileSystemWatcher.onDidDelete(() => this.refresh());
-        this.fileSystemWatcher.onDidChange(() => this.refresh());
+            // Watch for file creation, deletion, or change events
+            this.fileSystemWatcher.onDidCreate(() => this.refresh());
+            this.fileSystemWatcher.onDidDelete(() => this.refresh());
+            this.fileSystemWatcher.onDidChange(() => this.refresh());
+        } else {
+            // Fallback: create a minimal watcher that does nothing
+            this.fileSystemWatcher = vscode.workspace.createFileSystemWatcher('**/nonexistent');
+        }
     }
 
     /**
@@ -37,27 +44,38 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem>, vs
      * 
      * @returns A new FolderViewProvider, or undefined if no workspace is open.
      */
-    static create(): FolderViewProvider | undefined {
-        const folders = vscode.workspace.workspaceFolders;
+    static create(): FolderViewProvider | undefined {        const folders = vscode.workspace.workspaceFolders;
         if (!folders || folders.length === 0) {
-            vscode.window.showWarningMessage("No workspace folder is open.");
+            vscode.window.showWarningMessage(localize("folderView.noWorkspace", "No workspace folder is open."));
             return;
         }
         return new FolderViewProvider(folders[0].uri.fsPath);
-    }
-
-    /**
-     * Dispose the file system watcher.
+    }    /**
+     * Dispose the file system watcher and event emitter.
      */
     dispose(): void {
-        this.fileSystemWatcher.dispose();
-    }
-
-    /**
+        if (this._disposed) {
+            return;
+        }
+        
+        try {
+            this._disposed = true;
+            this.fileSystemWatcher?.dispose();
+            this._onDidChangeTreeData?.dispose();
+        } catch (error) {
+            console.error('Error disposing FolderViewProvider:', error);
+        }
+    }/**
      * Refresh the tree view.
      */
     refresh(): void {
-        this._onDidChangeTreeData.fire(undefined);
+        try {
+            if (!this._disposed && this._onDidChangeTreeData) {
+                this._onDidChangeTreeData.fire(undefined);
+            }
+        } catch (error) {
+            console.error('Error refreshing FolderView:', error);
+        }
     }
 
     /**
@@ -76,9 +94,8 @@ export class FolderViewProvider implements vscode.TreeDataProvider<FileItem>, vs
      * @param element - The parent folder node, or undefined for the root.
      * @returns A list of FileItem instances.
      */
-    getChildren(element?: FileItem): FileItem[] | Thenable<FileItem[]> {
-        if (!this.workspaceRoot) {
-            vscode.window.showInformationMessage("No workspace folder found");
+    getChildren(element?: FileItem): FileItem[] | Thenable<FileItem[]> {        if (!this.workspaceRoot) {
+            vscode.window.showInformationMessage(localize("folderView.noWorkspaceRoot", "No workspace folder found"));
             return Promise.resolve([]);
         }
 
@@ -146,9 +163,8 @@ export class FileItem extends vscode.TreeItem {
 
         // Open file on click if it's not a folder
         if (collapsibleState === vscode.TreeItemCollapsibleState.None) {
-            this.command = {
-                command: 'vscode.open',
-                title: 'Open File',
+            this.command = {                command: 'vscode.open',
+                title: localize("folderView.openFile", "Open File"),
                 arguments: [this.resourceUri]
             };
         }

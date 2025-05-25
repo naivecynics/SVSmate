@@ -4,7 +4,8 @@ import * as path from 'path';
 import { getWorkspaceDir } from '../../utils/pathManager';
 import { AICodeResponse, generateCodeFromText } from '../ai/pdfCodeGenerator';
 import { outputChannel } from '../../utils/OutputChannel';
-import pdfParse from 'pdf-parse';
+import { localize } from '../../utils/i18n';
+// import pdfParse from 'pdf-parse';
 
 /**
  * Extracts text from a specific page range of a PDF file
@@ -43,12 +44,14 @@ export async function extractTextFromPDFRange(pdfPath: string, startPage: number
       }
     };
 
+    const pdfParse = await import('pdf-parse').then(m => m.default || m);
+    
     // Parse the PDF with our custom renderer
     const data = await pdfParse(dataBuffer, renderOptions);
     
     // If no pages were found in the range, return a message
     if (!data.text.trim()) {
-      return `No content found in pages ${startPage + 1} to ${endPage + 1}`;
+      return localize('pdf.noContentFound', `No content found in pages ${startPage + 1} to ${endPage + 1}`);
     }
     
     return data.text;
@@ -78,20 +81,19 @@ export async function processPdfToCode(
   try {
     // 1. Extract text from PDF
     outputChannel.info('PDF Code Generator', `Extracting text from PDF pages ${startPage + 1}-${endPage + 1}`);
-    const pdfText = await extractTextFromPDFRange(pdfPath, startPage, endPage);
-    // vscode show pdf text
-    vscode.window.showInformationMessage(`Extracted text from PDF: ${pdfText.substring(0, 100)}...`);
+    const pdfText = await extractTextFromPDFRange(pdfPath, startPage, endPage);    // vscode show pdf text
+    vscode.window.showInformationMessage(localize('pdf.extractedText', `Extracted text from PDF: ${pdfText.substring(0, 100)}...`));
     const aiResponse = await generateCodeFromText(pdfText, preferredLanguage);
 
     // 3. Create the code file
     const filePath = await createCodeFile(aiResponse);
 
     // 4. Show success message
-    vscode.window.showInformationMessage(
-      `Successfully generated ${aiResponse.language} code from PDF: ${aiResponse.description}`,
-      'Open File'
+      vscode.window.showInformationMessage(
+      localize('pdf.successGenerated', `Successfully generated ${aiResponse.language} code from PDF: ${aiResponse.description}`),
+      localize('pdf.openFile', 'Open File')
     ).then(selection => {
-      if (selection === 'Open File') {
+      if (selection === localize('pdf.openFile', 'Open File')) {
         vscode.workspace.openTextDocument(filePath).then(doc => {
           vscode.window.showTextDocument(doc);
         });
@@ -101,7 +103,7 @@ export async function processPdfToCode(
     return filePath;
   } catch (error) {
     outputChannel.error('PDF Code Generator', `Error in PDF code generation process: ${error}`);
-    vscode.window.showErrorMessage(`Error generating code from PDF: ${error}`);
+    vscode.window.showErrorMessage(localize('pdf.errorGeneratingCode', `Error generating code from PDF: ${error}`));
     throw error;
   }
 }

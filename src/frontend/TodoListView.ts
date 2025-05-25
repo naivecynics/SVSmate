@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as ical from "node-ical";
 import * as PathManager from "../utils/pathManager";
 import * as aiSubtask from "../backend/ai/createSubtasks";
+import { localize } from "../utils/i18n";
 
 /**
  * Represents a task or subtask item in the to-do list.
@@ -31,14 +32,14 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     /** Event emitter for notifying VS Code about data changes */
     public _onDidChangeTreeData = new vscode.EventEmitter<TodoItem | undefined>();
     /** Event that fires when the tree data changes */
-    readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
-
-    /** Array of root-level tasks */
+    readonly onDidChangeTreeData = this._onDidChangeTreeData.event;    /** Array of root-level tasks */
     private items: TodoItem[] = [];
     /** Current search term for filtering tasks */
     private _searchTerm = "";
     /** Array of tasks matching the current search term */
     private _filteredItems: TodoItem[] = [];
+    /** Flag to track if the provider is disposed */
+    private _disposed: boolean = false;
 
     private constructor() {}
 
@@ -50,13 +51,33 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         const provider = new TodoListViewProvider();
         await provider.loadFromDisk();
         return provider;
-    }
-
-    /**
+    }    /**
      * Cleans up resources when the provider is disposed
      */
     dispose(): void {
-        this._onDidChangeTreeData.dispose();
+        if (this._disposed) {
+            return;
+        }
+        
+        try {
+            this._disposed = true;
+            this._onDidChangeTreeData?.dispose();
+        } catch (error) {
+            console.error('Error disposing TodoListViewProvider:', error);
+        }
+    }
+
+    /**
+     * Safely refresh the tree view
+     */
+    private safeRefresh(): void {
+        try {
+            if (!this._disposed && this._onDidChangeTreeData) {
+                this._onDidChangeTreeData.fire(undefined);
+            }
+        } catch (error) {
+            console.error('Error refreshing TodoListView:', error);
+        }
     }
 
     /**
@@ -71,14 +92,13 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             : vscode.TreeItemCollapsibleState.None;
 
         const item = new vscode.TreeItem(element.label, state);
-        item.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");
-        item.tooltip = `Task: ${element.label}\nCategory: ${element.category}\nDue: ${element.endTime}` +
-            (hasChildren ? `\nSubtasks: ${element.children.length}` : '');
+        item.iconPath = new vscode.ThemeIcon(element.checked ? "check" : "circle-outline");        item.tooltip = localize("todoListView.taskTooltip", 
+            `Task: ${element.label}\nCategory: ${element.category}\nDue: ${element.endTime}` +
+            (hasChildren ? `\nSubtasks: ${element.children.length}` : ''));
         item.description = `[${element.category}] ❗${element.endTime}${hasChildren ? ` (${element.children.length})` : ''}`;
-        item.resourceUri = vscode.Uri.parse(`date:${element.endTime}`);
-        item.command = {
+        item.resourceUri = vscode.Uri.parse(`date:${element.endTime}`);        item.command = {
             command: 'todoListView.toggleTaskCheckbox',
-            title: 'Toggle Task',
+            title: localize("todoListView.toggleTask", "Toggle Task"),
             arguments: [element]
         };
         item.contextValue = element.id.includes('/') ? 'subtask' : 'task';
@@ -128,13 +148,10 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
      */
     setSearchTerm(term: string) {
         this._searchTerm = term.trim().toLowerCase();
-        this._filteredItems = [];
-
-        if (this._searchTerm) {
+        this._filteredItems = [];        if (this._searchTerm) {
             this.findMatchingTasks(this.items, this._searchTerm, this._filteredItems);
         }
-
-        this._onDidChangeTreeData.fire(undefined);
+        this.safeRefresh();
     }
 
     private findMatchingTasks(items: TodoItem[], term: string, results: TodoItem[]) {
@@ -142,15 +159,13 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             if (item.label.toLowerCase().includes(term)) {results.push(item);}
             if (item.children.length > 0) {this.findMatchingTasks(item.children, term, results);}
         }
-    }
-
-    /**
+    }    /**
      * Clears the current search term and resets the task list.
      */
     clearSearch() {
         this._searchTerm = "";
         this._filteredItems = [];
-        this._onDidChangeTreeData.fire(undefined);
+        this.safeRefresh();
     }
 
     /**
@@ -181,11 +196,10 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             endTime,
             category,
             checked: false,
-            children: []
-        });
+            children: []        });
 
         this.saveToDisk();
-        this._onDidChangeTreeData.fire(undefined);
+        this.safeRefresh();
     }
 
     /**
@@ -203,11 +217,9 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             category: parentTask.category,
             checked: false,
             children: []
-        };
-
-        parentTask.children.push(subTask);
+        };        parentTask.children.push(subTask);
         this.saveToDisk();
-        this._onDidChangeTreeData.fire(undefined);
+        this.safeRefresh();
     }
 
     /**
@@ -221,18 +233,14 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             prompt: "Edit due date (YYYY-MM-DD)",
             value: task.endTime,
             validateInput: (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : "Invalid date format"
-        });
-
-        if (newLabel && newCategory && newEndTime) {
+        });        if (newLabel && newCategory && newEndTime) {
             task.label = newLabel;
             task.category = newCategory;
             task.endTime = newEndTime;
             this.saveToDisk();
-            this._onDidChangeTreeData.fire(undefined);
+            this.safeRefresh();
         }
-    }
-
-    /**
+    }    /**
      * Deletes a task or subtask.
      * @param task - The task to delete
      */
@@ -246,10 +254,8 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         }
 
         this.saveToDisk();
-        this._onDidChangeTreeData.fire(undefined);
-    }
-
-    /**
+        this.safeRefresh();
+    }    /**
      * Toggles completion state of a task and updates children and parent accordingly.
      * @param task - The task to toggle
      */
@@ -258,7 +264,7 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         if (task.children.length > 0) {this.updateChildrenCheckState(task.children, task.checked);}
         this.updateParentCheckState(task);
         this.saveToDisk();
-        this._onDidChangeTreeData.fire(undefined);
+        this.safeRefresh();
     }
 
     private updateChildrenCheckState(children: TodoItem[], checked: boolean) {
@@ -276,15 +282,13 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
             parent.checked = parent.children.every(c => c.checked);
             this.updateParentCheckState(parent);
         }
-    }
-
-    /**
+    }    /**
      * Sorts tasks recursively by end date or category.
      * @param key - The key to sort tasks by (endTime or category)
      */
     sortBy(key: "endTime" | "category") {
         this.sortItems(this.items, key);
-        this._onDidChangeTreeData.fire(undefined);
+        this.safeRefresh();
     }
 
     private sortItems(items: TodoItem[], key: "endTime" | "category") {
@@ -297,10 +301,9 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
     /**
      * Loads tasks from disk and initializes the task list.
      */
-    private async loadFromDisk() {
-        const filePath = PathManager.getFile("todoList");
+    private async loadFromDisk() {        const filePath = PathManager.getFile("todoList");
         if (!fs.existsSync(filePath)) {
-            vscode.window.showWarningMessage("Task file not found. A new file will be created.");
+            vscode.window.showWarningMessage(localize("todoListView.fileNotFound", "Task file not found. A new file will be created."));
             this.items = [];
             this.saveToDisk();
             return;
@@ -309,9 +312,8 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         try {
             const raw = fs.readFileSync(filePath, "utf8");
             const rawData = JSON.parse(raw);
-            this.items = this.buildTaskTree(rawData);
-        } catch (err) {
-            vscode.window.showErrorMessage(`Failed to load tasks: ${err}`);
+            this.items = this.buildTaskTree(rawData);        } catch (err) {
+            vscode.window.showErrorMessage(localize("todoListView.loadError", `Failed to load tasks: ${err}`));
             this.items = [];
         }
     }
@@ -320,12 +322,11 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
         const allTasks: Record<string, TodoItem> = {};
         const rootTasks: TodoItem[] = [];
 
-        for (const item of data) {
-            const task: TodoItem = {
+        for (const item of data) {                const task: TodoItem = {
                 id: item.id || `task_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-                label: item.Name || "Untitled",
-                endTime: item.DDL || "N/A",
-                category: item.Variety || "Uncategorized",
+                label: item.Name || localize("todoListView.untitled", "Untitled"),
+                endTime: item.DDL || localize("todoListView.noDate", "N/A"),
+                category: item.Variety || localize("todoListView.uncategorized", "Uncategorized"),
                 checked: item.Finish || false,
                 children: []
             };
@@ -385,9 +386,8 @@ export class TodoListViewProvider implements vscode.TreeDataProvider<TodoItem>, 
                 const res = await fetch(filePath);
                 if (!res.ok) {throw new Error(`HTTP ${res.status}`);}
                 icsContent = await res.text();
-            } else {
-                if (!fs.existsSync(filePath)) {
-                    vscode.window.showErrorMessage(`.ics file not found: ${filePath}`);
+            } else {                if (!fs.existsSync(filePath)) {
+                    vscode.window.showErrorMessage(localize("todoListView.icsFileNotFound", `.ics file not found: ${filePath}`));
                     return;
                 }
                 icsContent = fs.readFileSync(filePath, "utf8");

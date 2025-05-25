@@ -10,8 +10,9 @@ If the user asks a non-programming question, politely decline to respond.`;
 /**
  * Factory function to create a new Chat Participant for the API version of the ChatBot.
  * This function initializes a `ChatBot` instance and sets up the handler to manage chat requests.
+ * @returns The created chat participant for registration in extension context
  */
-export function createChatParticipantAPI(): void {
+export function createChatParticipantAPI(): vscode.ChatParticipant {
   /**
    * Handler for processing chat requests.
    * 
@@ -45,10 +46,11 @@ export function createChatParticipantAPI(): void {
 
     return;
   };
-
   // Create the chat participant with the handler defined above
   const mateParticipantAPI = vscode.chat.createChatParticipant("svsmate.ChatBot-API", handler);
 
   // Optional: Set the participant's icon path here if needed
   // mateParticipantAPI.iconPath = vscode.Uri.joinPath(context.extensionUri, 'tutor.jpeg');
+  
+  return mateParticipantAPI;
 }

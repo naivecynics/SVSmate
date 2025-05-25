@@ -1,7 +1,8 @@
 {
     "name": "svsmate",
     "displayName": "SVSmate",
-    "description": "The Ultimate VS Code Extension for SUSTechers!",    "version": "0.0.1",
+    "description": "The Ultimate VS Code Extension for SUSTechers!",
+    "version": "0.0.1",
     "publisher": "svsmate-team",
     "repository": {
         "type": "git",
@@ -20,7 +21,7 @@
     "activationEvents": [
         "onStartupFinished"
     ],
-    "main": "./out/extension",
+    "main": "./dist/extension",
     "contributes": {
         "configuration": {
             "title": "%svsmate.configuration.title%",
@@ -281,7 +282,8 @@
                     "when": "view == folderView",
                     "group": "navigation",
                     "title": "Generate Code from PDF"
-                }            ]
+                }
+            ]
         }
     },
     "dependencies": {
@@ -293,6 +295,7 @@
         "pdf-lib": "^1.17.1",
         "pdf-parse": "^1.1.1",
         "tough-cookie": "^5.1.2",
+        "vscode-nls": "^5.2.0",
         "xml2js": "^0.6.2"
     },
     "devDependencies": {
@@ -316,23 +319,25 @@
         "sinon": "^20.0.0",
         "typedoc": "^0.28.4",
         "typescript": "^5.7.3",
-        "vscode-nls": "^5.2.0",
         "vscode-nls-dev": "^4.0.4"
     },
     "scripts": {
-        "vscode:prepublish": "npm run esbuild-base -- --minify",
+        "lint": "eslint src --fix",
+        "dev:compile": "npx rimraf out && npx tsc -p ./ && npm run lint",
+        "test": "vscode-test",
+        "docs": "typedoc",
+        "compile": "npm run check-types && node esbuild.js",
+        "check-types": "tsc --noEmit",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "vscode:prepublish": "npm run package",
+        "package": "npm run check-types && node esbuild.js --production",
+        "generate-nls": "npx vscode-nls-dev generate --out l10n src",
         "esbuild-base": "node esbuild.js",
         "esbuild": "npm run esbuild-base -- --sourcemap",
         "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
-        "check-types": "tsc --noEmit",
-        "lint": "eslint . --ext .ts,.tsx",
-        "package": "vsce package",
-        "docs": "typedoc",
         "test-compile": "tsc -p ./",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
-        "pretest": "npm run compile && npm run lint",
-        "test": "vscode-test",
-        "generate-nls": "vscode-nls-dev generate --outDir l10n"
+        "pretest": "npm run compile && npm run lint"
     }
 }
