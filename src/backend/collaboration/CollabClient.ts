@@ -243,12 +243,26 @@ export class CollabClient extends EventEmitter {
     }
 
     /**
+     * Get existing document by ID
+     */
+    getDocument(fileId: string): any | null {
+        return this.documentManager.getDocument(fileId);
+    }
+
+    /**
+     * Apply editor change to document
+     */
+    applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {
+        return this.documentManager.applyEditorChange(fileId, change);
+    }
+
+    /**
      * Create or get document for collaboration
      */
     async getOrCreateDocument(fileId: string, filePath: string): Promise<any | null> {
         let doc = this.documentManager.getDocument(fileId);
         if (!doc) {
-            // Create document locally
+            // Create document locally with empty content initially
             doc = await this.documentManager.createDocument(fileId, filePath, 'remote');
             if (doc) {
                 // Request latest state from server
@@ -378,12 +392,25 @@ export class CollabClient extends EventEmitter {
 
     private handleDocumentUpdate(payload: any) {
         const { fileId, update, origin } = payload;
-        if (origin !== 'local') {
+
+        // Always apply updates from server
+        if (origin === 'server' || origin !== 'local') {
             const updateArray = new Uint8Array(update);
             this.documentManager.applyUpdate(fileId, updateArray, 'remote');
 
             // Update VS Code editor if it's open
             this.documentManager.updateEditor(fileId);
+
+            // Save to original file if this client owns the document
+            const sharedFile = this.sharedFiles.get(fileId);
+            if (sharedFile && fs.existsSync(sharedFile.path)) {
+                const content = this.documentManager.getDocumentContent(fileId);
+                try {
+                    fs.writeFileSync(sharedFile.path, content, 'utf-8');
+                } catch (error) {
+                    outputChannel.error('File Save Error', error instanceof Error ? error.message : String(error));
+                }
+            }
         }
     }
 

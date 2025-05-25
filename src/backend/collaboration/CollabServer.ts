@@ -201,11 +201,56 @@ export class CollabServer extends EventEmitter {
         }
     }
 
+    /**
+     * Get all shared documents metadata
+     */
+    getAllDocuments() {
+        return this.documentManager.getAllDocumentMetadata();
+    }
+
+    /**
+     * Register an editor with a shared document
+     */
+    registerEditor(fileId: string, editor: vscode.TextEditor): boolean {
+        return this.documentManager.registerEditor(fileId, editor);
+    }
+
+    /**
+     * Get document content
+     */
+    getDocumentContent(fileId: string): string {
+        return this.documentManager.getDocumentContent(fileId);
+    }
+
+    /**
+     * Get existing document by ID
+     */
+    getDocument(fileId: string): any | null {
+        return this.documentManager.getDocument(fileId);
+    }
+
+    /**
+     * Create a new document
+     */
+    async createDocument(fileId: string, filePath: string, owner: string): Promise<any | null> {
+        return await this.documentManager.createDocument(fileId, filePath, owner);
+    }
+
+    /**
+     * Apply editor change to document
+     */
+    applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {
+        return this.documentManager.applyEditorChange(fileId, change);
+    }
+
     private async handleDocumentUpdate(clientId: string, payload: any) {
         const { fileId, update } = payload;
         const updateArray = new Uint8Array(update);
 
         if (await this.documentManager.applyUpdate(fileId, updateArray, clientId)) {
+            // Update the original file on disk
+            this.documentManager.saveDocument(fileId);
+
             // Broadcast to other clients
             this.broadcastToClients({
                 type: 'documentUpdate',
@@ -221,6 +266,13 @@ export class CollabServer extends EventEmitter {
             this.sendToClient(clientId, {
                 type: 'documentUpdate',
                 payload: { fileId, update: Array.from(state), origin: 'server' },
+                timestamp: Date.now()
+            });
+        } else {
+            // If document doesn't exist, send empty state
+            this.sendToClient(clientId, {
+                type: 'documentUpdate',
+                payload: { fileId, update: [], origin: 'server' },
                 timestamp: Date.now()
             });
         }
@@ -277,27 +329,6 @@ export class CollabServer extends EventEmitter {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Get all shared documents metadata
-     */
-    getAllDocuments() {
-        return this.documentManager.getAllDocumentMetadata();
-    }
-
-    /**
-     * Register an editor with a shared document
-     */
-    registerEditor(fileId: string, editor: vscode.TextEditor): boolean {
-        return this.documentManager.registerEditor(fileId, editor);
-    }
-
-    /**
-     * Get document content
-     */
-    getDocumentContent(fileId: string): string {
-        return this.documentManager.getDocumentContent(fileId);
     }
 
     private async handleShareDocument(clientId: string, payload: any) {

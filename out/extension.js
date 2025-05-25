@@ -196,30 +196,35 @@ async function activate(context) {
                 vscode.window.showWarningMessage('Not connected to a collaboration session');
                 return;
             }
-            // Request the latest document state from server if we're a client
-            if (collabClient.isClientConnected()) {
+            // First, ensure we have the document in our document manager
+            let content = '';
+            if (collabServer.isServerRunning()) {
+                // Server side - get existing document or create it
+                let doc = collabServer.getDocument(file.id);
+                if (!doc) {
+                    // Create document from file if it doesn't exist
+                    doc = await collabServer.createDocument(file.id, file.path, 'Server');
+                }
+                content = collabServer.getDocumentContent(file.id);
+            }
+            else if (collabClient.isClientConnected()) {
+                // Client side - request document from server and wait for response
                 await collabClient.requestDocument(file.id);
-            }
-            // Try to open the file if it exists locally
-            let uri;
-            if (fs.existsSync(file.path)) {
-                uri = vscode.Uri.file(file.path);
-            }
-            else {
-                // Create a temporary file with the shared content
-                const tempDir = os.tmpdir();
-                const tempFilePath = path.join(tempDir, `svsmate_${file.id}_${file.name}`);
-                // Get content from document manager
-                let content = '';
-                if (collabServer.isServerRunning()) {
-                    content = collabServer.getDocumentContent(file.id);
+                // Wait a bit for the document to sync
+                await new Promise(resolve => setTimeout(resolve, 500));
+                // Try to get content, if not available create local document
+                let doc = collabClient.getDocument(file.id);
+                if (!doc) {
+                    doc = await collabClient.getOrCreateDocument(file.id, file.path);
                 }
-                else if (collabClient.isClientConnected()) {
-                    content = collabClient.getDocumentContent(file.id);
-                }
-                fs.writeFileSync(tempFilePath, content, 'utf-8');
-                uri = vscode.Uri.file(tempFilePath);
+                content = collabClient.getDocumentContent(file.id);
             }
+            // Create a unique temporary file path for collaboration
+            const tempDir = os.tmpdir();
+            const tempFilePath = path.join(tempDir, `svsmate_collab_${file.id}_${file.name}`);
+            // Write the actual content to temp file
+            fs.writeFileSync(tempFilePath, content, 'utf-8');
+            const uri = vscode.Uri.file(tempFilePath);
             // Open the document
             const document = await vscode.workspace.openTextDocument(uri);
             const editor = await vscode.window.showTextDocument(document);
@@ -230,7 +235,22 @@ async function activate(context) {
             else if (collabClient.isClientConnected()) {
                 collabClient.registerEditor(file.id, editor);
             }
-            vscode.window.showInformationMessage(`Opened shared file: ${file.name}`);
+            // Set up real-time document change listener
+            const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
+                if (event.document.uri.fsPath === tempFilePath) {
+                    event.contentChanges.forEach(change => {
+                        if (collabServer.isServerRunning()) {
+                            collabServer.applyEditorChange(file.id, change);
+                        }
+                        else if (collabClient.isClientConnected()) {
+                            collabClient.applyEditorChange(file.id, change);
+                        }
+                    });
+                }
+            });
+            // Store the listener for cleanup
+            context.subscriptions.push(changeListener);
+            vscode.window.showInformationMessage(`Opened shared file: ${file.name} (${content.length} characters)`);
         }
         catch (error) {
             OutputChannel_1.outputChannel.error('Open Shared File Error', error instanceof Error ? error.message : String(error));

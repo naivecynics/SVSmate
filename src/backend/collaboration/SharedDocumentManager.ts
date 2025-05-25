@@ -254,11 +254,16 @@ export class SharedDocumentManager extends EventEmitter {
             }
 
             const content = doc.getText('content').toString();
-            fs.writeFileSync(metadata.path, content, 'utf-8');
 
-            outputChannel.info('Document Saved',
-                `Document ${metadata.name} (${fileId}) saved to disk`);
-            return true;
+            // Only save if file path exists and is writable
+            if (fs.existsSync(metadata.path)) {
+                fs.writeFileSync(metadata.path, content, 'utf-8');
+                outputChannel.info('Document Saved',
+                    `Document ${metadata.name} (${fileId}) saved to disk`);
+                return true;
+            }
+
+            return false;
         } catch (error) {
             outputChannel.error('Document Save Error',
                 error instanceof Error ? error.message : String(error));
@@ -309,40 +314,6 @@ export class SharedDocumentManager extends EventEmitter {
     }
 
     /**
-     * Apply an editor change to a Yjs document
-     */
-    applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {
-        const doc = this.documents.get(fileId);
-        if (!doc) {
-            return false;
-        }
-
-        try {
-            const yText = doc.getText('content');
-
-            // Calculate start and end positions
-            const startPos = change.rangeOffset;
-            const endPos = change.rangeOffset + change.rangeLength;
-
-            // Delete text if needed
-            if (change.rangeLength > 0) {
-                yText.delete(startPos, change.rangeLength);
-            }
-
-            // Insert new text
-            if (change.text.length > 0) {
-                yText.insert(startPos, change.text);
-            }
-
-            return true;
-        } catch (error) {
-            outputChannel.error('Editor Change Application Error',
-                error instanceof Error ? error.message : String(error));
-            return false;
-        }
-    }
-
-    /**
      * Update VS Code editor with Yjs document changes
      */
     updateEditor(fileId: string): boolean {
@@ -357,7 +328,12 @@ export class SharedDocumentManager extends EventEmitter {
             const content = doc.getText('content').toString();
             const document = editor.document;
 
-            // Apply the edit
+            // Check if content actually changed to avoid infinite loops
+            if (document.getText() === content) {
+                return true;
+            }
+
+            // Apply the edit without triggering our own update handlers
             const edit = new vscode.WorkspaceEdit();
             edit.replace(
                 document.uri,
@@ -366,10 +342,49 @@ export class SharedDocumentManager extends EventEmitter {
             );
 
             // Apply the edit
-            vscode.workspace.applyEdit(edit);
+            vscode.workspace.applyEdit(edit).then(() => {
+                outputChannel.info('Editor Updated', `Updated editor for document ${fileId}`);
+            });
+
             return true;
         } catch (error) {
             outputChannel.error('Editor Update Error',
+                error instanceof Error ? error.message : String(error));
+            return false;
+        }
+    }
+
+    /**
+     * Apply editor change to a Yjs document
+     */
+    applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {
+        const doc = this.documents.get(fileId);
+        if (!doc) {
+            return false;
+        }
+
+        try {
+            const yText = doc.getText('content');
+
+            // Calculate positions properly
+            const startPos = change.rangeOffset;
+
+            // Delete text if needed
+            if (change.rangeLength > 0) {
+                yText.delete(startPos, change.rangeLength);
+            }
+
+            // Insert new text if any
+            if (change.text.length > 0) {
+                yText.insert(startPos, change.text);
+            }
+
+            outputChannel.info('Editor Change Applied',
+                `Applied change to document ${fileId}: offset=${startPos}, length=${change.rangeLength}, text="${change.text}"`);
+
+            return true;
+        } catch (error) {
+            outputChannel.error('Editor Change Application Error',
                 error instanceof Error ? error.message : String(error));
             return false;
         }
