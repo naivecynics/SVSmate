@@ -1,8 +1,8 @@
 {
     "name": "svsmate",
     "displayName": "SVSmate",
-    "description": "The Ultimate VS Code Extension for SUSTechers!",
-    "version": "0.0.1",
+    "description": "The Ultimate VS Code Extension for SUSTechers!",    "version": "0.0.1",
+    "publisher": "svsmate-team",
     "repository": {
         "type": "git",
         "url": "https://github.com/naivecynics/SVSmate.git"
@@ -18,119 +18,119 @@
         "Other"
     ],
     "activationEvents": [
-        "*"
+        "onStartupFinished"
     ],
-    "main": "./dist/extension",
+    "main": "./out/extension",
     "contributes": {
         "configuration": {
-            "title": "svsmate",
+            "title": "%svsmate.configuration.title%",
             "properties": {
                 "svsmate.root": {
                     "type": "string",
                     "default": "~/.svsmate",
-                    "description": "Enter a directory path if you want to costomize the cache location."
+                    "description": "%svsmate.configuration.root.description%"
                 },
                 "svsmate.apikey": {
                     "type": "string",
                     "default": "sk-c0e9243de07945c28e782f57929909b0",
-                    "description": "API key to enpower the extension (deepseek api available only)."
+                    "description": "%svsmate.configuration.apikey.description%"
                 }
             }
         },
         "commands": [
             {
                 "command": "svsmate.BB-updateAll",
-                "title": "SVSmate: Update All Materials",
+                "title": "%svsmate.BB-updateAll.title%",
                 "icon": "$(sync)"
             },
             {
                 "command": "svsmate.BB-updateTerm",
-                "title": "SVSmate: Update One Term",
+                "title": "%svsmate.BB-updateTerm.title%",
                 "icon": "$(refresh)"
             },
             {
                 "command": "svsmate.BB-updateCourse",
-                "title": "SVSmate: Update One Course",
+                "title": "%svsmate.BB-updateCourse.title%",
                 "icon": "$(refresh)"
             },
             {
                 "command": "svsmate.BB-downloadToWorkspace",
-                "title": "SVSmate: Download File to Workspace",
+                "title": "%svsmate.BB-downloadToWorkspace.title%",
                 "icon": "$(cloud-download)"
             },
             {
                 "command": "svsmate.BB-downloadToAiSpace",
-                "title": "SVSmate: Download File to AI Suggested Directory",
+                "title": "%svsmate.BB-downloadToAiSpace.title%",
                 "icon": "$(symbol-file)"
             },
             {
                 "command": "todoListView.addItem",
-                "title": "SVSmate: Add Task",
+                "title": "%todoListView.addItem.title%",
                 "icon": "$(add)"
             },
             {
                 "command": "todoListView.editTask",
-                "title": "SVSmate: Edit Task",
+                "title": "%todoListView.editTask.title%",
                 "icon": "$(edit)"
             },
             {
                 "command": "todoListView.deleteTask",
-                "title": "SVSmate: Delete Task",
+                "title": "%todoListView.deleteTask.title%",
                 "icon": "$(trash)"
             },
             {
                 "command": "todoListView.toggleTaskCheckbox",
-                "title": "SVSmate: Toggle Task Checkbox",
+                "title": "%todoListView.toggleTaskCheckbox.title%",
                 "icon": "$(check)"
             },
             {
                 "command": "todoListView.sortByEndTime",
-                "title": "SVSmate: Sort by DDL",
+                "title": "%todoListView.sortByEndTime.title%",
                 "icon": "$(sort-precedence)"
             },
             {
                 "command": "todoListView.sortByKinds",
-                "title": "SVSmate: Sort by Kinds",
+                "title": "%todoListView.sortByKinds.title%",
                 "icon": "$(group-by-ref-type)"
             },
             {
                 "command": "todoListView.searchTasks",
-                "title": "SVSmate: Search Tasks",
+                "title": "%todoListView.searchTasks.title%",
                 "icon": "$(search)"
             },
             {
                 "command": "todoListView.clearSearch",
-                "title": "SVSmate: Clear Search",
+                "title": "%todoListView.clearSearch.title%",
                 "icon": "$(clear-all)"
             },
             {
                 "command": "todoListView.loadICSFile",
-                "title": "SVSmate: Load from .ics File",
+                "title": "%todoListView.loadICSFile.title%",
                 "icon": "$(file-submodule)"
             },
             {
                 "command": "todoListView.addSubTask",
-                "title": "SVSmate: Add Subtask",
+                "title": "%todoListView.addSubTask.title%",
                 "icon": "$(add)"
             },
             {
                 "command": "todoList.generateAISubtasks",
-                "title": "SVSmate: Generate AI Subtasks",
+                "title": "%todoList.generateAISubtasks.title%",
                 "icon": "$(sparkle)"
             },
             {
                 "command": "notesView.createNote",
-                "title": "SVSmate: Create Note",
+                "title": "%notesView.createNote.title%",
                 "icon": "$(note)"
             },
             {
                 "command": "notesView.deleteNote",
-                "title": "SVSmate: Delete Note",
+                "title": "%notesView.deleteNote.title%",
                 "icon": "$(trash)"
             },
             {
                 "command": "svsmate.PDF-generateFromPDF",
-                "title": "SVSmate: Generate Code from PDF",
+                "title": "%svsmate.PDF-generateFromPDF.title%",
                 "icon": "$(note)"
             }
         ],
@@ -139,14 +139,14 @@
                 "id": "svsmate.ChatBot-API",
                 "fullName": "svsmate-ChatBot-API",
                 "name": "mate-API",
-                "description": "What can I assist you?",
+                "description": "%svsmate.chatParticipant.mate-API.description%",
                 "isSticky": true
             },
             {
                 "id": "svsmate.ChatBot",
                 "fullName": "svsmate-ChatBot",
                 "name": "mate",
-                "description": "What can I assist you?",
+                "description": "%svsmate.chatParticipant.mate.description%",
                 "isSticky": true
             }
         ],
@@ -154,7 +154,7 @@
             "activitybar": [
                 {
                     "id": "SVSmate",
-                    "title": "SVSmate",
+                    "title": "%svsmate.viewsContainer.SVSmate.title%",
                     "icon": "media/telescope.png"
                 }
             ]
@@ -163,19 +163,19 @@
             "SVSmate": [
                 {
                     "id": "folderView",
-                    "name": "File Explorer"
+                    "name": "%svsmate.view.folderView.name%"
                 },
                 {
                     "id": "bbMaterialView",
-                    "name": "BB Materials"
+                    "name": "%svsmate.view.bbMaterialView.name%"
                 },
                 {
                     "id": "todoListView",
-                    "name": "To-Do List"
+                    "name": "%svsmate.view.todoListView.name%"
                 },
                 {
                     "id": "notesView",
-                    "name": "Notes"
+                    "name": "%svsmate.view.notesView.name%"
                 }
             ]
         },
@@ -281,108 +281,8 @@
                     "when": "view == folderView",
                     "group": "navigation",
                     "title": "Generate Code from PDF"
-                }
-            ]
+                }            ]
         }
-    },
-    "menus": {
-        "view/item/context": [
-            {
-                "command": "todoListView.editTask",
-                "when": "view == todoListView",
-                "group": "inline"
-            },
-            {
-                "command": "todoListView.deleteTask",
-                "when": "view == todoListView",
-                "group": "inline"
-            },
-            {
-                "command": "todoListView.addSubTask",
-                "when": "view == todoListView && viewItem == task",
-                "group": "inline"
-            },
-            {
-                "command": "todoList.generateAISubtasks",
-                "when": "view == todoListView && viewItem == task",
-                "group": "inline"
-            },
-            {
-                "command": "svsmate.BB-downloadToAiSpace",
-                "when": "view == bbMaterialView && viewItem == file",
-                "group": "inline"
-            },
-            {
-                "command": "svsmate.BB-downloadToWorkspace",
-                "when": "view == bbMaterialView && viewItem == file",
-                "group": "inline"
-            },
-            {
-                "command": "svsmate.BB-updateTerm",
-                "when": "view == bbMaterialView && viewItem == termFolder",
-                "group": "inline"
-            },
-            {
-                "command": "svsmate.BB-updateCourse",
-                "when": "view == bbMaterialView && viewItem == courseFolder",
-                "group": "inline"
-            },
-            {
-                "command": "notesView.deleteNote",
-                "when": "view == notesView",
-                "group": "inline"
-            }
-        ],
-        "view/title": [
-            {
-                "command": "todoListView.addItem",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Add Item"
-            },
-            {
-                "command": "todoListView.sortByEndTime",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Sort By End Time"
-            },
-            {
-                "command": "todoListView.sortByKinds",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Sort By Kinds"
-            },
-            {
-                "command": "todoListView.searchTasks",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Search Tasks"
-            },
-            {
-                "command": "todoListView.clearSearch",
-                "when": "view == todoListView ",
-                "group": "navigation",
-                "title": "Clear Search"
-            },
-            {
-                "command": "todoListView.loadICSFile",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Load From .ics File"
-            },
-            {
-                "command": "svsmate.BB-updateAll",
-                "when": "view == bbMaterialView",
-                "group": "navigation",
-                "title": "Update All"
-            },
-            {
-                "command": "svsmate.BB-updateTerm",
-                "when": "view == bbMaterialView",
-                "group": "navigation",
-                "title": "Update Term"
-            }
-        ]
     },
     "dependencies": {
         "cheerio": "^1.0.0",
@@ -415,19 +315,23 @@
         "npm-run-all": "^4.1.5",
         "sinon": "^20.0.0",
         "typedoc": "^0.28.4",
-        "typescript": "^5.7.3"
+        "typescript": "^5.7.3",
+        "vscode-nls": "^5.2.0",
+        "vscode-nls-dev": "^4.0.4"
     },
     "scripts": {
-        "lint": "eslint src --fix",
-        "dev:compile": "npx rimraf out && npx tsc -p ./ && npm run lint",
-        "test": "vscode-test",
-        "docs": "typedoc",
-        "compile": "npm run check-types && node esbuild.js",
+        "vscode:prepublish": "npm run esbuild-base -- --minify",
+        "esbuild-base": "node esbuild.js",
+        "esbuild": "npm run esbuild-base -- --sourcemap",
+        "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
         "check-types": "tsc --noEmit",
-        "watch": "npm-run-all -p watch:*",
-        "watch:esbuild": "node esbuild.js --watch",
-        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-        "vscode:prepublish": "npm run package",
-        "package": "npm run check-types && node esbuild.js --product"
+        "lint": "eslint . --ext .ts,.tsx",
+        "package": "vsce package",
+        "test-compile": "tsc -p ./",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "test": "vscode-test",
+        "generate-nls": "vscode-nls-dev generate --outDir l10n"
     }
 }
