@@ -218,30 +218,21 @@ export async function activate(context: vscode.ExtensionContext) {
         let isOwned = false;
 
         if (collabServer.isServerRunning()) {
-          // Server side - get or create document
-          let doc = collabServer.getDocument(file.id);
-          if (!doc) {
-            // If document doesn't exist and we have the file path, create it
-            if (fs.existsSync(file.path)) {
-              doc = await collabServer.createDocument(file.id, file.path, 'Server');
-            }
-          }
+          // Server side - get document content
           content = collabServer.getDocumentContent(file.id);
           isOwned = collabServer.documentManager.isDocumentOwned(file.id);
         } else if (collabClient.isClientConnected()) {
-          // Client side - request document content first
-          await collabClient.requestDocument(file.id);
-
-          // Wait for response
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          let doc = collabClient.getDocument(file.id);
-          if (!doc) {
-            // Create empty document if not received
-            doc = await collabClient.documentManager.createDocumentFromContent(file.id, file.name, '', file.owner);
-          }
+          // Client side - get document content (should already be loaded)
           content = collabClient.getDocumentContent(file.id);
           isOwned = collabClient.documentManager.isDocumentOwned(file.id);
+
+          // If no content, request it from server
+          if (!content) {
+            await collabClient.requestDocument(file.id);
+            // Wait a bit for response
+            await new Promise(resolve => setTimeout(resolve, 500));
+            content = collabClient.getDocumentContent(file.id);
+          }
         }
 
         // Create temporary file for editing

@@ -461,16 +461,22 @@ export class CollabClient extends EventEmitter {
     }
 
     private handleDocumentList(payload: any[]) {
-        // Update local shared files map
+        // Update local shared files map and create documents from content
         this.sharedFiles.clear();
+
         payload.forEach(doc => {
+            // Create document with content if available
+            if (doc.content !== undefined) {
+                this.documentManager.createDocumentFromContent(doc.id, doc.name, doc.content, doc.owner);
+            }
+
             const sharedFile: SharedFile = {
                 id: doc.id,
                 name: doc.name,
                 path: this.documentManager.getDocumentDisplayPath(doc.id),
                 owner: doc.owner,
                 sharedAt: doc.sharedAt,
-                size: 0,
+                size: doc.content ? doc.content.length : 0,
                 collaborators: []
             };
             this.sharedFiles.set(doc.id, sharedFile);
@@ -479,7 +485,8 @@ export class CollabClient extends EventEmitter {
         // Emit event for UI update
         this.emit('documentListUpdated', payload);
 
-        outputChannel.info('Document List Updated', `Received ${payload.length} shared documents`);
+        outputChannel.info('Document List Updated',
+            `Received ${payload.length} shared documents with content`);
     }
 
     private handleClientJoined(payload: any) {

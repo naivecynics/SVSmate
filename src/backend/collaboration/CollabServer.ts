@@ -148,10 +148,16 @@ export class CollabServer extends EventEmitter {
         this.clients.set(clientId, clientConnection);
         outputChannel.info('Client Connected', `${clientConnection.name} (${clientId})`);
 
-        // Send current document list
+        // Send current document list with content
+        const documents = this.documentManager.getAllDocumentMetadata();
+        const documentsWithContent = documents.map(doc => ({
+            ...doc,
+            content: this.documentManager.getDocumentContent(doc.id)
+        }));
+
         this.sendToClient(clientId, {
             type: 'documentList',
-            payload: this.documentManager.getAllDocumentMetadata(),
+            payload: documentsWithContent,
             timestamp: Date.now()
         });
 
@@ -222,6 +228,27 @@ export class CollabServer extends EventEmitter {
         return this.documentManager.applyEditorChange(fileId, change);
     }
 
+    /**
+     * Get all shared documents metadata
+     */
+    getAllDocuments() {
+        return this.documentManager.getAllDocumentMetadata();
+    }
+
+    /**
+     * Register an editor with a shared document
+     */
+    registerEditor(fileId: string, editor: vscode.TextEditor): boolean {
+        return this.documentManager.registerEditor(fileId, editor);
+    }
+
+    /**
+     * Get document content
+     */
+    getDocumentContent(fileId: string): string {
+        return this.documentManager.getDocumentContent(fileId);
+    }
+
     private async handleShareDocument(clientId: string, payload: any) {
         const { filePath, name, content } = payload;
         const fileId = `${clientId}_${Date.now()}_${name}`;
@@ -244,10 +271,16 @@ export class CollabServer extends EventEmitter {
                     timestamp: Date.now()
                 });
 
-                // Also send updated document list to all clients
+                // Send updated document list with content to all clients
+                const documents = this.documentManager.getAllDocumentMetadata();
+                const documentsWithContent = documents.map(doc => ({
+                    ...doc,
+                    content: this.documentManager.getDocumentContent(doc.id)
+                }));
+
                 this.broadcastToClients({
                     type: 'documentList',
-                    payload: this.documentManager.getAllDocumentMetadata(),
+                    payload: documentsWithContent,
                     timestamp: Date.now()
                 });
 
@@ -288,6 +321,19 @@ export class CollabServer extends EventEmitter {
                     timestamp: Date.now()
                 });
 
+                // Send updated document list with content to all clients
+                const documents = this.documentManager.getAllDocumentMetadata();
+                const documentsWithContent = documents.map(doc => ({
+                    ...doc,
+                    content: this.documentManager.getDocumentContent(doc.id)
+                }));
+
+                this.broadcastToClients({
+                    type: 'documentList',
+                    payload: documentsWithContent,
+                    timestamp: Date.now()
+                });
+
                 // Emit event for local UI update
                 this.emit('documentShared', metadata);
 
@@ -300,6 +346,30 @@ export class CollabServer extends EventEmitter {
             vscode.window.showErrorMessage(`Failed to share file: ${error}`);
             return false;
         }
+    }
+
+    /**
+     * Unshare a file from the server side
+     */
+    async unshareFile(fileId: string): Promise<boolean> {
+        if (this.documentManager.removeDocument(fileId)) {
+            // Send updated document list with content to all clients
+            const documents = this.documentManager.getAllDocumentMetadata();
+            const documentsWithContent = documents.map(doc => ({
+                ...doc,
+                content: this.documentManager.getDocumentContent(doc.id)
+            }));
+
+            this.broadcastToClients({
+                type: 'documentList',
+                payload: documentsWithContent,
+                timestamp: Date.now()
+            });
+
+            this.emit('documentRemoved', fileId);
+            return true;
+        }
+        return false;
     }
 
     private async handleDocumentUpdate(clientId: string, payload: any) {
@@ -340,51 +410,18 @@ export class CollabServer extends EventEmitter {
         }
     }
 
-    /**
-     * Unshare a file from the server side
-     */
-    async unshareFile(fileId: string): Promise<boolean> {
-        if (this.documentManager.removeDocument(fileId)) {
-            this.broadcastToClients({
-                type: 'documentList',
-                payload: this.documentManager.getAllDocumentMetadata(),
-                timestamp: Date.now()
-            });
-
-            this.emit('documentRemoved', fileId);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Get all shared documents metadata
-     */
-    getAllDocuments() {
-        return this.documentManager.getAllDocumentMetadata();
-    }
-
-    /**
-     * Register an editor with a shared document
-     */
-    registerEditor(fileId: string, editor: vscode.TextEditor): boolean {
-        return this.documentManager.registerEditor(fileId, editor);
-    }
-
-    /**
-     * Get document content
-     */
-    getDocumentContent(fileId: string): string {
-        return this.documentManager.getDocumentContent(fileId);
-    }
-
     private handleUnshareDocument(clientId: string, fileId: string) {
         if (this.documentManager.removeDocument(fileId)) {
-            const updatedList = this.documentManager.getAllDocumentMetadata();
+            // Send updated document list with content to all clients
+            const documents = this.documentManager.getAllDocumentMetadata();
+            const documentsWithContent = documents.map(doc => ({
+                ...doc,
+                content: this.documentManager.getDocumentContent(doc.id)
+            }));
 
             this.broadcastToClients({
                 type: 'documentList',
-                payload: updatedList,
+                payload: documentsWithContent,
                 timestamp: Date.now()
             });
 
