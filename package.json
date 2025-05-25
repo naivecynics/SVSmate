@@ -327,6 +327,7 @@
         "check-types": "tsc --noEmit",
         "lint": "eslint . --ext .ts,.tsx",
         "package": "vsce package",
+        "docs": "typedoc",
         "test-compile": "tsc -p ./",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
