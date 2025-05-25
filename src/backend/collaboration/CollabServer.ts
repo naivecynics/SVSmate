@@ -11,478 +11,311 @@ import { SharedDocumentManager } from './SharedDocumentManager';
 const TCP_PORT = 6789;
 const UDP_PORT = 6790;
 
-type TCPMessageType = 'system' | 'register' | 'welcome' | 'chat' | 'shareFile' | 'unshareFile' | 'fileOperation' | 'error';
-type UDPMessageType = 'discover' | 'serverInfo'
-
-interface ClientInfo {
+interface ClientConnection {
+    socket: net.Socket;
     id: string;
     name: string;
-    ip: string;
-    port: number;
-    connectedAt: number;
-    sharedFiles: string[]; // IDs of files shared by this client
+    joinedAt: number;
 }
 
-interface SharedFile {
-    id: string;
-    name: string;
-    path: string;
-    owner: string; // Client ID of the file owner
-    sharedAt: number;
-    size: number;
-    collaborators: string[]; // Client IDs of collaborators
+interface ServerMessage {
+    type: 'documentUpdate' | 'documentList' | 'clientJoined' | 'clientLeft' | 'error' | 'documentShared';
+    payload: any;
+    timestamp: number;
 }
 
 export class CollabServer {
     private tcpServer: net.Server | null = null;
-    private tcpClients: Map<string, net.Socket> = new Map();
-    private clientInfo: Map<string, ClientInfo> = new Map();
-
     private udpServer: dgram.Socket | null = null;
-    private sharedFiles: Map<string, SharedFile> = new Map();
-
-    private sharedDocumentManager: SharedDocumentManager;
-    private serverIp: string;
+    private clients: Map<string, ClientConnection> = new Map();
+    private documentManager: SharedDocumentManager;
+    private isRunning: boolean = false;
+    private serverName: string;
 
     constructor() {
-        this.sharedDocumentManager = new SharedDocumentManager();
-        this.serverIp = NetworkUtils.getLocalIp();
+        this.documentManager = new SharedDocumentManager();
+        this.serverName = `${os.hostname()}-SVSmate`;
+        this.setupDocumentManager();
     }
 
-    startServer(): Promise<void> {
+    private setupDocumentManager() {
+        this.documentManager.on('documentUpdate', (data) => {
+            this.broadcastToClients({
+                type: 'documentUpdate',
+                payload: {
+                    fileId: data.fileId,
+                    update: Array.from(data.update),
+                    origin: data.origin
+                },
+                timestamp: Date.now()
+            });
+        });
+    }
+
+    async startServer(): Promise<boolean> {
+        if (this.isRunning) {
+            vscode.window.showWarningMessage('Collaboration server is already running');
+            return true;
+        }
+
+        try {
+            await this.startTcpServer();
+            await this.startUdpServer();
+            this.isRunning = true;
+
+            const localIp = NetworkUtils.getLocalIp();
+            vscode.window.showInformationMessage(
+                `Collaboration server started on ${localIp}:${TCP_PORT}`
+            );
+            outputChannel.info('Server Started', `TCP: ${localIp}:${TCP_PORT}, UDP: ${UDP_PORT}`);
+            return true;
+        } catch (error) {
+            outputChannel.error('Server Start Error', error instanceof Error ? error.message : String(error));
+            vscode.window.showErrorMessage(`Failed to start collaboration server: ${error}`);
+            return false;
+        }
+    }
+
+    private startTcpServer(): Promise<void> {
         return new Promise((resolve, reject) => {
-            try {
-                // Start TCP server
-                if (this.tcpServer) {
-                    outputChannel.info('TCP Server', 'Server already running');
-                } else {
-                    this.initTcpServer();
-                }
+            this.tcpServer = net.createServer((socket) => {
+                this.handleClientConnection(socket);
+            });
 
-                // Start UDP server
-                if (this.udpServer) {
-                    outputChannel.info('UDP Server', 'Server already running');
-                } else {
-                    this.initUdpServer();
-                }
-
-                outputChannel.info('Collaboration Server',
-                    `Server started on TCP port: ${TCP_PORT}, UDP port: ${UDP_PORT}`);
-
-                resolve();
-            } catch (error) {
-                outputChannel.error('Server Start Error', error instanceof Error ? error.message : String(error));
+            this.tcpServer.on('error', (error) => {
                 reject(error);
-            }
+            });
+
+            this.tcpServer.listen(TCP_PORT, '0.0.0.0', () => {
+                resolve();
+            });
         });
     }
 
-    stopServer(): Promise<void> {
-        return new Promise((resolve) => {
-            for (const client of this.tcpClients.values()) {
-                client.end();
-            }
-            this.tcpClients.clear();
-            this.clientInfo.clear();
+    private startUdpServer(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.udpServer = dgram.createSocket('udp4');
 
-            // Close TCP server
-            if (this.tcpServer) {
-                this.tcpServer.close(() => {
-                    outputChannel.info('TCP Server', 'Server stopped');
-                    this.tcpServer = null;
-                });
-            }
-
-            // Close UDP server
-            if (this.udpServer) {
-                this.udpServer.close(() => {
-                    outputChannel.info('UDP Server', 'Server stopped');
-                    this.udpServer = null;
-                });
-            }
-
-            resolve();
-        });
-    }
-
-    private initTcpServer(): void {
-        this.tcpServer = net.createServer((socket) => {
-            const clientId = `${socket.remoteAddress}:${socket.remotePort}`;
-            this.tcpClients.set(clientId, socket);
-
-            outputChannel.info('TCP Connection', `Client connected: ${clientId}`);
-
-            // Handle data from clients
-            socket.on('data', (data) => {
+            this.udpServer.on('message', (msg, rinfo) => {
                 try {
-                    const message = JSON.parse(data.toString());
-                    this.handleTcpMessage(clientId, socket, message);
+                    const message = JSON.parse(msg.toString());
+                    if (message.type === 'discover') {
+                        this.handleDiscoveryRequest(rinfo);
+                    }
                 } catch (error) {
-                    outputChannel.error('TCP Message Error',
-                        error instanceof Error ? error.message : String(error));
+                    outputChannel.error('UDP Message Error', `Invalid message from ${rinfo.address}`);
                 }
             });
 
-            // Handle client disconnection
-            socket.on('close', () => {
-                this.handleClientDisconnect(clientId);
+            this.udpServer.on('error', (error) => {
+                reject(error);
             });
 
-            // Handle errors
-            socket.on('error', (error) => {
-                outputChannel.error('TCP Client Error', error.message);
-                this.handleClientDisconnect(clientId);
+            this.udpServer.bind(UDP_PORT, () => {
+                resolve();
             });
-        });
-
-        // this.tcpServer.listen(TCP_PORT, this.serverIp, () => {
-        //     outputChannel.info('TCP Server', `Listening on ${this.serverIp}:${TCP_PORT}`);
-        // });
-
-        this.tcpServer.listen(TCP_PORT, () => {
-            outputChannel.info('TCP Server', `Listening on Port:${TCP_PORT}`);
-        });
-
-        this.tcpServer.on('error', (error) => {
-            outputChannel.error('TCP Server Error', error.message);
         });
     }
 
+    private handleDiscoveryRequest(rinfo: dgram.RemoteInfo) {
+        const response = {
+            type: 'serverInfo',
+            payload: {
+                name: this.serverName,
+                ip: NetworkUtils.getLocalIp(),
+                tcpPort: TCP_PORT,
+                udpPort: UDP_PORT,
+                clients: this.clients.size
+            },
+            timestamp: Date.now()
+        };
 
-    private initUdpServer(): void {
-        this.udpServer = dgram.createSocket('udp4');
+        const responseBuffer = Buffer.from(JSON.stringify(response));
+        this.udpServer?.send(responseBuffer, rinfo.port, rinfo.address);
+    }
 
-        // Handle incoming UDP messages
-        this.udpServer.on('message', (msg, rinfo) => {
-            try {
-                const message = JSON.parse(msg.toString());
-                this.handleUdpMessage(message, rinfo);
-            } catch (error) {
-                outputChannel.error('UDP Message Error',
-                    error instanceof Error ? error.message : String(error));
+    private handleClientConnection(socket: net.Socket) {
+        const clientId = `${socket.remoteAddress}:${socket.remotePort}_${Date.now()}`;
+        const clientConnection: ClientConnection = {
+            socket,
+            id: clientId,
+            name: `Client-${this.clients.size + 1}`,
+            joinedAt: Date.now()
+        };
+
+        this.clients.set(clientId, clientConnection);
+        outputChannel.info('Client Connected', `${clientConnection.name} (${clientId})`);
+
+        // Send current document list
+        this.sendToClient(clientId, {
+            type: 'documentList',
+            payload: this.documentManager.getAllDocumentMetadata(),
+            timestamp: Date.now()
+        });
+
+        // Notify other clients
+        this.broadcastToClients({
+            type: 'clientJoined',
+            payload: { name: clientConnection.name, id: clientId },
+            timestamp: Date.now()
+        }, clientId);
+
+        socket.on('data', (data) => {
+            this.handleClientMsg(clientId, data);
+        });
+
+        socket.on('close', () => {
+            this.handleClientDisconnection(clientId);
+        });
+
+        socket.on('error', (error) => {
+            outputChannel.error('Client Socket Error', `${clientId}: ${error.message}`);
+            this.handleClientDisconnection(clientId);
+        });
+    }
+
+    handleClientMsg(clientId: string, data: Buffer) {
+        try {
+            const message = JSON.parse(data.toString());
+
+            switch (message.type) {
+                case 'documentUpdate':
+                    this.handleDocumentUpdate(clientId, message.payload);
+                    break;
+                case 'requestDocument':
+                    this.handleDocumentRequest(clientId, message.payload.fileId);
+                    break;
+                case 'shareDocument':
+                    this.handleShareDocument(clientId, message.payload);
+                    break;
+                case 'unshareDocument':
+                    this.handleUnshareDocument(clientId, message.payload.fileId);
+                    break;
+                default:
+                    outputChannel.warn('Unknown Message Type', `${message.type} from ${clientId}`);
             }
-        });
-
-        this.udpServer.on('error', (error) => {
-            outputChannel.error('UDP Server Error', error.message);
-        });
-
-        this.udpServer.bind(UDP_PORT, () => {
-            outputChannel.info('UDP Server', `Listening on Port:${UDP_PORT}`);
-        });
-    }
-
-    private handleTcpMessage(clientId: string, socket: net.Socket, message: any): void {
-        const messageType: TCPMessageType = message.type;
-
-        switch (messageType) {
-            case 'register':
-                // Register a new client
-                const clientInfo: ClientInfo = {
-                    id: clientId,
-                    name: message.name || `User-${Date.now().toString(36)}`,
-                    ip: socket.remoteAddress || '',
-                    port: socket.remotePort || 0,
-                    connectedAt: Date.now(),
-                    sharedFiles: []
-                };
-
-                this.clientInfo.set(clientId, clientInfo);
-
-                // Send welcome message back to the client
-                const welcomeMessage = {
-                    type: 'welcome',
-                    message: `Welcome to the collaboration server, ${clientInfo.name}!`,
-                    clientId: clientId,
-                    serverInfo: {
-                        name: os.hostname(),
-                        clients: Array.from(this.clientInfo.keys()),
-                        sharedFiles: Array.from(this.sharedFiles.keys())
-                    }
-                };
-                socket.write(JSON.stringify(welcomeMessage));
-
-                // Broadcast new client to all other clients
-                this.broadcastMessage({
-                    type: 'system',
-                    action: 'clientJoined',
-                    client: clientInfo
-                }, clientId);
-
-                outputChannel.info('Client Registered', `${clientInfo.name} (${clientId}) registered`);
-                break;
-
-            case 'chat':
-                // Validate if client is registered
-                if (!this.clientInfo.has(clientId)) {
-                    socket.write(JSON.stringify({
-                        type: 'error',
-                        message: 'Not registered. Please register first.'
-                    }));
-                    return;
-                }
-
-                const client = this.clientInfo.get(clientId);
-                const chatMessage = {
-                    type: 'chat',
-                    from: clientId,
-                    fromName: client?.name,
-                    message: message.message,
-                    timestamp: Date.now()
-                };
-
-                // Broadcast chat message to all clients
-                this.broadcastMessage(chatMessage);
-                outputChannel.info('Chat Message',
-                    `From ${client?.name}: ${message.message.substring(0, 50)}${message.message.length > 50 ? '...' : ''}`);
-                break;
-
-            case 'shareFile':
-                // Validate client
-                if (!this.clientInfo.has(clientId)) {
-                    socket.write(JSON.stringify({
-                        type: 'error',
-                        message: 'Not registered. Please register first.'
-                    }));
-                    return;
-                }
-
-                // Create a shared file entry
-                const fileId = message.fileId || `file-${Date.now().toString(36)}`;
-                const sharedFile: SharedFile = {
-                    id: fileId,
-                    name: message.name,
-                    path: message.path,
-                    owner: clientId,
-                    sharedAt: Date.now(),
-                    size: message.size || 0,
-                    collaborators: []
-                };
-
-                this.sharedFiles.set(fileId, sharedFile);
-
-                // Add file to client's shared files
-                const clientData = this.clientInfo.get(clientId);
-                if (clientData) {
-                    clientData.sharedFiles.push(fileId);
-                }
-
-                // Create document in shared document manager
-                this.sharedDocumentManager.createDocument(fileId, message.path, clientId);
-
-                // Broadcast file sharing to all clients
-                this.broadcastMessage({
-                    type: 'shareFile',
-                    file: sharedFile
-                });
-
-                outputChannel.info('File Shared',
-                    `${clientData?.name} shared file: ${message.name}`);
-                break;
-
-            case 'unshareFile':
-                // Validate client
-                if (!this.clientInfo.has(clientId)) {
-                    socket.write(JSON.stringify({
-                        type: 'error',
-                        message: 'Not registered. Please register first.'
-                    }));
-                    return;
-                }
-
-                const fileToRemove = this.sharedFiles.get(message.fileId);
-
-                // Check if file exists and client is the owner
-                if (!fileToRemove || fileToRemove.owner !== clientId) {
-                    socket.write(JSON.stringify({
-                        type: 'error',
-                        message: 'Cannot unshare file. File not found or you are not the owner.'
-                    }));
-                    return;
-                }
-
-                // Remove file from shared files
-                this.sharedFiles.delete(message.fileId);
-
-                // Remove file from client's shared files
-                const client2 = this.clientInfo.get(clientId);
-                if (client2) {
-                    client2.sharedFiles = client2.sharedFiles.filter(id => id !== message.fileId);
-                }
-
-                // Remove from document manager
-                this.sharedDocumentManager.removeDocument(message.fileId);
-
-                // Broadcast file unsharing to all clients
-                this.broadcastMessage({
-                    type: 'unshareFile',
-                    fileId: message.fileId
-                });
-
-                outputChannel.info('File Unshared',
-                    `${client2?.name} unshared file: ${fileToRemove.name}`);
-                break;
-
-            case 'fileOperation':
-                // Handle file operations (edit, save, etc.)
-                if (!this.clientInfo.has(clientId)) {
-                    socket.write(JSON.stringify({
-                        type: 'error',
-                        message: 'Not registered. Please register first.'
-                    }));
-                    return;
-                }
-
-                const file = this.sharedFiles.get(message.fileId);
-                if (!file) {
-                    socket.write(JSON.stringify({
-                        type: 'error',
-                        message: 'File not found.'
-                    }));
-                    return;
-                }
-
-                // Process different file operations
-                switch (message.operation) {
-                    case 'update':
-                        // Apply document update
-                        if (message.update) {
-                            const update = Buffer.from(message.update);
-                            this.sharedDocumentManager.applyUpdate(message.fileId, update, clientId);
-
-                            // Broadcast update to all clients except sender
-                            this.broadcastMessage({
-                                type: 'fileOperation',
-                                fileId: message.fileId,
-                                operation: 'update',
-                                update: message.update
-                            }, clientId);
-                        }
-                        break;
-
-                    case 'save':
-                        // Save document to disk
-                        this.sharedDocumentManager.saveDocument(message.fileId);
-
-                        // Broadcast save notification
-                        this.broadcastMessage({
-                            type: 'fileOperation',
-                            fileId: message.fileId,
-                            operation: 'save',
-                            savedBy: clientId
-                        });
-                        break;
-
-                    default:
-                        outputChannel.error('Unknown File Operation',
-                            `Received unknown file operation: ${message.operation}`);
-                }
-                break;
-
-            default:
-                outputChannel.error('Unknown TCP Message Type', `Received unknown message type: ${messageType}`);
+        } catch (error) {
+            outputChannel.error('Message Parse Error', `From ${clientId}: ${error}`);
         }
     }
 
-    private handleUdpMessage(message: any, rinfo: dgram.RemoteInfo): void {
-        const messageType: UDPMessageType = message.type;
+    private async handleDocumentUpdate(clientId: string, payload: any) {
+        const { fileId, update } = payload;
+        const updateArray = new Uint8Array(update);
 
-        switch (messageType) {
-            case 'discover':
-                const response = {
-                    type: 'serverInfo',
-                    name: os.hostname(),
-                    tcpPort: TCP_PORT,
-                    udpPort: UDP_PORT,
-                    ip: this.serverIp,
-                    clients: this.clientInfo.size
-                };
-
-                const responseBuffer = Buffer.from(JSON.stringify(response));
-                this.udpServer?.send(responseBuffer, rinfo.port, rinfo.address, (error) => {
-                    if (error) {
-                        outputChannel.error('UDP Response Error', error.message);
-                    } else {
-                        outputChannel.info('UDP Response', `Sent server info to ${rinfo.address}:${rinfo.port}`);
-                    }
-                });
-                break;
-
-            default:
-                outputChannel.error('Unknown UDP Message Type', `Received unknown message type: ${messageType}`);
+        if (await this.documentManager.applyUpdate(fileId, updateArray, clientId)) {
+            // Broadcast to other clients
+            this.broadcastToClients({
+                type: 'documentUpdate',
+                payload: { fileId, update, origin: clientId },
+                timestamp: Date.now()
+            }, clientId);
         }
     }
 
-    private handleClientDisconnect(clientId: string): void {
-        const client = this.clientInfo.get(clientId);
+    private async handleDocumentRequest(clientId: string, fileId: string) {
+        const state = await this.documentManager.getDocumentState(fileId);
+        if (state) {
+            this.sendToClient(clientId, {
+                type: 'documentUpdate',
+                payload: { fileId, update: Array.from(state), origin: 'server' },
+                timestamp: Date.now()
+            });
+        }
+    }
+
+    private async handleShareDocument(clientId: string, payload: any) {
+        const { filePath, name } = payload;
+        const fileId = `${clientId}_${Date.now()}_${name}`;
+        const client = this.clients.get(clientId);
 
         if (client) {
-            // Remove client from client info
-            this.clientInfo.delete(clientId);
-            this.tcpClients.delete(clientId);
-
-            // Remove or reassign ownership of shared files
-            for (const [fileId, file] of this.sharedFiles.entries()) {
-                if (file.owner === clientId) {
-                    // If owner disconnects, unshare the file
-                    this.sharedFiles.delete(fileId);
-                    this.sharedDocumentManager.removeDocument(fileId);
-
-                    // Broadcast file unsharing to all clients
-                    this.broadcastMessage({
-                        type: 'unshareFile',
-                        fileId: fileId,
-                        reason: 'ownerDisconnected'
-                    });
-                } else {
-                    // Remove client from collaborators if they were one
-                    file.collaborators = file.collaborators.filter(id => id !== clientId);
-                }
+            const doc = await this.documentManager.createDocument(fileId, filePath, client.name);
+            if (doc) {
+                this.broadcastToClients({
+                    type: 'documentShared',
+                    payload: this.documentManager.getDocumentMetadata(fileId),
+                    timestamp: Date.now()
+                });
             }
+        }
+    }
 
-            // Broadcast client disconnection to all clients
-            this.broadcastMessage({
-                type: 'system',
-                action: 'clientLeft',
-                clientId: clientId,
-                clientName: client.name
+    private handleUnshareDocument(clientId: string, fileId: string) {
+        if (this.documentManager.removeDocument(fileId)) {
+            this.broadcastToClients({
+                type: 'documentList',
+                payload: this.documentManager.getAllDocumentMetadata(),
+                timestamp: Date.now()
             });
-
-            outputChannel.info('TCP Connection', `Client disconnected: ${clientId}`);
-        } else {
-            outputChannel.error('TCP Connection', `Client not found: ${clientId}`);
         }
     }
 
-    public broadcastMessage(message: any, excludeClientId?: string): void {
-        const messageJson = JSON.stringify(message);
+    private handleClientDisconnection(clientId: string) {
+        const client = this.clients.get(clientId);
+        if (client) {
+            this.clients.delete(clientId);
+            outputChannel.info('Client Disconnected', `${client.name} (${clientId})`);
 
-        for (const [clientId, socket] of this.tcpClients.entries()) {
-            // Don't send message back to the sender if excludeClientId is provided
-            if (excludeClientId && clientId === excludeClientId) {
-                continue;
-            }
+            this.broadcastToClients({
+                type: 'clientLeft',
+                payload: { name: client.name, id: clientId },
+                timestamp: Date.now()
+            });
+        }
+    }
 
+    private sendToClient(clientId: string, message: ServerMessage) {
+        const client = this.clients.get(clientId);
+        if (client && !client.socket.destroyed) {
             try {
-                socket.write(messageJson);
+                client.socket.write(JSON.stringify(message) + '\n');
             } catch (error) {
-                outputChannel.error('Broadcast Error',
-                    `Failed to send message to ${clientId}: ${error instanceof Error ? error.message : String(error)}`);
-
-                // Handle disconnected client
-                this.handleClientDisconnect(clientId);
+                outputChannel.error('Send Message Error', `To ${clientId}: ${error}`);
             }
         }
     }
 
-    public getServerInfo(): any {
-        return {
-            ip: this.serverIp,
-            tcpPort: TCP_PORT,
-            udpPort: UDP_PORT,
-            clients: Array.from(this.clientInfo.values()),
-            sharedFiles: Array.from(this.sharedFiles.values()),
-            isRunning: this.tcpServer !== null && this.udpServer !== null
-        };
+    private broadcastToClients(message: ServerMessage, excludeClientId?: string) {
+        for (const [clientId, client] of this.clients) {
+            if (clientId !== excludeClientId) {
+                this.sendToClient(clientId, message);
+            }
+        }
+    }
+
+    stopServer(): void {
+        if (!this.isRunning) {
+            return;
+        }
+
+        // Close all client connections
+        for (const [clientId, client] of this.clients) {
+            client.socket.end();
+        }
+        this.clients.clear();
+
+        // Close servers
+        if (this.tcpServer) {
+            this.tcpServer.close();
+            this.tcpServer = null;
+        }
+
+        if (this.udpServer) {
+            this.udpServer.close();
+            this.udpServer = null;
+        }
+
+        this.isRunning = false;
+        vscode.window.showInformationMessage('Collaboration server stopped');
+        outputChannel.info('Server Stopped', 'Collaboration server stopped');
+    }
+
+    isServerRunning(): boolean {
+        return this.isRunning;
+    }
+
+    getConnectedClients(): ClientConnection[] {
+        return Array.from(this.clients.values());
     }
 }

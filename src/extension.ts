@@ -9,9 +9,10 @@ import { TodoListViewProvider } from "./frontend/TodoListView";
 import { CopilotViewProvider } from "./frontend/CopilotView";
 import { NotesViewProvider } from "./frontend/NotesView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
-import { initializeCollaborationManager, getCollaborationManager } from './frontend/CollaborationManager';
-import { SharedFilesView } from './frontend/SharedFilesView';
-import { ChatView } from './frontend/ChatView';
+import { SharedFilesViewProvider } from "./frontend/SharedFilesView";
+import { CollabServer } from "./backend/collaboration/CollabServer";
+import { CollabClient } from "./backend/collaboration/CollabClient";
+
 
 
 
@@ -74,28 +75,101 @@ export async function activate(context: vscode.ExtensionContext) {
   // endregion
 
   // region collaboration
-  // Initialize the collaboration manager
-  const collaborationManager = initializeCollaborationManager(context);
+  const collabServer = new CollabServer();
+  const collabClient = new CollabClient();
+  const sharedFilesViewProvider = SharedFilesViewProvider.create();
 
-  // Register the shared files view
-  SharedFilesView.getInstance(context);
+  vscode.window.registerTreeDataProvider("sharedFilesView", sharedFilesViewProvider);
+  context.subscriptions.push(sharedFilesViewProvider);
 
-  // Register the chat view
-  context.subscriptions.push(
-    vscode.commands.registerCommand('teamCollab.openChat', () => {
-      ChatView.getInstance(context).show();
-    })
-  );
-
-  // Handle extension deactivation
-  context.subscriptions.push({
-    dispose: () => {
-      collaborationManager.dispose();
-    }
+  // Setup event listeners
+  collabClient.on('connected', () => {
+    sharedFilesViewProvider.updateCollaborationStatus('connected');
   });
 
-  // Log activation
-  // outputChannel.info('Extension Activated', 'Team Collaboration extension is now active.');
+  collabClient.on('disconnected', () => {
+    sharedFilesViewProvider.updateCollaborationStatus('disconnected');
+    sharedFilesViewProvider.updateSharedFiles([]);
+  });
+
+  collabClient.on('fileShared', (file) => {
+    sharedFilesViewProvider.addSharedFile(file);
+  });
+
+  collabClient.on('fileUnshared', (fileId) => {
+    sharedFilesViewProvider.removeSharedFile(fileId);
+  });
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('teamCollab.startServer', async () => {
+      const success = await collabServer.startServer();
+      if (success) {
+        sharedFilesViewProvider.updateCollaborationStatus('hosting');
+      }
+    }),
+
+    vscode.commands.registerCommand('teamCollab.stopServer', () => {
+      collabServer.stopServer();
+      sharedFilesViewProvider.updateCollaborationStatus('disconnected');
+    }),
+
+    vscode.commands.registerCommand('teamCollab.connectToServer', async () => {
+      try {
+        const servers = await collabClient.discoverServers();
+        if (servers.length === 0) {
+          vscode.window.showInformationMessage('No collaboration servers found on the network');
+          return;
+        }
+
+        const items = servers.map(server => ({
+          label: server.name,
+          description: `${server.ip}:${server.tcpPort} (${server.clients} clients)`,
+          server: server
+        }));
+
+        const selected = await vscode.window.showQuickPick(items, {
+          placeHolder: 'Select a collaboration server to connect to'
+        });
+
+        if (selected) {
+          await collabClient.connectToServer(selected.server);
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to discover servers: ${error}`);
+      }
+    }),
+
+    vscode.commands.registerCommand('teamCollab.disconnect', () => {
+      collabClient.disconnectFromServer();
+    }),
+
+    vscode.commands.registerCommand('teamCollab.shareCurrentFile', async () => {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (!activeEditor) {
+        vscode.window.showWarningMessage('No file is currently open');
+        return;
+      }
+
+      const filePath = activeEditor.document.uri.fsPath;
+      await collabClient.shareFile(filePath);
+    }),
+
+    vscode.commands.registerCommand('teamCollab.unshareFile', async (item) => {
+      if (item && item.id) {
+        await collabClient.unshareFile(item.id);
+      }
+    }),
+
+    vscode.commands.registerCommand('teamCollab.refreshSharedFiles', () => {
+      sharedFilesViewProvider.refresh();
+    }),
+
+    vscode.commands.registerCommand('svsmate.removeSharedFile', async (item) => {
+      if (item && item.id) {
+        await collabClient.unshareFile(item.id);
+      }
+    })
+  );
   // endregion
 
   // region note
@@ -183,8 +257,5 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
-  const collaborationManager = getCollaborationManager();
-  if (collaborationManager) {
-    collaborationManager.dispose();
-  }
+
 }

@@ -132,7 +132,11 @@
       },
       {
         "command": "notesView.createNote",
-        "title": "Create Note"
+        "title": "Create Note",
+        "icon": {
+          "dark": "./src/icons/add-dark.svg",
+          "light": "./src/icons/add-light.svg"
+        }
       },
       {
         "command": "notesView.deleteNote",
@@ -168,19 +172,35 @@
       },
       {
         "command": "teamCollab.startServer",
-        "title": "Start Collaboration Server"
+        "title": "Start Collaboration Server",
+        "icon": {
+          "dark": "./src/icons/server-start-dark.svg",
+          "light": "./src/icons/server-start-light.svg"
+        }
       },
       {
         "command": "teamCollab.stopServer",
-        "title": "Stop Collaboration Server"
+        "title": "Stop Collaboration Server",
+        "icon": {
+          "dark": "./src/icons/server-stop-dark.svg",
+          "light": "./src/icons/server-stop-light.svg"
+        }
       },
       {
         "command": "teamCollab.connectToServer",
-        "title": "Connect to Collaboration Server"
+        "title": "Connect to Collaboration Server",
+        "icon": {
+          "dark": "./src/icons/connect-dark.svg",
+          "light": "./src/icons/connect-light.svg"
+        }
       },
       {
         "command": "teamCollab.disconnect",
-        "title": "Disconnect from Collaboration Server"
+        "title": "Disconnect from Collaboration Server",
+        "icon": {
+          "dark": "./src/icons/disconnect-dark.svg",
+          "light": "./src/icons/disconnect-light.svg"
+        }
       },
       {
         "command": "teamCollab.openChat",
@@ -188,7 +208,11 @@
       },
       {
         "command": "teamCollab.shareCurrentFile",
-        "title": "Share Current File"
+        "title": "Share Current File",
+        "icon": {
+          "dark": "./src/icons/share-dark.svg",
+          "light": "./src/icons/share-light.svg"
+        }
       },
       {
         "command": "teamCollab.unshareFile",
@@ -196,7 +220,11 @@
       },
       {
         "command": "teamCollab.refreshSharedFiles",
-        "title": "Refresh Shared Files"
+        "title": "Refresh Shared Files",
+        "icon": {
+          "dark": "./src/icons/refresh-dark.svg",
+          "light": "./src/icons/refresh-light.svg"
+        }
       }
     ],
     "chatParticipants": [
