@@ -339,8 +339,8 @@ export class CollaborationManager extends EventEmitter implements vscode.Disposa
 
         const portInput = await vscode.window.showInputBox({
             prompt: 'Enter server port',
-            placeHolder: '3000',
-            value: '3000',
+            placeHolder: '6789',
+            value: '6789',
             validateInput: (value) => {
                 const port = parseInt(value);
                 if (isNaN(port) || port < 1 || port > 65535) {
