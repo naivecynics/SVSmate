@@ -8,8 +8,8 @@ import { outputChannel } from '../../utils/OutputChannel';
 import { NetworkUtils } from './NetworkUtils';
 import { SharedDocumentManager } from './SharedDocumentManager';
 
-const TCP_PORT = 3000;
-const UDP_PORT = 3001;
+const TCP_PORT = 6789;
+const UDP_PORT = 6790;
 
 type TCPMessageType = 'system' | 'register' | 'welcome' | 'chat' | 'shareFile' | 'unshareFile' | 'fileOperation' | 'error';
 type UDPMessageType = 'discover' | 'serverInfo'
@@ -67,7 +67,7 @@ export class CollabServer {
                 }
 
                 outputChannel.info('Collaboration Server',
-                    `Server started on IP: ${this.serverIp}, TCP port: ${TCP_PORT}, UDP port: ${UDP_PORT}`);
+                    `Server started on TCP port: ${TCP_PORT}, UDP port: ${UDP_PORT}`);
 
                 resolve();
             } catch (error) {
@@ -135,8 +135,12 @@ export class CollabServer {
             });
         });
 
-        this.tcpServer.listen(TCP_PORT, this.serverIp, () => {
-            outputChannel.info('TCP Server', `Listening on ${this.serverIp}:${TCP_PORT}`);
+        // this.tcpServer.listen(TCP_PORT, this.serverIp, () => {
+        //     outputChannel.info('TCP Server', `Listening on ${this.serverIp}:${TCP_PORT}`);
+        // });
+
+        this.tcpServer.listen(TCP_PORT, () => {
+            outputChannel.info('TCP Server', `Listening on Port:${TCP_PORT}`);
         });
 
         this.tcpServer.on('error', (error) => {
@@ -163,8 +167,8 @@ export class CollabServer {
             outputChannel.error('UDP Server Error', error.message);
         });
 
-        this.udpServer.bind(UDP_PORT, this.serverIp, () => {
-            outputChannel.info('UDP Server', `Listening on ${this.serverIp}:${UDP_PORT}`);
+        this.udpServer.bind(UDP_PORT, () => {
+            outputChannel.info('UDP Server', `Listening on Port:${UDP_PORT}`);
         });
     }
 
