@@ -182,13 +182,6 @@ export class CollabClient extends EventEmitter {
 
         try {
             const fileName = path.basename(filePath);
-            const fileId = `${Date.now()}_${fileName}`;
-
-            // Create local document
-            const doc = await this.documentManager.createDocument(fileId, filePath, 'local');
-            if (!doc) {
-                return false;
-            }
 
             // Send share request to server
             this.sendToServer({
@@ -200,23 +193,7 @@ export class CollabClient extends EventEmitter {
                 timestamp: Date.now()
             });
 
-            // Set up document change listener
-            this.setupDocumentListener(filePath, fileId);
-
-            const sharedFile: SharedFile = {
-                id: fileId,
-                name: fileName,
-                path: filePath,
-                owner: 'local',
-                sharedAt: Date.now(),
-                size: fs.statSync(filePath).size,
-                collaborators: []
-            };
-
-            this.sharedFiles.set(fileId, sharedFile);
-            this.emit('fileShared', sharedFile);
-
-            vscode.window.showInformationMessage(`File "${fileName}" is now being shared`);
+            vscode.window.showInformationMessage(`Sharing file "${fileName}"...`);
             return true;
         } catch (error) {
             outputChannel.error('Share File Error', error instanceof Error ? error.message : String(error));
@@ -356,13 +333,42 @@ export class CollabClient extends EventEmitter {
     }
 
     private handleDocumentList(payload: any[]) {
-        // Update shared files list
+        // Update local shared files map
+        this.sharedFiles.clear();
+        payload.forEach(doc => {
+            const sharedFile: SharedFile = {
+                id: doc.id,
+                name: doc.name,
+                path: doc.path,
+                owner: doc.owner,
+                sharedAt: doc.sharedAt,
+                size: 0,
+                collaborators: []
+            };
+            this.sharedFiles.set(doc.id, sharedFile);
+        });
+
+        // Emit event for UI update
         this.emit('documentListUpdated', payload);
     }
 
     private handleDocumentShared(payload: any) {
         outputChannel.info('Document Shared', `${payload.name} by ${payload.owner}`);
+
+        // Add to local shared files
+        const sharedFile: SharedFile = {
+            id: payload.id,
+            name: payload.name,
+            path: payload.path,
+            owner: payload.owner,
+            sharedAt: payload.sharedAt,
+            size: 0,
+            collaborators: []
+        };
+        this.sharedFiles.set(payload.id, sharedFile);
+
         this.emit('documentShared', payload);
+        this.emit('fileShared', sharedFile);
     }
 
     private handleClientJoined(payload: any) {

@@ -359,6 +359,18 @@
           "when": "view == bbMaterialView",
           "group": "navigation",
           "title": "Update All"
+        },
+        {
+          "command": "teamCollab.shareCurrentFile",
+          "when": "view == sharedFilesView",
+          "group": "navigation",
+          "title": "Share Current File"
+        },
+        {
+          "command": "teamCollab.refreshSharedFiles",
+          "when": "view == sharedFilesView",
+          "group": "navigation",
+          "title": "Refresh Shared Files"
         }
       ]
     }

@@ -4,6 +4,7 @@ import * as net from 'net';
 import * as dgram from 'dgram';
 import * as fs from 'fs';
 import * as os from 'os';
+import { EventEmitter } from 'events';
 import { outputChannel } from '../../utils/OutputChannel';
 import { NetworkUtils } from './NetworkUtils';
 import { SharedDocumentManager } from './SharedDocumentManager';
@@ -24,7 +25,7 @@ interface ServerMessage {
     timestamp: number;
 }
 
-export class CollabServer {
+export class CollabServer extends EventEmitter {
     private tcpServer: net.Server | null = null;
     private udpServer: dgram.Socket | null = null;
     private clients: Map<string, ClientConnection> = new Map();
@@ -33,6 +34,7 @@ export class CollabServer {
     private serverName: string;
 
     constructor() {
+        super();
         this.documentManager = new SharedDocumentManager();
         this.serverName = `${os.hostname()}-SVSmate`;
         this.setupDocumentManager();
@@ -224,6 +226,66 @@ export class CollabServer {
         }
     }
 
+    /**
+     * Share a file from the server side
+     */
+    async shareFile(filePath: string): Promise<boolean> {
+        try {
+            const fileName = path.basename(filePath);
+            const fileId = `server_${Date.now()}_${fileName}`;
+
+            const doc = await this.documentManager.createDocument(fileId, filePath, 'Server');
+            if (!doc) {
+                return false;
+            }
+
+            const metadata = this.documentManager.getDocumentMetadata(fileId);
+            if (metadata) {
+                // Broadcast to all clients
+                this.broadcastToClients({
+                    type: 'documentShared',
+                    payload: metadata,
+                    timestamp: Date.now()
+                });
+
+                // Emit event for local UI update
+                this.emit('documentShared', metadata);
+
+                vscode.window.showInformationMessage(`File "${fileName}" is now being shared from server`);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            outputChannel.error('Server Share File Error', error instanceof Error ? error.message : String(error));
+            vscode.window.showErrorMessage(`Failed to share file: ${error}`);
+            return false;
+        }
+    }
+
+    /**
+     * Unshare a file from the server side
+     */
+    async unshareFile(fileId: string): Promise<boolean> {
+        if (this.documentManager.removeDocument(fileId)) {
+            this.broadcastToClients({
+                type: 'documentList',
+                payload: this.documentManager.getAllDocumentMetadata(),
+                timestamp: Date.now()
+            });
+
+            this.emit('documentRemoved', fileId);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get all shared documents metadata
+     */
+    getAllDocuments() {
+        return this.documentManager.getAllDocumentMetadata();
+    }
+
     private async handleShareDocument(clientId: string, payload: any) {
         const { filePath, name } = payload;
         const fileId = `${clientId}_${Date.now()}_${name}`;
@@ -232,22 +294,39 @@ export class CollabServer {
         if (client) {
             const doc = await this.documentManager.createDocument(fileId, filePath, client.name);
             if (doc) {
+                const metadata = this.documentManager.getDocumentMetadata(fileId);
+
+                // Broadcast to ALL clients (including the sender)
                 this.broadcastToClients({
                     type: 'documentShared',
-                    payload: this.documentManager.getDocumentMetadata(fileId),
+                    payload: metadata,
                     timestamp: Date.now()
                 });
+
+                // Also send updated document list to all clients
+                this.broadcastToClients({
+                    type: 'documentList',
+                    payload: this.documentManager.getAllDocumentMetadata(),
+                    timestamp: Date.now()
+                });
+
+                // Emit event for server UI update
+                this.emit('documentShared', metadata);
             }
         }
     }
 
     private handleUnshareDocument(clientId: string, fileId: string) {
         if (this.documentManager.removeDocument(fileId)) {
+            const updatedList = this.documentManager.getAllDocumentMetadata();
+
             this.broadcastToClients({
                 type: 'documentList',
-                payload: this.documentManager.getAllDocumentMetadata(),
+                payload: updatedList,
                 timestamp: Date.now()
             });
+
+            this.emit('documentRemoved', fileId);
         }
     }
 

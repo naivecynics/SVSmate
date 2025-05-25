@@ -85,7 +85,7 @@ async function activate(context) {
     const sharedFilesViewProvider = SharedFilesView_1.SharedFilesViewProvider.create();
     vscode.window.registerTreeDataProvider("sharedFilesView", sharedFilesViewProvider);
     context.subscriptions.push(sharedFilesViewProvider);
-    // Setup event listeners
+    // Setup event listeners for client
     collabClient.on('connected', () => {
         sharedFilesViewProvider.updateCollaborationStatus('connected');
     });
@@ -99,14 +99,52 @@ async function activate(context) {
     collabClient.on('fileUnshared', (fileId) => {
         sharedFilesViewProvider.removeSharedFile(fileId);
     });
+    collabClient.on('documentListUpdated', (documents) => {
+        const files = documents.map((doc) => ({
+            id: doc.id,
+            name: doc.name,
+            path: doc.path,
+            owner: doc.owner,
+            sharedAt: doc.sharedAt,
+            collaborators: []
+        }));
+        sharedFilesViewProvider.updateSharedFiles(files);
+    });
+    // Setup event listeners for server
+    collabServer.on('documentShared', (metadata) => {
+        const file = {
+            id: metadata.id,
+            name: metadata.name,
+            path: metadata.path,
+            owner: metadata.owner,
+            sharedAt: metadata.sharedAt,
+            collaborators: []
+        };
+        sharedFilesViewProvider.addSharedFile(file);
+    });
+    collabServer.on('documentRemoved', (fileId) => {
+        sharedFilesViewProvider.removeSharedFile(fileId);
+    });
     context.subscriptions.push(vscode.commands.registerCommand('teamCollab.startServer', async () => {
         const success = await collabServer.startServer();
         if (success) {
             sharedFilesViewProvider.updateCollaborationStatus('hosting');
+            // Load existing shared documents into view
+            const documents = collabServer.getAllDocuments();
+            const files = documents.map((doc) => ({
+                id: doc.id,
+                name: doc.name,
+                path: doc.path,
+                owner: doc.owner,
+                sharedAt: doc.sharedAt,
+                collaborators: []
+            }));
+            sharedFilesViewProvider.updateSharedFiles(files);
         }
     }), vscode.commands.registerCommand('teamCollab.stopServer', () => {
         collabServer.stopServer();
         sharedFilesViewProvider.updateCollaborationStatus('disconnected');
+        sharedFilesViewProvider.updateSharedFiles([]);
     }), vscode.commands.registerCommand('teamCollab.connectToServer', async () => {
         try {
             const servers = await collabClient.discoverServers();
@@ -138,7 +176,16 @@ async function activate(context) {
             return;
         }
         const filePath = activeEditor.document.uri.fsPath;
-        await collabClient.shareFile(filePath);
+        // Check if we're hosting a server
+        if (collabServer.isServerRunning()) {
+            await collabServer.shareFile(filePath);
+        }
+        else if (collabClient.isClientConnected()) {
+            await collabClient.shareFile(filePath);
+        }
+        else {
+            vscode.window.showWarningMessage('Not connected to a collaboration session');
+        }
     }), vscode.commands.registerCommand('teamCollab.unshareFile', async (item) => {
         if (item && item.id) {
             await collabClient.unshareFile(item.id);
