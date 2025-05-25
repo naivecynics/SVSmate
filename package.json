@@ -65,57 +65,57 @@
                 "icon": "$(symbol-file)"
             },
             {
-                "command": "todoListView.addItem",
+                "command": "svsmate.TODO-addItem",
                 "title": "%todoListView.addItem.title%",
                 "icon": "$(add)"
             },
             {
-                "command": "todoListView.editTask",
+                "command": "svsmate.TODO-editTask",
                 "title": "%todoListView.editTask.title%",
                 "icon": "$(edit)"
             },
             {
-                "command": "todoListView.deleteTask",
+                "command": "svsmate.TODO-deleteTask",
                 "title": "%todoListView.deleteTask.title%",
                 "icon": "$(trash)"
             },
             {
-                "command": "todoListView.toggleTaskCheckbox",
+                "command": "svsmate.TODO-toggleTaskCheckbox",
                 "title": "%todoListView.toggleTaskCheckbox.title%",
                 "icon": "$(check)"
             },
             {
-                "command": "todoListView.sortByEndTime",
+                "command": "svsmate.TODO-sortByEndTime",
                 "title": "%todoListView.sortByEndTime.title%",
                 "icon": "$(sort-precedence)"
             },
             {
-                "command": "todoListView.sortByKinds",
+                "command": "svsmate.TODO-sortByKinds",
                 "title": "%todoListView.sortByKinds.title%",
                 "icon": "$(group-by-ref-type)"
             },
             {
-                "command": "todoListView.searchTasks",
+                "command": "svsmate.TODO-searchTasks",
                 "title": "%todoListView.searchTasks.title%",
                 "icon": "$(search)"
             },
             {
-                "command": "todoListView.clearSearch",
+                "command": "svsmate.TODO-clearSearch",
                 "title": "%todoListView.clearSearch.title%",
                 "icon": "$(clear-all)"
             },
             {
-                "command": "todoListView.loadICSFile",
+                "command": "svsmate.TODO-loadICSFile",
                 "title": "%todoListView.loadICSFile.title%",
                 "icon": "$(file-submodule)"
             },
             {
-                "command": "todoListView.addSubTask",
+                "command": "svsmate.TODO-addSubTask",
                 "title": "%todoListView.addSubTask.title%",
                 "icon": "$(add)"
             },
             {
-                "command": "todoList.generateAISubtasks",
+                "command": "svsmate.TODO-generateAISubtasks",
                 "title": "%todoList.generateAISubtasks.title%",
                 "icon": "$(sparkle)"
             },
@@ -169,22 +169,22 @@
         "menus": {
             "view/item/context": [
                 {
-                    "command": "todoListView.editTask",
+                    "command": "svsmate.TODO-editTask",
                     "when": "view == todoListView",
                     "group": "inline"
                 },
                 {
-                    "command": "todoListView.deleteTask",
+                    "command": "svsmate.TODO-deleteTask",
                     "when": "view == todoListView",
                     "group": "inline"
                 },
                 {
-                    "command": "todoListView.addSubTask",
+                    "command": "svsmate.TODO-addSubTask",
                     "when": "view == todoListView && viewItem == task",
                     "group": "inline"
                 },
                 {
-                    "command": "todoList.generateAISubtasks",
+                    "command": "svsmate.TODO-generateAISubtasks",
                     "when": "view == todoListView && viewItem == task",
                     "group": "inline"
                 },
@@ -207,40 +207,41 @@
                     "command": "svsmate.BB-updateCourse",
                     "when": "view == bbMaterialView && viewItem == courseFolder",
                     "group": "inline"
-                }            ],
+                }
+            ],
             "view/title": [
                 {
-                    "command": "todoListView.addItem",
+                    "command": "svsmate.TODO-addItem",
                     "when": "view == todoListView",
                     "group": "navigation",
                     "title": "Add Item"
                 },
                 {
-                    "command": "todoListView.sortByEndTime",
+                    "command": "svsmate.TODO-sortByEndTime",
                     "when": "view == todoListView",
                     "group": "navigation",
                     "title": "Sort By End Time"
                 },
                 {
-                    "command": "todoListView.sortByKinds",
+                    "command": "svsmate.TODO-sortByKinds",
                     "when": "view == todoListView",
                     "group": "navigation",
                     "title": "Sort By Kinds"
                 },
                 {
-                    "command": "todoListView.searchTasks",
+                    "command": "svsmate.TODO-searchTasks",
                     "when": "view == todoListView",
                     "group": "navigation",
                     "title": "Search Tasks"
                 },
                 {
-                    "command": "todoListView.clearSearch",
+                    "command": "svsmate.TODO-clearSearch",
                     "when": "view == todoListView ",
                     "group": "navigation",
                     "title": "Clear Search"
                 },
                 {
-                    "command": "todoListView.loadICSFile",
+                    "command": "svsmate.TODO-loadICSFile",
                     "when": "view == todoListView",
                     "group": "navigation",
                     "title": "Load From .ics File"

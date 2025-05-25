@@ -120,47 +120,47 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
 
-        vscode.commands.registerCommand("todoListView.addItem", async () => {
+        vscode.commands.registerCommand("svsmate.TODO-addItem", async () => {
             await addItem(todoListViewProvider);
         }),
 
-        vscode.commands.registerCommand("todoListView.editTask", async (task) => {
-            todoListViewProvider.editTask(task);
+        vscode.commands.registerCommand("svsmate.TODO-editTask", async (task) => {
+            await editTask(todoListViewProvider, task);
         }),
 
-        vscode.commands.registerCommand("todoListView.deleteTask", async (item: TodoItem) => {
+        vscode.commands.registerCommand("svsmate.TODO-deleteTask", async (item: TodoItem) => {
             await deleteTask(todoListViewProvider, item);
         }),
 
-        vscode.commands.registerCommand("todoListView.toggleTaskCheckbox", async (item: TodoItem) => {
+        vscode.commands.registerCommand("svsmate.TODO-toggleTaskCheckbox", async (item: TodoItem) => {
             await toggleTaskCheckbox(todoListViewProvider, item);
         }),
 
-        vscode.commands.registerCommand("todoListView.sortByEndTime", async () => {
+        vscode.commands.registerCommand("svsmate.TODO-sortByEndTime", async () => {
             await sortByEndTime(todoListViewProvider);
         }),
 
-        vscode.commands.registerCommand("todoListView.sortByKinds", async () => {
+        vscode.commands.registerCommand("svsmate.TODO-sortByKinds", async () => {
             await sortByKinds(todoListViewProvider);
         }),
 
-        vscode.commands.registerCommand('todoListView.searchTasks', async () => {
+        vscode.commands.registerCommand('svsmate.TODO-searchTasks', async () => {
             await searchTasks(todoListViewProvider);
         }),
 
-        vscode.commands.registerCommand('todoListView.clearSearch', async () => {
+        vscode.commands.registerCommand('svsmate.TODO-clearSearch', async () => {
             await clearSearch(todoListViewProvider);
         }),
 
-        vscode.commands.registerCommand('todoListView.addSubTask', async (item: TodoItem) => {
+        vscode.commands.registerCommand('svsmate.TODO-addSubTask', async (item: TodoItem) => {
             await addSubTask(todoListViewProvider, item);
         }),
 
-        vscode.commands.registerCommand('todoList.generateAISubtasks', async (item: TodoItem) => {
+        vscode.commands.registerCommand('svsmate.TODO-generateAISubtasks', async (item: TodoItem) => {
             await addAIGeneratedSubtasks(todoListViewProvider, item);
         }),
 
-        vscode.commands.registerCommand('todoListView.loadICSFile', async () => {
+        vscode.commands.registerCommand('svsmate.TODO-loadICSFile', async () => {
             await loadICSFile(todoListViewProvider);
         }),
 
