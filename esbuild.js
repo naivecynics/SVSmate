@@ -13,10 +13,8 @@ async function main() {
     sourcesContent: false,
     platform: 'node',
     outfile: 'dist/extension.js',
-    external: ['vscode', 'pdf-lib', 'pdf-parse'],
-    logLevel: 'warning',
-    plugins: [
-      /* add to the end of plugins array */
+    external: ['vscode'],
+    logLevel: 'warning',    plugins: [
       esbuildProblemMatcherPlugin
     ]
   });
@@ -41,7 +39,7 @@ const esbuildProblemMatcherPlugin = {
     build.onEnd(result => {
       result.errors.forEach(({ text, location }) => {
         console.error(`✘ [ERROR] ${text}`);
-        if (location == null) return;
+        if (location === null) { return; }
         console.error(`    ${location.file}:${location.line}:${location.column}:`);
       });
       console.log('[watch] build finished');

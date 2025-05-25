@@ -1,6 +1,9 @@
 import { ChatBot } from './ChatBot';
 import { TodoListViewProvider, TodoItem } from "../../frontend/TodoListView";
 import * as vscode from "vscode";
+import * as nls from 'vscode-nls';
+
+const localize = nls.loadMessageBundle();
 
 /**
  * Uses AI to break a parent task into subtasks.
@@ -80,13 +83,34 @@ export async function addAIGeneratedSubtasks(
   task: TodoItem
 ): Promise<void> {
   try {
+    // Ask the user for the number of subtasks they want
+    const userInput = await vscode.window.showInputBox({
+      prompt: localize('subtasks.input.prompt', 'How many subtasks would you like to generate?'),
+      placeHolder: localize('subtasks.input.placeholder', 'Enter a number (e.g., 5)'),
+      value: '5',
+      validateInput: (input: string) => {
+        const num = parseInt(input);
+        if (isNaN(num) || num <= 0 || num > 20) {
+          return localize('subtasks.input.validation', 'Please enter a number between 1 and 20');
+        }
+        return undefined;
+      }
+    });
+
+    if (!userInput) {
+      // User cancelled the input
+      return;
+    }
+
+    const numberOfSubtasks = parseInt(userInput);
+
     // Show a progress notification while the AI is generating subtasks
     await vscode.window.withProgress({
       location: vscode.ProgressLocation.Notification,
-      title: "AI is analyzing and generating subtasks...",
+      title: localize('subtasks.progress.title', 'AI is analyzing and generating subtasks...'),
       cancellable: false
     }, async () => {
-      const subtasks = await createSubtasksWithAI(task);
+      const subtasks = await createSubtasksWithAI(task, numberOfSubtasks);
       // Add the generated subtasks to the task's children
       task.children.push(...subtasks);
       // Notify the treeProvider that the data has changed and needs to be saved
@@ -95,9 +119,13 @@ export async function addAIGeneratedSubtasks(
     });
 
     // Show a success message when the subtasks are created successfully
-    vscode.window.showInformationMessage(`Successfully created subtasks for task "${task.label}"`);
+    vscode.window.showInformationMessage(
+      localize('subtasks.success.message', 'Successfully created subtasks for task "{0}"', task.label)
+    );
   } catch (error) {
     // Show an error message if the subtask creation fails
-    vscode.window.showErrorMessage(`Failed to generate subtasks: ${(error as Error).message}`);
+    vscode.window.showErrorMessage(
+      localize('subtasks.error.message', 'Failed to generate subtasks: {0}', (error as Error).message)
+    );
   }
 }
