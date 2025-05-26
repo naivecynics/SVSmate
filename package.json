@@ -2,7 +2,7 @@
     "name": "svsmate",
     "displayName": "SVSmate",
     "description": "The Ultimate VS Code Extension for SUSTechers!",
-    "version": "0.0.2",
+    "version": "1.1.0",
     "publisher": "naivecynics",
     "repository": {
         "type": "git",
@@ -33,7 +33,7 @@
                 },
                 "svsmate.apikey": {
                     "type": "string",
-                    "default": "sk-c0e9243de07945c28e782f57929909b0",
+                    "default": "",
                     "description": "API key to empower the extension (deepseek api available only)."
                 }
             }
@@ -128,9 +128,9 @@
         "chatParticipants": [
             {
                 "id": "svsmate.ChatBot",
-                "fullName": "svsmate-ChatBot",
+                "fullName": "SVSmate",
                 "name": "mate",
-                "description": "Hi SUSTechers, what can I assist you?",
+                "description": "Hi SUSTecher, what can I assist you?",
                 "isSticky": true
             }
         ],
@@ -295,9 +295,9 @@
     },
     "scripts": {
         "lint": "eslint src --fix",
-        "dev:compile": "npx rimraf out && npx tsc -p ./ && npm run lint",
-        "test": "vscode-test",
         "docs": "typedoc",
+        "dev:compile": "npx rimraf out && npx tsc -p ./ && npm run lint",
+        "test": "npm run dev:compile && vscode-test",
         "compile": "npm run check-types && node esbuild.js",
         "check-types": "tsc --noEmit",
         "watch": "npm-run-all -p watch:*",
@@ -307,8 +307,6 @@
         "package": "npm run check-types && node esbuild.js --production",
         "esbuild-base": "node esbuild.js",
         "esbuild": "npm run esbuild-base -- --sourcemap",
-        "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
-        "test-compile": "tsc -p ./",
-        "pretest": "npm run compile && npm run lint"
+        "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch"
     }
 }

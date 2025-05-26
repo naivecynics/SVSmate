@@ -85,7 +85,7 @@ Currently tested with the [Deepseek API](https://platform.deepseek.com/api_keys)
 
 After configuring your API key, you can:
 
-1. Chat with your API agent: `@mate-API`
+1. Chat with your API agent: `@mate`
 2. Automatically download Blackboard files to the correct directory
 3. Generate intelligent subtask breakdowns
 4. Read PDFs and extract code into files

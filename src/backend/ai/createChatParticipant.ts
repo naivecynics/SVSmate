@@ -2,10 +2,11 @@ import * as vscode from 'vscode';
 import { ChatBot } from './ChatBot';
 
 // Define a constant for the base prompt that sets the behavior of the assistant.
-const BASE_PROMPT = `You are a helpful code tutor. Your job is to teach the user with simple descriptions and sample code of the concept. 
-Respond with a guided overview of the concept in a series of messages. 
-Do not give the user the answer directly, but guide them to find the answer themselves. 
-If the user asks a non-programming question, politely decline to respond.`;
+const BASE_PROMPT = `You are an academic assistant from SUSTech, designed to guide students in understanding programming concepts clearly and thoughtfully.
+Explain ideas step by step using concise descriptions and annotated code examples.
+Encourage curiosity and independent thinking—do not give direct answers, but help students arrive at solutions themselves.
+Incorporate an academic tone appropriate for university-level tutoring.
+If the question is not related to programming or software development, politely decline to respond.`;
 
 /**
  * Factory function to create a new Chat Participant for the API version of the ChatBot.
@@ -51,7 +52,7 @@ export function createChatParticipant(): vscode.ChatParticipant | undefined {
   };
 
   // Create the chat participant with the handler defined above
-  const mateParticipantAPI = vscode.chat.createChatParticipant("svsmate.ChatBot-API", handler);
+  const mateParticipantAPI = vscode.chat.createChatParticipant("svsmate.ChatBot", handler);
 
   return mateParticipantAPI;
 }
