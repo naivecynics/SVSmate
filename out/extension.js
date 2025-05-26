@@ -128,6 +128,14 @@ async function activate(context) {
     collabServer.on('documentRemoved', (fileId) => {
         sharedFilesViewProvider.removeSharedFile(fileId);
     });
+    collabServer.on('clientJoined', (clientInfo) => {
+        const clientCount = collabServer.getConnectedClients().length;
+        OutputChannel_1.outputChannel.info('Client Status Update', `${clientInfo.name} joined. Total clients: ${clientCount}`);
+    });
+    collabServer.on('clientLeft', (clientInfo) => {
+        const clientCount = collabServer.getConnectedClients().length;
+        OutputChannel_1.outputChannel.info('Client Status Update', `${clientInfo.name} left. Total clients: ${clientCount}`);
+    });
     context.subscriptions.push(vscode.commands.registerCommand('teamCollab.startServer', async () => {
         const success = await collabServer.startServer();
         if (success) {

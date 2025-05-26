@@ -102,12 +102,12 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
     private getStatusText(): string {
         switch (this.collaborationStatus) {
             case 'hosting':
-                return '🟢 Hosting collaboration session';
+                return '🟢 Hosting Session (You are included as participant)';
             case 'connected':
-                return '🟡 Connected to collaboration session';
+                return '🟡 Connected as Client';
             case 'disconnected':
             default:
-                return '🔴 Not connected';
+                return '⚪ Ready to Collaborate';
         }
     }
 

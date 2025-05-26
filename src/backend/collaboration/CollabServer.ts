@@ -65,6 +65,9 @@ export class CollabServer extends EventEmitter {
             await this.startUdpServer();
             this.isRunning = true;
 
+            // Add server host as a special client
+            this.addServerAsClient();
+
             const localIp = NetworkUtils.getLocalIp();
             vscode.window.showInformationMessage(
                 `Collaboration server started on ${localIp}:${TCP_PORT}`
@@ -75,6 +78,49 @@ export class CollabServer extends EventEmitter {
             outputChannel.error('Server Start Error', error instanceof Error ? error.message : String(error));
             vscode.window.showErrorMessage(`Failed to start collaboration server: ${error}`);
             return false;
+        }
+    }
+
+    /**
+     * Add server host as a special client for collaboration
+     */
+    private addServerAsClient(): void {
+        const serverClientId = 'server_host';
+        const serverClient: ClientConnection = {
+            socket: null as any, // Server doesn't need a socket to itself
+            id: serverClientId,
+            name: `${this.serverName} (Host)`,
+            joinedAt: Date.now()
+        };
+
+        this.clients.set(serverClientId, serverClient);
+        outputChannel.info('Server Host Added', `Server host added as client: ${serverClient.name}`);
+
+        // Emit event for UI update
+        this.emit('clientJoined', {
+            name: serverClient.name,
+            id: serverClientId,
+            isHost: true
+        });
+    }
+
+    /**
+     * Remove server host from clients when stopping
+     */
+    private removeServerAsClient(): void {
+        const serverClientId = 'server_host';
+        const serverClient = this.clients.get(serverClientId);
+
+        if (serverClient) {
+            this.clients.delete(serverClientId);
+            outputChannel.info('Server Host Removed', `Server host removed from clients`);
+
+            // Emit event for UI update
+            this.emit('clientLeft', {
+                name: serverClient.name,
+                id: serverClientId,
+                isHost: true
+            });
         }
     }
 
@@ -406,8 +452,13 @@ export class CollabServer extends EventEmitter {
     }
 
     private sendToClient(clientId: string, message: ServerMessage) {
+        // Skip sending messages to server host (itself)
+        if (clientId === 'server_host') {
+            return;
+        }
+
         const client = this.clients.get(clientId);
-        if (client && !client.socket.destroyed) {
+        if (client && client.socket && !client.socket.destroyed) {
             try {
                 client.socket.write(JSON.stringify(message) + '\n');
             } catch (error) {
@@ -429,9 +480,14 @@ export class CollabServer extends EventEmitter {
             return;
         }
 
-        // Close all client connections
+        // Remove server host from clients
+        this.removeServerAsClient();
+
+        // Close all client connections (excluding server host)
         for (const [clientId, client] of this.clients) {
-            client.socket.end();
+            if (client.socket) {
+                client.socket.end();
+            }
         }
         this.clients.clear();
 

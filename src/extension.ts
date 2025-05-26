@@ -132,6 +132,18 @@ export async function activate(context: vscode.ExtensionContext) {
     sharedFilesViewProvider.removeSharedFile(fileId);
   });
 
+  collabServer.on('clientJoined', (clientInfo) => {
+    const clientCount = collabServer.getConnectedClients().length;
+    outputChannel.info('Client Status Update',
+      `${clientInfo.name} joined. Total clients: ${clientCount}`);
+  });
+
+  collabServer.on('clientLeft', (clientInfo) => {
+    const clientCount = collabServer.getConnectedClients().length;
+    outputChannel.info('Client Status Update',
+      `${clientInfo.name} left. Total clients: ${clientCount}`);
+  });
+
   context.subscriptions.push(
     vscode.commands.registerCommand('teamCollab.startServer', async () => {
       const success = await collabServer.startServer();
