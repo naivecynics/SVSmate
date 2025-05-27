@@ -123,6 +123,90 @@
                 "command": "svsmate.PDF-generateFromPDF",
                 "title": "SVSmate: Generate Code from PDF",
                 "icon": "$(note)"
+            },
+            {
+                "command": "svsmate.startServer",
+                "title": "Start Server"
+            },
+            {
+                "command": "svsmate.connect",
+                "title": "Connect to Server"
+            },
+            {
+                "command": "svsmate.sendMessage",
+                "title": "Send Message"
+            },
+            {
+                "command": "svsmate.disconnect",
+                "title": "Disconnect"
+            },
+            {
+                "command": "svsmate.removeSharedFile",
+                "title": "Stop Sharing File",
+                "icon": {
+                    "dark": "./src/icons/delete-dark.svg",
+                    "light": "./src/icons/delete-light.svg"
+                }
+            },
+            {
+                "command": "teamCollab.startServer",
+                "title": "Start Collaboration Server",
+                "icon": {
+                    "dark": "./src/icons/server-start-dark.svg",
+                    "light": "./src/icons/server-start-light.svg"
+                }
+            },
+            {
+                "command": "teamCollab.stopServer",
+                "title": "Stop Collaboration Server",
+                "icon": {
+                    "dark": "./src/icons/server-stop-dark.svg",
+                    "light": "./src/icons/server-stop-light.svg"
+                }
+            },
+            {
+                "command": "teamCollab.connectToServer",
+                "title": "Connect to Collaboration Server",
+                "icon": {
+                    "dark": "./src/icons/connect-dark.svg",
+                    "light": "./src/icons/connect-light.svg"
+                }
+            },
+            {
+                "command": "teamCollab.disconnect",
+                "title": "Disconnect from Collaboration Server",
+                "icon": {
+                    "dark": "./src/icons/disconnect-dark.svg",
+                    "light": "./src/icons/disconnect-light.svg"
+                }
+            },
+            {
+                "command": "teamCollab.openChat",
+                "title": "Open Collaboration Chat"
+            },
+            {
+                "command": "teamCollab.shareCurrentFile",
+                "title": "Share Current File (Server Only)",
+                "icon": {
+                    "dark": "./src/icons/share-dark.svg",
+                    "light": "./src/icons/share-light.svg"
+                }
+            },
+            {
+                "command": "teamCollab.unshareFile",
+                "title": "Unshare File"
+            },
+            {
+                "command": "teamCollab.refreshSharedFiles",
+                "title": "Refresh Shared Files",
+                "icon": {
+                    "dark": "./src/icons/refresh-dark.svg",
+                    "light": "./src/icons/refresh-light.svg"
+                }
+            },
+            {
+                "command": "teamCollab.openSharedFile",
+                "title": "Open Shared File"
             }
         ],
         "chatParticipants": [
@@ -156,6 +240,10 @@
                 {
                     "id": "todoListView",
                     "name": "To-Do List"
+                },
+                {
+                    "id": "sharedfilesview",
+                    "name": "shared files"
                 }
             ]
         },
@@ -199,6 +287,11 @@
                 {
                     "command": "svsmate.BB-updateCourse",
                     "when": "view == bbMaterialView && viewItem == courseFolder",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.removeSharedFile",
+                    "when": "view == sharedFilesView && viewItem == sharedFile",
                     "group": "inline"
                 }
             ],
@@ -256,6 +349,18 @@
                     "when": "view == folderView",
                     "group": "navigation",
                     "title": "Generate Code from PDF"
+                },
+                {
+                    "command": "teamCollab.shareCurrentFile",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation",
+                    "title": "Share Current File (Server Only)"
+                },
+                {
+                    "command": "teamCollab.refreshSharedFiles",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation",
+                    "title": "Refresh Shared Files"
                 }
             ]
         }
@@ -269,7 +374,9 @@
         "pdf-lib": "^1.17.1",
         "pdf-parse": "^1.1.1",
         "tough-cookie": "^5.1.2",
-        "xml2js": "^0.6.2"
+        "y-protocols": "^1.0.6",
+        "y-webrtc": "^10.3.0",
+        "yjs": "^13.6.26"
     },
     "devDependencies": {
         "@types/cheerio": "^0.22.35",
