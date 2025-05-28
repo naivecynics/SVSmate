@@ -123,48 +123,6 @@
                 "command": "svsmate.PDF-generateFromPDF",
                 "title": "SVSmate: Generate Code from PDF",
                 "icon": "$(note)"
-            },
-            {
-                "command": "svsmate.startServer",
-                "title": "Start Collaboration Server",
-                "icon": "${debug-start}"
-            },
-            {
-                "command": "svsmate.stopServer",
-                "title": "Stop Collaboration Server",
-                "icon": "$(debug-stop)"
-            },
-            {
-                "command": "svsmate.connectToServer",
-                "title": "Connect to Collaboration Server",
-                "icon": "$(plug)"
-            },
-            {
-                "command": "svsmate.disconnect",
-                "title": "Disconnect from Collaboration Server",
-                "icon": "$(debug-disconnect)"
-            },
-            {
-                "command": "svsmate.shareCurrentFile",
-                "title": "Share Current File",
-                "icon": "$(share)"
-            },
-            {
-                "command": "svsmate.openSharedFile",
-                "title": "Open Shared File"
-            },
-            {
-                "command": "svsmate.unshareFile",
-                "title": "Stop Sharing File"
-            },
-            {
-                "command": "svsmate.refreshSharedFiles",
-                "title": "Refresh Shared Files",
-                "icon": "$(refresh)"
-            },
-            {
-                "command": "svsmate.removeSharedFile",
-                "title": "Stop Sharing File"
             }
         ],
         "chatParticipants": [
@@ -246,11 +204,6 @@
                     "command": "svsmate.BB-updateCourse",
                     "when": "view == bbMaterialView && viewItem == courseFolder",
                     "group": "inline"
-                },
-                {
-                    "command": "svsmate.removeSharedFile",
-                    "when": "view == sharedFilesView && viewItem == sharedFile",
-                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -307,36 +260,6 @@
                     "when": "view == folderView",
                     "group": "navigation",
                     "title": "Generate Code from PDF"
-                },
-                {
-                    "command": "svsmate.startServer",
-                    "when": "view == sharedFilesView",
-                    "group": "navigation@1"
-                },
-                {
-                    "command": "svsmate.stopServer",
-                    "when": "view == sharedFilesView",
-                    "group": "navigation@2"
-                },
-                {
-                    "command": "svsmate.connectToServer",
-                    "when": "view == sharedFilesView",
-                    "group": "navigation@3"
-                },
-                {
-                    "command": "svsmate.disconnect",
-                    "when": "view == sharedFilesView",
-                    "group": "navigation@4"
-                },
-                {
-                    "command": "svsmate.shareCurrentFile",
-                    "when": "view == sharedFilesView",
-                    "group": "navigation@5"
-                },
-                {
-                    "command": "svsmate.refreshSharedFiles",
-                    "when": "view == sharedFilesView",
-                    "group": "navigation@6"
                 }
             ]
         }
