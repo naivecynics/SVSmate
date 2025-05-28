@@ -5,6 +5,15 @@ export interface ServerFile {
     id: string;
     name: string;
     content: string;
+    lastTimestamp?: number;
+}
+
+export interface OpenDocument {
+    fileId: string;
+    document: vscode.TextDocument;
+    changeListener: vscode.Disposable;
+    closeListener: vscode.Disposable;
+    isUpdating: boolean;
 }
 
 export class CollaborationClient {
@@ -13,7 +22,9 @@ export class CollaborationClient {
     private serverIP = '';
     private serverPort = 0;
     private serverFiles: Map<string, ServerFile> = new Map();
+    private openDocuments: Map<string, OpenDocument> = new Map();
     private onFilesUpdatedCallback?: () => void;
+    private updateInProgress = new Set<string>(); // Prevent update loops
 
     constructor() { }
 
@@ -62,6 +73,11 @@ export class CollaborationClient {
      * Disconnect from the server
      */
     async disconnect(): Promise<void> {
+        // Clean up all open documents
+        for (const [fileId] of this.openDocuments) {
+            this.cleanupDocument(fileId);
+        }
+
         if (this.socket) {
             this.socket.destroy();
             this.socket = null;
@@ -83,6 +99,13 @@ export class CollaborationClient {
             return;
         }
 
+        // Check if file is already open
+        if (this.openDocuments.has(fileId)) {
+            const openDoc = this.openDocuments.get(fileId)!;
+            await vscode.window.showTextDocument(openDoc.document);
+            return;
+        }
+
         try {
             // Create a new untitled document with the file content
             const document = await vscode.workspace.openTextDocument({
@@ -95,7 +118,8 @@ export class CollaborationClient {
 
             // Listen for changes to sync back to server
             const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
-                if (event.document === document) {
+                const openDoc = this.openDocuments.get(fileId);
+                if (event.document === document && openDoc && !openDoc.isUpdating) {
                     this.sendFileUpdate(fileId, event.document.getText());
                 }
             });
@@ -103,13 +127,33 @@ export class CollaborationClient {
             // Clean up listener when document is closed
             const closeListener = vscode.workspace.onDidCloseTextDocument((closedDoc) => {
                 if (closedDoc === document) {
-                    changeListener.dispose();
-                    closeListener.dispose();
+                    this.cleanupDocument(fileId);
                 }
+            });
+
+            // Track the open document
+            this.openDocuments.set(fileId, {
+                fileId,
+                document,
+                changeListener,
+                closeListener,
+                isUpdating: false
             });
 
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to open file: ${error}`);
+        }
+    }
+
+    /**
+     * Clean up document tracking when file is closed
+     */
+    private cleanupDocument(fileId: string): void {
+        const openDoc = this.openDocuments.get(fileId);
+        if (openDoc) {
+            openDoc.changeListener.dispose();
+            openDoc.closeListener.dispose();
+            this.openDocuments.delete(fileId);
         }
     }
 
@@ -148,7 +192,8 @@ export class CollaborationClient {
                     this.serverFiles.set(file.id, {
                         id: file.id,
                         name: file.name,
-                        content: file.content
+                        content: file.content,
+                        lastTimestamp: file.lastModified
                     });
                 }
                 if (this.onFilesUpdatedCallback) {
@@ -162,7 +207,8 @@ export class CollaborationClient {
                 this.serverFiles.set(newFile.id, {
                     id: newFile.id,
                     name: newFile.name,
-                    content: newFile.content
+                    content: newFile.content,
+                    lastTimestamp: Date.now()
                 });
                 if (this.onFilesUpdatedCallback) {
                     this.onFilesUpdatedCallback();
@@ -173,16 +219,63 @@ export class CollaborationClient {
             case 'fileUpdated':
                 // Handle file content update
                 const updateData = message.data;
-                const existingFile = this.serverFiles.get(updateData.id);
-                if (existingFile) {
-                    existingFile.content = updateData.content;
-                    // TODO: Update open documents with new content
-                }
+                this.handleFileUpdate(updateData.id, updateData.content, updateData.timestamp);
                 break;
 
             case 'pong':
                 // Handle ping response
                 break;
+        }
+    }
+
+    /**
+     * Handle file updates from server
+     */
+    private async handleFileUpdate(fileId: string, content: string, timestamp?: number): Promise<void> {
+        // Prevent update loops
+        if (this.updateInProgress.has(fileId)) {
+            return;
+        }
+
+        // Update the stored file content
+        const existingFile = this.serverFiles.get(fileId);
+        if (existingFile) {
+            // Check timestamp to avoid applying old updates
+            if (timestamp && existingFile.lastTimestamp && timestamp < existingFile.lastTimestamp) {
+                return;
+            }
+
+            existingFile.content = content;
+            existingFile.lastTimestamp = timestamp || Date.now();
+        }
+
+        // Update open document if it exists
+        const openDoc = this.openDocuments.get(fileId);
+        if (openDoc && openDoc.document.getText() !== content) {
+            this.updateInProgress.add(fileId);
+            openDoc.isUpdating = true;
+
+            try {
+                // Apply edit to the document
+                const edit = new vscode.WorkspaceEdit();
+                const fullRange = new vscode.Range(
+                    openDoc.document.positionAt(0),
+                    openDoc.document.positionAt(openDoc.document.getText().length)
+                );
+                edit.replace(openDoc.document.uri, fullRange, content);
+                await vscode.workspace.applyEdit(edit);
+
+                // Show a subtle indication that the file was updated
+                vscode.window.setStatusBarMessage('File updated from server', 2000);
+            } catch (error) {
+                console.error('Failed to update document:', error);
+            } finally {
+                openDoc.isUpdating = false;
+                // Remove from progress tracking after a short delay
+                setTimeout(() => {
+                    this.updateInProgress.delete(fileId);
+                }, 100);
+            }
         }
     }
 
@@ -196,7 +289,8 @@ export class CollaborationClient {
                 type: 'fileContentUpdate',
                 data: {
                     fileId: fileId,
-                    content: content
+                    content: content,
+                    timestamp: Date.now()
                 }
             };
             this.socket.write(JSON.stringify(message));

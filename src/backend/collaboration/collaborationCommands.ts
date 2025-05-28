@@ -131,12 +131,28 @@ export async function openSharedFile(item: SharedFilesItem): Promise<void> {
     if (item.type === 'clientFile') {
         await collaborationClient.openSharedFile(item.fileId);
     } else if (item.type === 'serverFile') {
-        // For server files, open the local file directly
+        // For server files, open the local file directly and set up sync
         const sharedFiles = collaborationServer.getSharedFiles();
         const file = sharedFiles.find(f => f.id === item.fileId);
         if (file) {
             const document = await vscode.workspace.openTextDocument(file.path);
             await vscode.window.showTextDocument(document);
+
+            // Set up document change listener for server-side sync
+            const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
+                if (event.document === document) {
+                    // Update the shared file content and notify clients
+                    collaborationServer.updateFileContent(file.id, event.document.getText(), false);
+                }
+            });
+
+            // Clean up listener when document is closed
+            const closeListener = vscode.workspace.onDidCloseTextDocument((closedDoc) => {
+                if (closedDoc === document) {
+                    changeListener.dispose();
+                    closeListener.dispose();
+                }
+            });
         }
     }
 }

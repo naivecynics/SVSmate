@@ -10,6 +10,7 @@ export interface SharedFile {
     path: string;
     content: string;
     lastModified: number;
+    watcher?: vscode.FileSystemWatcher;
 }
 
 export interface ConnectedClient {
@@ -25,6 +26,7 @@ export class CollaborationServer {
     private sharedFiles: Map<string, SharedFile> = new Map();
     private port: number = 0;
     private isRunning = false;
+    private fileUpdateInProgress = new Set<string>(); // Prevent update loops
 
     constructor() { }
 
@@ -77,6 +79,14 @@ export class CollaborationServer {
         }
         this.clients.clear();
 
+        // Dispose file watchers
+        for (const file of this.sharedFiles.values()) {
+            if (file.watcher) {
+                file.watcher.dispose();
+            }
+        }
+        this.sharedFiles.clear();
+
         if (this.server) {
             this.server.close();
             this.server = null;
@@ -100,12 +110,19 @@ export class CollaborationServer {
             const fileName = path.basename(filePath);
             const fileId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+            // Create file watcher to monitor changes
+            const watcher = vscode.workspace.createFileSystemWatcher(filePath);
+            watcher.onDidChange(() => {
+                this.handleFileSystemChange(fileId, filePath);
+            });
+
             const sharedFile: SharedFile = {
                 id: fileId,
                 name: fileName,
                 path: filePath,
                 content: content,
-                lastModified: Date.now()
+                lastModified: Date.now(),
+                watcher: watcher
             };
 
             this.sharedFiles.set(fileId, sharedFile);
@@ -129,25 +146,93 @@ export class CollaborationServer {
     }
 
     /**
-     * Update file content and sync with clients
+     * Update file content and sync with clients and disk
      */
-    updateFileContent(fileId: string, content: string): void {
+    updateFileContent(fileId: string, content: string, fromClient: boolean = false): void {
         const sharedFile = this.sharedFiles.get(fileId);
         if (!sharedFile) {
             return;
         }
 
-        sharedFile.content = content;
-        sharedFile.lastModified = Date.now();
+        // Prevent update loops
+        if (this.fileUpdateInProgress.has(fileId)) {
+            return;
+        }
 
-        // Broadcast update to all clients
-        this.broadcastToClients({
-            type: 'fileUpdated',
-            data: {
-                id: fileId,
-                content: content
+        this.fileUpdateInProgress.add(fileId);
+
+        try {
+            sharedFile.content = content;
+            sharedFile.lastModified = Date.now();
+
+            // Save to disk if the update came from a client
+            if (fromClient) {
+                try {
+                    fs.writeFileSync(sharedFile.path, content, 'utf-8');
+                } catch (error) {
+                    console.error('Failed to save file to disk:', error);
+                }
             }
-        });
+
+            // Broadcast update to all clients
+            this.broadcastToClients({
+                type: 'fileUpdated',
+                data: {
+                    id: fileId,
+                    content: content,
+                    timestamp: sharedFile.lastModified
+                }
+            });
+
+            // Update open VS Code documents on server side
+            this.updateServerDocument(sharedFile);
+
+        } finally {
+            // Remove from progress tracking after a short delay
+            setTimeout(() => {
+                this.fileUpdateInProgress.delete(fileId);
+            }, 100);
+        }
+    }
+
+    /**
+     * Handle file system changes (when file is edited outside of collaboration)
+     */
+    private async handleFileSystemChange(fileId: string, filePath: string): Promise<void> {
+        if (this.fileUpdateInProgress.has(fileId)) {
+            return;
+        }
+
+        try {
+            const content = fs.readFileSync(filePath, 'utf-8');
+            this.updateFileContent(fileId, content, false);
+        } catch (error) {
+            console.error('Failed to read file system change:', error);
+        }
+    }
+
+    /**
+     * Update open VS Code document on server side
+     */
+    private async updateServerDocument(sharedFile: SharedFile): Promise<void> {
+        try {
+            // Find if the file is currently open in VS Code
+            const openDocuments = vscode.workspace.textDocuments;
+            const document = openDocuments.find(doc => doc.fileName === sharedFile.path);
+
+            if (document && document.getText() !== sharedFile.content) {
+                // Apply edit to the document
+                const edit = new vscode.WorkspaceEdit();
+                const fullRange = new vscode.Range(
+                    document.positionAt(0),
+                    document.positionAt(document.getText().length)
+                );
+                edit.replace(document.uri, fullRange, sharedFile.content);
+                await vscode.workspace.applyEdit(edit);
+            }
+        } catch (error) {
+            console.error('Failed to update server document:', error);
+        }
     }
 
     /**
@@ -226,7 +311,7 @@ export class CollaborationServer {
         switch (message.type) {
             case 'fileContentUpdate':
                 // Handle file content updates from clients
-                this.updateFileContent(message.data.fileId, message.data.content);
+                this.updateFileContent(message.data.fileId, message.data.content, true);
                 break;
             case 'ping':
                 // Respond to ping
