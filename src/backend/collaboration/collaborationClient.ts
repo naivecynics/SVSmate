@@ -18,6 +18,13 @@ export interface DiscoveredServer {
     lastSeen: number;
 }
 
+export interface ChatMessage {
+    id: string;
+    sender: string;
+    content: string;
+    timestamp: number;
+}
+
 export interface OpenDocument {
     fileId: string;
     document: vscode.TextDocument;
@@ -38,6 +45,8 @@ export class CollaborationClient {
     private discoveredServers: Map<string, DiscoveredServer> = new Map();
     private onServersUpdatedCallback?: () => void;
     private discoveryPort: number = 8889;
+    private latestMessage?: ChatMessage;
+    private onMessageReceivedCallback?: (message: ChatMessage) => void;
 
     constructor() { }
 
@@ -377,6 +386,19 @@ export class CollaborationClient {
             case 'pong':
                 // Handle ping response
                 break;
+            case 'chatMessage':
+                // Handle chat message from server
+                const chatMessage: ChatMessage = {
+                    id: message.data.id || `msg_${Date.now()}`,
+                    sender: message.data.sender || 'Unknown',
+                    content: message.data.content,
+                    timestamp: message.data.timestamp || Date.now()
+                };
+                this.latestMessage = chatMessage;
+                if (this.onMessageReceivedCallback) {
+                    this.onMessageReceivedCallback(chatMessage);
+                }
+                break;
         }
     }
 
@@ -449,6 +471,44 @@ export class CollaborationClient {
         } catch (error) {
             console.error('Failed to send file update:', error);
         }
+    }
+
+    /**
+     * Send a chat message to the server
+     */
+    sendMessage(content: string): void {
+        if (!this.isConnected || !this.socket) {
+            vscode.window.showErrorMessage('Not connected to server');
+            return;
+        }
+
+        try {
+            const message = {
+                type: 'chatMessage',
+                data: {
+                    content: content,
+                    timestamp: Date.now()
+                }
+            };
+            this.socket.write(JSON.stringify(message));
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            vscode.window.showErrorMessage('Failed to send message');
+        }
+    }
+
+    /**
+     * Get the latest chat message
+     */
+    getLatestMessage(): ChatMessage | undefined {
+        return this.latestMessage;
+    }
+
+    /**
+     * Set callback for when a message is received
+     */
+    onMessageReceived(callback: (message: ChatMessage) => void): void {
+        this.onMessageReceivedCallback = callback;
     }
 
     private getLanguageFromFileName(fileName: string): string {

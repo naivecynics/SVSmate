@@ -5,7 +5,7 @@ import { collaborationClient } from '../backend/collaboration/collaborationClien
 export interface SharedFilesItem {
     id: string;
     label: string;
-    type: 'server' | 'client' | 'serverFile' | 'clientFile' | 'serverStatus' | 'clientStatus' | 'discoveredServers' | 'discoveredServer';
+    type: 'server' | 'client' | 'serverFile' | 'clientFile' | 'serverStatus' | 'clientStatus' | 'discoveredServers' | 'discoveredServer' | 'messageStatus';
     resourceUri?: vscode.Uri;
     description?: string;
     fileId?: string;
@@ -34,6 +34,13 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
         // Listen for discovered servers updates
         collaborationClient.onServersUpdated(() => {
             this.refresh();
+        });
+
+        // Listen for message updates
+        collaborationClient.onMessageReceived((message) => {
+            this.refresh();
+            // Show message in status bar
+            vscode.window.setStatusBarMessage(`💬 ${message.sender}: ${message.content}`, 5000);
         });
     }
 
@@ -96,6 +103,14 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
             case 'clientStatus':
                 item.iconPath = new vscode.ThemeIcon('info');
                 break;
+            case 'messageStatus':
+                item.iconPath = new vscode.ThemeIcon('comment');
+                item.command = {
+                    command: 'svsmate.COLLAB-showLatestMessage',
+                    title: 'Show Latest Message',
+                    arguments: []
+                };
+                break;
         }
 
         return item;
@@ -107,7 +122,7 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
     getChildren(element?: SharedFilesItem): SharedFilesItem[] {
         if (!element) {
             // Root level - show server and client sections
-            return [
+            const items: SharedFilesItem[] = [
                 {
                     id: 'server-section',
                     label: 'Server',
@@ -119,6 +134,26 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
                     type: 'client'
                 }
             ];
+
+            // Add message status at the bottom
+            const clientMessage = collaborationClient.getLatestMessage();
+            const serverMessage = collaborationServer.getLatestMessage();
+            let latestMessage = clientMessage;
+            if (serverMessage && (!clientMessage || serverMessage.timestamp > clientMessage.timestamp)) {
+                latestMessage = serverMessage;
+            }
+
+            if (latestMessage) {
+                const timeStr = new Date(latestMessage.timestamp).toLocaleTimeString();
+                items.push({
+                    id: 'message-status',
+                    label: '💬 Latest Message',
+                    type: 'messageStatus',
+                    description: `${latestMessage.sender}: ${latestMessage.content.substring(0, 30)}${latestMessage.content.length > 30 ? '...' : ''} (${timeStr})`
+                });
+            }
+
+            return items;
         }
 
         if (element.type === 'server') {

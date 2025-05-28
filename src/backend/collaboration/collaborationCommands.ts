@@ -263,3 +263,67 @@ export async function connectToDiscoveredServer(provider: SharedFilesViewProvide
 export async function refreshDiscoveredServers(provider: SharedFilesViewProvider): Promise<void> {
     await discoverServers(provider);
 }
+
+/**
+ * Send a chat message
+ */
+export async function sendMessage(): Promise<void> {
+    const clientInfo = collaborationClient.getConnectionInfo();
+    const serverInfo = collaborationServer.getServerInfo();
+
+    if (!clientInfo.isConnected && !serverInfo.isRunning) {
+        vscode.window.showErrorMessage('Not connected to any server and no server running');
+        return;
+    }
+
+    const message = await vscode.window.showInputBox({
+        prompt: 'Enter your message',
+        placeHolder: 'Type your message here...'
+    });
+
+    if (!message) {
+        return;
+    }
+
+    if (clientInfo.isConnected) {
+        // Send as client
+        collaborationClient.sendMessage(message);
+        vscode.window.setStatusBarMessage(`💬 You: ${message}`, 3000);
+    } else if (serverInfo.isRunning) {
+        // Send as server (broadcast to all clients)
+        const serverMessage = {
+            id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            sender: 'Server',
+            content: message,
+            timestamp: Date.now()
+        };
+
+        // Simulate server message handling
+        vscode.window.setStatusBarMessage(`💬 Server: ${message}`, 3000);
+
+        // You could add a method to server to send server messages if needed
+    }
+}
+
+/**
+ * Show latest message
+ */
+export async function showLatestMessage(): Promise<void> {
+    const clientMessage = collaborationClient.getLatestMessage();
+    const serverMessage = collaborationServer.getLatestMessage();
+
+    let latestMessage = clientMessage;
+    if (serverMessage && (!clientMessage || serverMessage.timestamp > clientMessage.timestamp)) {
+        latestMessage = serverMessage;
+    }
+
+    if (latestMessage) {
+        const timeStr = new Date(latestMessage.timestamp).toLocaleTimeString();
+        vscode.window.showInformationMessage(
+            `💬 ${latestMessage.sender} (${timeStr}): ${latestMessage.content}`,
+            { modal: true }
+        );
+    } else {
+        vscode.window.showInformationMessage('No messages yet');
+    }
+}

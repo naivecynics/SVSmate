@@ -15,7 +15,7 @@ import { SharedFilesViewProvider } from "./frontend/SharedFilesView";
 
 import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
-import { startServer, stopServer, connectToServer, disconnectFromServer, shareCurrentFile, shareFile, openSharedFile, showServerInfo, showClientInfo, discoverServers, connectToDiscoveredServer, refreshDiscoveredServers } from './backend/collaboration/collaborationCommands';
+import { startServer, stopServer, connectToServer, disconnectFromServer, shareCurrentFile, shareFile, openSharedFile, showServerInfo, showClientInfo, discoverServers, connectToDiscoveredServer, refreshDiscoveredServers, sendMessage, showLatestMessage } from './backend/collaboration/collaborationCommands';
 
 
 /**
@@ -108,6 +108,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('svsmate.COLLAB-refreshDiscoveredServers', async () => {
       await refreshDiscoveredServers(sharedFilesViewProvider);
+    }),
+
+    vscode.commands.registerCommand('svsmate.COLLAB-sendMessage', async () => {
+      await sendMessage();
+    }),
+
+    vscode.commands.registerCommand('svsmate.COLLAB-showLatestMessage', async () => {
+      await showLatestMessage();
     })
   );
   console.log(`After collaboration components registration: ${context.subscriptions.length} subscriptions`);

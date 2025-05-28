@@ -21,6 +21,13 @@ export interface ConnectedClient {
     ip: string;
 }
 
+export interface ChatMessage {
+    id: string;
+    sender: string;
+    content: string;
+    timestamp: number;
+}
+
 export class CollaborationServer {
     private server: net.Server | null = null;
     private discoveryServer: dgram.Socket | null = null;
@@ -30,6 +37,7 @@ export class CollaborationServer {
     private discoveryPort: number = 8889; // Fixed port for discovery
     private isRunning = false;
     private fileUpdateInProgress = new Set<string>(); // Prevent update loops
+    private latestMessage?: ChatMessage;
 
     constructor() { }
 
@@ -316,6 +324,13 @@ export class CollaborationServer {
         return Array.from(this.clients.values());
     }
 
+    /**
+     * Get the latest chat message
+     */
+    getLatestMessage(): ChatMessage | undefined {
+        return this.latestMessage;
+    }
+
     private handleClientConnection(socket: net.Socket): void {
         const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const clientIP = socket.remoteAddress || 'unknown';
@@ -375,7 +390,39 @@ export class CollaborationServer {
                     this.sendToClient(client.socket, { type: 'pong' });
                 }
                 break;
+            case 'chatMessage':
+                // Handle chat message from client
+                this.handleChatMessage(clientId, message.data);
+                break;
         }
+    }
+
+    /**
+     * Handle chat message from client
+     */
+    private handleChatMessage(clientId: string, data: any): void {
+        const client = this.clients.get(clientId);
+        if (!client) {
+            return;
+        }
+
+        const chatMessage: ChatMessage = {
+            id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            sender: client.name,
+            content: data.content,
+            timestamp: data.timestamp || Date.now()
+        };
+
+        this.latestMessage = chatMessage;
+
+        // Broadcast message to all clients
+        this.broadcastToClients({
+            type: 'chatMessage',
+            data: chatMessage
+        });
+
+        // Show message on server side
+        vscode.window.setStatusBarMessage(`💬 ${chatMessage.sender}: ${chatMessage.content}`, 5000);
     }
 
     private broadcastToClients(message: any): void {

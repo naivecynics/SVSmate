@@ -183,6 +183,16 @@
                 "command": "svsmate.COLLAB-refreshDiscoveredServers",
                 "title": "SVSmate: Refresh Discovered Servers",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "svsmate.COLLAB-sendMessage",
+                "title": "SVSmate: Send Message",
+                "icon": "$(comment)"
+            },
+            {
+                "command": "svsmate.COLLAB-showLatestMessage",
+                "title": "SVSmate: Show Latest Message",
+                "icon": "$(comment)"
             }
         ],
         "chatParticipants": [
@@ -289,6 +299,11 @@
                     "command": "svsmate.COLLAB-refreshDiscoveredServers",
                     "when": "view == sharedFilesView && viewItem == discoveredServers",
                     "group": "inline"
+                },
+                {
+                    "command": "svsmate.COLLAB-showLatestMessage",
+                    "when": "view == sharedFilesView && viewItem == messageStatus",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -375,6 +390,12 @@
                     "when": "view == sharedFilesView",
                     "group": "navigation",
                     "title": "Discover Servers"
+                },
+                {
+                    "command": "svsmate.COLLAB-sendMessage",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation",
+                    "title": "Send Message"
                 }
             ],
             "editor/context": [
