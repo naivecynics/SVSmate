@@ -126,87 +126,45 @@
             },
             {
                 "command": "svsmate.startServer",
-                "title": "Start Server"
+                "title": "Start Collaboration Server",
+                "icon": "${debug-start}"
             },
             {
-                "command": "svsmate.connect",
-                "title": "Connect to Server"
+                "command": "svsmate.stopServer",
+                "title": "Stop Collaboration Server",
+                "icon": "$(debug-stop)"
             },
             {
-                "command": "svsmate.sendMessage",
-                "title": "Send Message"
+                "command": "svsmate.connectToServer",
+                "title": "Connect to Collaboration Server",
+                "icon": "$(plug)"
             },
             {
                 "command": "svsmate.disconnect",
-                "title": "Disconnect"
+                "title": "Disconnect from Collaboration Server",
+                "icon": "$(debug-disconnect)"
+            },
+            {
+                "command": "svsmate.shareCurrentFile",
+                "title": "Share Current File",
+                "icon": "$(share)"
+            },
+            {
+                "command": "svsmate.openSharedFile",
+                "title": "Open Shared File"
+            },
+            {
+                "command": "svsmate.unshareFile",
+                "title": "Stop Sharing File"
+            },
+            {
+                "command": "svsmate.refreshSharedFiles",
+                "title": "Refresh Shared Files",
+                "icon": "$(refresh)"
             },
             {
                 "command": "svsmate.removeSharedFile",
-                "title": "Stop Sharing File",
-                "icon": {
-                    "dark": "./src/icons/delete-dark.svg",
-                    "light": "./src/icons/delete-light.svg"
-                }
-            },
-            {
-                "command": "teamCollab.startServer",
-                "title": "Start Collaboration Server",
-                "icon": {
-                    "dark": "./src/icons/server-start-dark.svg",
-                    "light": "./src/icons/server-start-light.svg"
-                }
-            },
-            {
-                "command": "teamCollab.stopServer",
-                "title": "Stop Collaboration Server",
-                "icon": {
-                    "dark": "./src/icons/server-stop-dark.svg",
-                    "light": "./src/icons/server-stop-light.svg"
-                }
-            },
-            {
-                "command": "teamCollab.connectToServer",
-                "title": "Connect to Collaboration Server",
-                "icon": {
-                    "dark": "./src/icons/connect-dark.svg",
-                    "light": "./src/icons/connect-light.svg"
-                }
-            },
-            {
-                "command": "teamCollab.disconnect",
-                "title": "Disconnect from Collaboration Server",
-                "icon": {
-                    "dark": "./src/icons/disconnect-dark.svg",
-                    "light": "./src/icons/disconnect-light.svg"
-                }
-            },
-            {
-                "command": "teamCollab.openChat",
-                "title": "Open Collaboration Chat"
-            },
-            {
-                "command": "teamCollab.shareCurrentFile",
-                "title": "Share Current File (Server Only)",
-                "icon": {
-                    "dark": "./src/icons/share-dark.svg",
-                    "light": "./src/icons/share-light.svg"
-                }
-            },
-            {
-                "command": "teamCollab.unshareFile",
-                "title": "Unshare File"
-            },
-            {
-                "command": "teamCollab.refreshSharedFiles",
-                "title": "Refresh Shared Files",
-                "icon": {
-                    "dark": "./src/icons/refresh-dark.svg",
-                    "light": "./src/icons/refresh-light.svg"
-                }
-            },
-            {
-                "command": "teamCollab.openSharedFile",
-                "title": "Open Shared File"
+                "title": "Stop Sharing File"
             }
         ],
         "chatParticipants": [
@@ -351,16 +309,34 @@
                     "title": "Generate Code from PDF"
                 },
                 {
-                    "command": "teamCollab.shareCurrentFile",
+                    "command": "svsmate.startServer",
                     "when": "view == sharedFilesView",
-                    "group": "navigation",
-                    "title": "Share Current File (Server Only)"
+                    "group": "navigation@1"
                 },
                 {
-                    "command": "teamCollab.refreshSharedFiles",
+                    "command": "svsmate.stopServer",
                     "when": "view == sharedFilesView",
-                    "group": "navigation",
-                    "title": "Refresh Shared Files"
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "svsmate.connectToServer",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation@3"
+                },
+                {
+                    "command": "svsmate.disconnect",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation@4"
+                },
+                {
+                    "command": "svsmate.shareCurrentFile",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation@5"
+                },
+                {
+                    "command": "svsmate.refreshSharedFiles",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation@6"
                 }
             ]
         }
@@ -374,6 +350,7 @@
         "pdf-lib": "^1.17.1",
         "pdf-parse": "^1.1.1",
         "tough-cookie": "^5.1.2",
+        "xml2js": "^0.6.2",
         "y-protocols": "^1.0.6",
         "y-webrtc": "^10.3.0",
         "yjs": "^13.6.26"
