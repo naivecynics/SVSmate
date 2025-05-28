@@ -252,7 +252,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // Create temporary file for editing
         const tempDir = os.tmpdir();
-        const tempFilePath = path.join(tempDir, `svsmate_collab_${file.id}_${file.name}`);
+        const tempFilePath = path.join(tempDir, `${file.id}`);
 
         // Write content to temp file
         fs.writeFileSync(tempFilePath, content, 'utf-8');

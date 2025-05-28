@@ -259,13 +259,6 @@ export class CollabServer extends EventEmitter {
     }
 
     /**
-     * Create a new document
-     */
-    async createDocument(fileId: string, filePath: string, owner: string): Promise<any | null> {
-        return await this.documentManager.createDocument(fileId, filePath, owner, true);
-    }
-
-    /**
      * Apply editor change to document
      */
     applyEditorChange(fileId: string, change: vscode.TextDocumentContentChangeEvent): boolean {

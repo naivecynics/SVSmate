@@ -69,7 +69,7 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
 
                 // Make file clickable to open
                 item.command = {
-                    command: 'teamCollab.openSharedFile',
+                    command: 'svsmate.openSharedFile',
                     title: 'Open Shared File',
                     arguments: [file]
                 };
