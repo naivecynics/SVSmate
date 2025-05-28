@@ -13,10 +13,10 @@
 
 ### Metric Values
 
-* **Lines of Code**: 4311
-* **Number of Source Files**: 33
-* **Number of Dependencies**: 9
-* **Total Cyclomatic Complexity**: 730
+* **Lines of Code**: 6801
+* **Number of Source Files**: 32
+* **Number of Dependencies**: 12
+* **Total Cyclomatic Complexity**: 933
 
 > Check our [METRICS BASH SCRIPT >>](https://github.com/naivecynics/SVSmate/blob/main/src/test/metrics.sh).
 
