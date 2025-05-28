@@ -168,6 +168,21 @@
                 "command": "svsmate.COLLAB-showClientInfo",
                 "title": "SVSmate: Show Client Info",
                 "icon": "$(info)"
+            },
+            {
+                "command": "svsmate.COLLAB-discoverServers",
+                "title": "SVSmate: Discover Servers",
+                "icon": "$(search)"
+            },
+            {
+                "command": "svsmate.COLLAB-connectToDiscoveredServer",
+                "title": "SVSmate: Connect to Discovered Server",
+                "icon": "$(plug)"
+            },
+            {
+                "command": "svsmate.COLLAB-refreshDiscoveredServers",
+                "title": "SVSmate: Refresh Discovered Servers",
+                "icon": "$(refresh)"
             }
         ],
         "chatParticipants": [
@@ -264,6 +279,16 @@
                     "command": "svsmate.COLLAB-showClientInfo",
                     "when": "view == sharedFilesView && viewItem == clientStatus",
                     "group": "inline"
+                },
+                {
+                    "command": "svsmate.COLLAB-connectToDiscoveredServer",
+                    "when": "view == sharedFilesView && viewItem == discoveredServer",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.COLLAB-refreshDiscoveredServers",
+                    "when": "view == sharedFilesView && viewItem == discoveredServers",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -344,6 +369,12 @@
                     "when": "view == sharedFilesView",
                     "group": "navigation",
                     "title": "Share Current File"
+                },
+                {
+                    "command": "svsmate.COLLAB-discoverServers",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation",
+                    "title": "Discover Servers"
                 }
             ],
             "editor/context": [

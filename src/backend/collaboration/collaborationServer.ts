@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as net from 'net';
+import * as dgram from 'dgram';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -22,9 +23,11 @@ export interface ConnectedClient {
 
 export class CollaborationServer {
     private server: net.Server | null = null;
+    private discoveryServer: dgram.Socket | null = null;
     private clients: Map<string, ConnectedClient> = new Map();
     private sharedFiles: Map<string, SharedFile> = new Map();
     private port: number = 0;
+    private discoveryPort: number = 8889; // Fixed port for discovery
     private isRunning = false;
     private fileUpdateInProgress = new Set<string>(); // Prevent update loops
 
@@ -56,6 +59,9 @@ export class CollaborationServer {
                 this.port = address.port;
                 this.isRunning = true;
 
+                // Start discovery server
+                this.startDiscoveryServer();
+
                 const localIP = this.getLocalIP();
                 vscode.window.showInformationMessage(
                     `Collaboration server started on ${localIP}:${this.port}`
@@ -66,11 +72,60 @@ export class CollaborationServer {
     }
 
     /**
+     * Start UDP discovery server
+     */
+    private startDiscoveryServer(): void {
+        try {
+            this.discoveryServer = dgram.createSocket('udp4');
+
+            this.discoveryServer.on('message', (msg, rinfo) => {
+                try {
+                    const request = JSON.parse(msg.toString());
+                    if (request.type === 'discover') {
+                        // Respond with server information
+                        const response = {
+                            type: 'server_info',
+                            data: {
+                                ip: this.getLocalIP(),
+                                port: this.port,
+                                clientCount: this.clients.size,
+                                sharedFilesCount: this.sharedFiles.size,
+                                serverName: os.hostname() || 'Unknown Server'
+                            }
+                        };
+
+                        const responseBuffer = Buffer.from(JSON.stringify(response));
+                        this.discoveryServer?.send(responseBuffer, rinfo.port, rinfo.address);
+                    }
+                } catch (error) {
+                    console.error('Failed to handle discovery request:', error);
+                }
+            });
+
+            this.discoveryServer.on('error', (err) => {
+                console.error('Discovery server error:', err);
+            });
+
+            this.discoveryServer.bind(this.discoveryPort, () => {
+                console.log(`Discovery server listening on port ${this.discoveryPort}`);
+            });
+        } catch (error) {
+            console.error('Failed to start discovery server:', error);
+        }
+    }
+
+    /**
      * Stop the collaboration server
      */
     stop(): void {
         if (!this.isRunning) {
             return;
+        }
+
+        // Stop discovery server
+        if (this.discoveryServer) {
+            this.discoveryServer.close();
+            this.discoveryServer = null;
         }
 
         // Disconnect all clients

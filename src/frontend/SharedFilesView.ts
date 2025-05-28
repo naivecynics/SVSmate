@@ -5,10 +5,11 @@ import { collaborationClient } from '../backend/collaboration/collaborationClien
 export interface SharedFilesItem {
     id: string;
     label: string;
-    type: 'server' | 'client' | 'serverFile' | 'clientFile' | 'serverStatus' | 'clientStatus';
+    type: 'server' | 'client' | 'serverFile' | 'clientFile' | 'serverStatus' | 'clientStatus' | 'discoveredServers' | 'discoveredServer';
     resourceUri?: vscode.Uri;
     description?: string;
     fileId?: string;
+    serverInfo?: any; // For discovered server info
 }
 
 /**
@@ -27,6 +28,11 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
     constructor() {
         // Listen for server/client updates
         collaborationClient.onFilesUpdated(() => {
+            this.refresh();
+        });
+
+        // Listen for discovered servers updates
+        collaborationClient.onServersUpdated(() => {
             this.refresh();
         });
     }
@@ -50,7 +56,7 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
     getTreeItem(element: SharedFilesItem): vscode.TreeItem {
         const item = new vscode.TreeItem(
             element.label,
-            element.type.includes('Status') || element.type.includes('File')
+            element.type.includes('Status') || element.type.includes('File') || element.type === 'discoveredServer'
                 ? vscode.TreeItemCollapsibleState.None
                 : vscode.TreeItemCollapsibleState.Expanded
         );
@@ -65,6 +71,17 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
                 break;
             case 'client':
                 item.iconPath = new vscode.ThemeIcon('device-desktop');
+                break;
+            case 'discoveredServers':
+                item.iconPath = new vscode.ThemeIcon('search');
+                break;
+            case 'discoveredServer':
+                item.iconPath = new vscode.ThemeIcon('globe');
+                item.command = {
+                    command: 'svsmate.COLLAB-connectToDiscoveredServer',
+                    title: 'Connect to Server',
+                    arguments: [element]
+                };
                 break;
             case 'serverFile':
             case 'clientFile':
@@ -149,6 +166,14 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
                     : 'Click to connect to server'
             });
 
+            // Discovered servers section
+            items.push({
+                id: 'discovered-servers',
+                label: 'Discovered Servers',
+                type: 'discoveredServers',
+                description: 'Available servers on network'
+            });
+
             // Available files from server
             if (clientInfo.isConnected) {
                 const serverFiles = collaborationClient.getServerFiles();
@@ -164,6 +189,17 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
             }
 
             return items;
+        }
+
+        if (element.type === 'discoveredServers') {
+            const discoveredServers = collaborationClient.getDiscoveredServers();
+            return discoveredServers.map(server => ({
+                id: `discovered-${server.ip}-${server.port}`,
+                label: `${server.serverName}`,
+                type: 'discoveredServer' as const,
+                description: `${server.ip}:${server.port} (${server.clientCount} clients, ${server.sharedFilesCount} files)`,
+                serverInfo: server
+            }));
         }
 
         return [];

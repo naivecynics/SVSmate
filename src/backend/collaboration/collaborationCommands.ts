@@ -213,3 +213,53 @@ export async function showClientInfo(): Promise<void> {
 
     vscode.window.showInformationMessage(message, { modal: true });
 }
+
+/**
+ * Discover available servers on the network
+ */
+export async function discoverServers(provider: SharedFilesViewProvider): Promise<void> {
+    vscode.window.showInformationMessage('Scanning network for collaboration servers...');
+
+    try {
+        const servers = await collaborationClient.discoverServers();
+        provider.refresh();
+
+        if (servers.length === 0) {
+            const action = await vscode.window.showInformationMessage(
+                'No servers found. Would you like to start your own server?',
+                'Start Server',
+                'Cancel'
+            );
+
+            if (action === 'Start Server') {
+                await startServer(provider);
+            }
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to discover servers: ${error}`);
+    }
+}
+
+/**
+ * Connect to a discovered server
+ */
+export async function connectToDiscoveredServer(provider: SharedFilesViewProvider, item: SharedFilesItem): Promise<void> {
+    if (!item.serverInfo) {
+        vscode.window.showErrorMessage('Invalid server information');
+        return;
+    }
+
+    try {
+        await collaborationClient.connectToDiscoveredServer(item.serverInfo);
+        provider.refresh();
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to connect to server: ${error}`);
+    }
+}
+
+/**
+ * Refresh discovered servers
+ */
+export async function refreshDiscoveredServers(provider: SharedFilesViewProvider): Promise<void> {
+    await discoverServers(provider);
+}

@@ -1,11 +1,21 @@
 import * as vscode from 'vscode';
 import * as net from 'net';
+import * as dgram from 'dgram';
 
 export interface ServerFile {
     id: string;
     name: string;
     content: string;
     lastTimestamp?: number;
+}
+
+export interface DiscoveredServer {
+    ip: string;
+    port: number;
+    clientCount: number;
+    sharedFilesCount: number;
+    serverName: string;
+    lastSeen: number;
 }
 
 export interface OpenDocument {
@@ -25,6 +35,9 @@ export class CollaborationClient {
     private openDocuments: Map<string, OpenDocument> = new Map();
     private onFilesUpdatedCallback?: () => void;
     private updateInProgress = new Set<string>(); // Prevent update loops
+    private discoveredServers: Map<string, DiscoveredServer> = new Map();
+    private onServersUpdatedCallback?: () => void;
+    private discoveryPort: number = 8889;
 
     constructor() { }
 
@@ -180,6 +193,145 @@ export class CollaborationClient {
      */
     onFilesUpdated(callback: () => void): void {
         this.onFilesUpdatedCallback = callback;
+    }
+
+    /**
+     * Discover available servers on the network
+     */
+    async discoverServers(): Promise<DiscoveredServer[]> {
+        return new Promise((resolve) => {
+            const client = dgram.createSocket('udp4');
+            const discoveredServers = new Map<string, DiscoveredServer>();
+
+            // Clear old discoveries
+            this.discoveredServers.clear();
+
+            const request = {
+                type: 'discover'
+            };
+
+            const requestBuffer = Buffer.from(JSON.stringify(request));
+
+            // Listen for responses
+            client.on('message', (msg, rinfo) => {
+                try {
+                    const response = JSON.parse(msg.toString());
+                    if (response.type === 'server_info') {
+                        const serverKey = `${response.data.ip}:${response.data.port}`;
+                        const server: DiscoveredServer = {
+                            ip: response.data.ip,
+                            port: response.data.port,
+                            clientCount: response.data.clientCount,
+                            sharedFilesCount: response.data.sharedFilesCount,
+                            serverName: response.data.serverName,
+                            lastSeen: Date.now()
+                        };
+
+                        discoveredServers.set(serverKey, server);
+                        this.discoveredServers.set(serverKey, server);
+                    }
+                } catch (error) {
+                    console.error('Failed to parse discovery response:', error);
+                }
+            });
+
+            client.on('error', (err) => {
+                console.error('Discovery client error:', err);
+            });
+
+            // Bind to any available port
+            client.bind(() => {
+                // Enable broadcast
+                client.setBroadcast(true);
+
+                // Send broadcast to common network ranges
+                const networkRanges = this.getNetworkRanges();
+
+                for (const range of networkRanges) {
+                    client.send(requestBuffer, this.discoveryPort, range, (err) => {
+                        if (err) {
+                            console.error(`Failed to send discovery to ${range}:`, err);
+                        }
+                    });
+                }
+
+                // Also try localhost
+                client.send(requestBuffer, this.discoveryPort, '127.0.0.1');
+            });
+
+            // Wait for responses and then resolve
+            setTimeout(() => {
+                client.close();
+                const servers = Array.from(discoveredServers.values());
+
+                if (this.onServersUpdatedCallback) {
+                    this.onServersUpdatedCallback();
+                }
+
+                if (servers.length > 0) {
+                    vscode.window.showInformationMessage(`Found ${servers.length} collaboration server(s)`);
+                } else {
+                    vscode.window.showInformationMessage('No collaboration servers found on the network');
+                }
+
+                resolve(servers);
+            }, 3000); // Wait 3 seconds for responses
+        });
+    }
+
+    /**
+     * Get discovered servers
+     */
+    getDiscoveredServers(): DiscoveredServer[] {
+        return Array.from(this.discoveredServers.values());
+    }
+
+    /**
+     * Set callback for when discovered servers are updated
+     */
+    onServersUpdated(callback: () => void): void {
+        this.onServersUpdatedCallback = callback;
+    }
+
+    /**
+     * Connect to a discovered server
+     */
+    async connectToDiscoveredServer(server: DiscoveredServer): Promise<void> {
+        await this.connect(server.ip, server.port);
+    }
+
+    /**
+     * Get network broadcast addresses for discovery
+     */
+    private getNetworkRanges(): string[] {
+        const ranges: string[] = [];
+        const interfaces = require('os').networkInterfaces();
+
+        for (const interfaceName in interfaces) {
+            const addresses = interfaces[interfaceName];
+            if (addresses) {
+                for (const address of addresses) {
+                    if (address.family === 'IPv4' && !address.internal) {
+                        // Calculate broadcast address
+                        const ip = address.address.split('.').map(Number);
+                        const netmask = address.netmask.split('.').map(Number);
+
+                        const broadcast = ip.map((octet: number, i: number) => {
+                            return octet | (~netmask[i] & 255);
+                        });
+
+                        ranges.push(broadcast.join('.'));
+                    }
+                }
+            }
+        }
+
+        // Add common broadcast addresses if none found
+        if (ranges.length === 0) {
+            ranges.push('192.168.1.255', '192.168.0.255', '10.0.0.255');
+        }
+
+        return ranges;
     }
 
     private handleServerMessage(message: any): void {
