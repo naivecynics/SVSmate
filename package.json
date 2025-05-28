@@ -21,7 +21,7 @@
     "activationEvents": [
         "onStartupFinished"
     ],
-    "main": "./dist/extension",
+    "main": "./out/extension",
     "contributes": {
         "configuration": {
             "title": "svsmate",
@@ -242,7 +242,7 @@
                     "name": "To-Do List"
                 },
                 {
-                    "id": "sharedfilesview",
+                    "id": "sharedFilesView",
                     "name": "shared files"
                 }
             ]
