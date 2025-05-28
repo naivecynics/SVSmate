@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import { collaborationServer } from '../backend/collaboration/collaborationServer';
 import { collaborationClient } from '../backend/collaboration/collaborationClient';
 
+/**
+ * Represents an item in the shared files tree view.
+ */
 export interface SharedFilesItem {
     id: string;
     label: string;
@@ -13,8 +16,16 @@ export interface SharedFilesItem {
 }
 
 /**
- * Provides a tree view for collaboration features including server management,
- * client connections, and shared files.
+ * SharedFilesViewProvider class for VS Code Tree View UI.
+ * 
+ * Provides a tree view for collaboration features, including server management, client connections, shared files,
+ * discovered servers, chat messages, and username status. Handles UI refresh and event listening for collaboration updates.
+ * 
+ * Main Functions:
+ * - refresh: Refresh the tree view
+ * - getTreeItem: Get the TreeItem representation of a shared files item
+ * - getChildren: Get the children for a given tree node
+ * - dispose: Dispose resources and listeners
  */
 export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFilesItem>, vscode.Disposable {
     /** Event emitter for notifying VS Code about data changes */
@@ -45,7 +56,7 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
     }
 
     /**
-     * Refresh the tree view
+     * Triggers a refresh of the tree view UI.
      */
     refresh(): void {
         try {
@@ -58,7 +69,10 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
     }
 
     /**
-     * Gets the TreeItem representation of a shared files item
+     * Provides the TreeItem for a given SharedFilesItem.
+     * 
+     * @param element - The shared files item for which to generate a TreeItem.
+     * @returns A TreeItem instance representing the element.
      */
     getTreeItem(element: SharedFilesItem): vscode.TreeItem {
         const item = new vscode.TreeItem(
@@ -71,7 +85,7 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
         item.description = element.description;
         item.contextValue = element.type;
 
-        // Set icons
+        // Set icons and commands based on type
         switch (element.type) {
             case 'server':
                 item.iconPath = new vscode.ThemeIcon('server');
@@ -125,7 +139,10 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
     }
 
     /**
-     * Gets the children for a given tree node
+     * Provides the children for a given tree element.
+     * 
+     * @param element - The parent shared files item.
+     * @returns An array of child SharedFilesItem elements.
      */
     getChildren(element?: SharedFilesItem): SharedFilesItem[] {
         if (!element) {
@@ -147,7 +164,7 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
             const username = collaborationClient.getUsername() || collaborationServer.getUsername();
             items.push({
                 id: 'username-status',
-                label: '👤 Username',
+                label: 'Username',
                 type: 'usernameStatus',
                 description: username
             });
@@ -258,7 +275,7 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
     }
 
     /**
-     * Dispose resources
+     * Disposes the tree view provider and associated resources.
      */
     dispose(): void {
         if (this._disposed) {

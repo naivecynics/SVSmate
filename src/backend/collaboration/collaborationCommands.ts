@@ -1,3 +1,27 @@
+/**
+ * Collaboration Commands Module
+ * 
+ * Provides command functions for starting/stopping the collaboration server, connecting/disconnecting as a client,
+ * sharing files, opening shared files, discovering servers, sending messages, and changing username.
+ * 
+ * Functions:
+ * - startServer: Start the collaboration server
+ * - stopServer: Stop the collaboration server
+ * - connectToServer: Connect to a collaboration server as a client
+ * - disconnectFromServer: Disconnect from the collaboration server
+ * - shareCurrentFile: Share the currently active file
+ * - shareFile: Share a file from the file explorer
+ * - openSharedFile: Open a shared file from the server or client
+ * - showServerInfo: Show information about the running server
+ * - showClientInfo: Show information about the client connection
+ * - discoverServers: Discover available servers on the network
+ * - connectToDiscoveredServer: Connect to a discovered server
+ * - refreshDiscoveredServers: Refresh the list of discovered servers
+ * - sendMessage: Send a chat message to the server or clients
+ * - changeUsername: Change the collaboration username
+ * - showLatestMessage: Show the latest chat message
+ */
+
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { collaborationServer } from './collaborationServer';

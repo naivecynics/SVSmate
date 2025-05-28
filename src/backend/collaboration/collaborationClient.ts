@@ -1,3 +1,18 @@
+/**
+ * The CollaborationClient class manages client-side collaboration features for VS Code extensions.
+ * 
+ * Responsibilities:
+ * - Discovering collaboration servers on the local network
+ * - Connecting/disconnecting to a server
+ * - Managing and synchronizing shared files
+ * - Handling real-time collaborative editing and chat messaging
+ * - Tracking open documents and syncing changes
+ * - Providing callbacks for file, server, and chat updates
+ * 
+ * Usage:
+ * Use the exported `collaborationClient` instance to interact with collaboration features.
+ */
+
 import * as vscode from 'vscode';
 import * as net from 'net';
 import * as dgram from 'dgram';

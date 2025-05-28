@@ -1,3 +1,26 @@
+/**
+ * CollaborationServer class for managing server-side collaboration in VS Code extensions.
+ * 
+ * Responsibilities:
+ * - Start/stop a TCP collaboration server and UDP discovery server
+ * - Manage connected clients and shared files
+ * - Synchronize file changes between server and clients
+ * - Handle chat messaging and username updates
+ * - Provide server info, shared files, and client lists
+ * 
+ * Functions:
+ * - start: Start the collaboration server
+ * - stop: Stop the collaboration server
+ * - shareFile: Share a file with connected clients
+ * - updateFileContent: Update file content and sync with clients/disk
+ * - getServerInfo: Get server status and info
+ * - getSharedFiles: Get all shared files
+ * - getConnectedClients: Get all connected clients
+ * - getLatestMessage: Get the latest chat message
+ * - sendServerMessage: Send a chat message as the server
+ * - setUsername/getUsername: Manage the server username
+ */
+
 import * as vscode from 'vscode';
 import * as net from 'net';
 import * as dgram from 'dgram';
@@ -197,7 +220,9 @@ export class CollaborationServer {
     }
 
     /**
-     * Share a file with connected clients
+     * Share a file with connected clients.
+     * @param filePath - Path of the file to be shared
+     * @returns Whether the operation was successful
      */
     shareFile(filePath: string): boolean {
         try {
@@ -246,7 +271,10 @@ export class CollaborationServer {
     }
 
     /**
-     * Update file content and sync with clients and disk
+     * Update shared file content and notify clients.
+     * @param fileId - ID of the file
+     * @param content - New file content
+     * @param fromClient - Whether the update came from a client
      */
     updateFileContent(fileId: string, content: string, fromClient: boolean = false): void {
         const sharedFile = this.sharedFiles.get(fileId);

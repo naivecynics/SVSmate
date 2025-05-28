@@ -21,7 +21,7 @@
     "activationEvents": [
         "onStartupFinished"
     ],
-    "main": "./out/extension",
+    "main": "./dist/extension",
     "contributes": {
         "configuration": {
             "title": "svsmate",
