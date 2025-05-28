@@ -11,9 +11,11 @@ import { addItem, editTask, deleteTask, toggleTaskCheckbox, sortByEndTime, sortB
 import { FolderViewProvider } from "./frontend/FolderView";
 import { TodoListViewProvider, TodoItem } from "./frontend/TodoListView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
+import { SharedFilesViewProvider } from "./frontend/SharedFilesView";
 
 import { outputChannel } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
+import { startServer, stopServer, connectToServer, disconnectFromServer, shareCurrentFile, shareFile, openSharedFile, showServerInfo, showClientInfo } from './backend/collaboration/collaborationCommands';
 
 
 /**
@@ -53,8 +55,50 @@ export async function activate(context: vscode.ExtensionContext) {
   // ------------------------------------------------
   //                 collaboration
   // ------------------------------------------------
+  const sharedFilesViewProvider = new SharedFilesViewProvider();
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider("sharedFilesView", sharedFilesViewProvider),
+    sharedFilesViewProvider
+  );
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand('svsmate.COLLAB-startServer', async () => {
+      await startServer(sharedFilesViewProvider);
+    }),
 
+    vscode.commands.registerCommand('svsmate.COLLAB-stopServer', async () => {
+      await stopServer(sharedFilesViewProvider);
+    }),
+
+    vscode.commands.registerCommand('svsmate.COLLAB-connectToServer', async () => {
+      await connectToServer(sharedFilesViewProvider);
+    }),
+
+    vscode.commands.registerCommand('svsmate.COLLAB-disconnectFromServer', async () => {
+      await disconnectFromServer(sharedFilesViewProvider);
+    }),
+
+    vscode.commands.registerCommand('svsmate.COLLAB-shareCurrentFile', async () => {
+      await shareCurrentFile(sharedFilesViewProvider);
+    }),
+
+    vscode.commands.registerCommand('svsmate.COLLAB-shareFile', async (fileUri) => {
+      await shareFile(sharedFilesViewProvider, fileUri);
+    }),
+
+    vscode.commands.registerCommand('svsmate.COLLAB-openSharedFile', async (item) => {
+      await openSharedFile(item);
+    }),
+
+    vscode.commands.registerCommand('svsmate.COLLAB-showServerInfo', async () => {
+      await showServerInfo();
+    }),
+
+    vscode.commands.registerCommand('svsmate.COLLAB-showClientInfo', async () => {
+      await showClientInfo();
+    })
+  );
+  console.log(`After collaboration components registration: ${context.subscriptions.length} subscriptions`);
 
   // ------------------------------------------------
   //                   blaskboard

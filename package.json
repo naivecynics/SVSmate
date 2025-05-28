@@ -123,6 +123,51 @@
                 "command": "svsmate.PDF-generateFromPDF",
                 "title": "SVSmate: Generate Code from PDF",
                 "icon": "$(note)"
+            },
+            {
+                "command": "svsmate.COLLAB-startServer",
+                "title": "SVSmate: Start Collaboration Server",
+                "icon": "$(server)"
+            },
+            {
+                "command": "svsmate.COLLAB-stopServer",
+                "title": "SVSmate: Stop Collaboration Server",
+                "icon": "$(debug-stop)"
+            },
+            {
+                "command": "svsmate.COLLAB-connectToServer",
+                "title": "SVSmate: Connect to Server",
+                "icon": "$(plug)"
+            },
+            {
+                "command": "svsmate.COLLAB-disconnectFromServer",
+                "title": "SVSmate: Disconnect from Server",
+                "icon": "$(debug-disconnect)"
+            },
+            {
+                "command": "svsmate.COLLAB-shareCurrentFile",
+                "title": "SVSmate: Share Current File",
+                "icon": "$(share)"
+            },
+            {
+                "command": "svsmate.COLLAB-shareFile",
+                "title": "SVSmate: Share File",
+                "icon": "$(share)"
+            },
+            {
+                "command": "svsmate.COLLAB-openSharedFile",
+                "title": "SVSmate: Open Shared File",
+                "icon": "$(file)"
+            },
+            {
+                "command": "svsmate.COLLAB-showServerInfo",
+                "title": "SVSmate: Show Server Info",
+                "icon": "$(info)"
+            },
+            {
+                "command": "svsmate.COLLAB-showClientInfo",
+                "title": "SVSmate: Show Client Info",
+                "icon": "$(info)"
             }
         ],
         "chatParticipants": [
@@ -204,6 +249,21 @@
                     "command": "svsmate.BB-updateCourse",
                     "when": "view == bbMaterialView && viewItem == courseFolder",
                     "group": "inline"
+                },
+                {
+                    "command": "svsmate.COLLAB-shareFile",
+                    "when": "view == folderView && viewItem == file",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.COLLAB-showServerInfo",
+                    "when": "view == sharedFilesView && viewItem == serverStatus",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.COLLAB-showClientInfo",
+                    "when": "view == sharedFilesView && viewItem == clientStatus",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -260,6 +320,36 @@
                     "when": "view == folderView",
                     "group": "navigation",
                     "title": "Generate Code from PDF"
+                },
+                {
+                    "command": "svsmate.COLLAB-startServer",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation",
+                    "title": "Start Server"
+                },
+                {
+                    "command": "svsmate.COLLAB-stopServer",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation",
+                    "title": "Stop Server"
+                },
+                {
+                    "command": "svsmate.COLLAB-connectToServer",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation",
+                    "title": "Connect to Server"
+                },
+                {
+                    "command": "svsmate.COLLAB-shareCurrentFile",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation",
+                    "title": "Share Current File"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "svsmate.COLLAB-shareCurrentFile",
+                    "group": "collaboration"
                 }
             ]
         }
