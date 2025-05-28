@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/naivecynics/SVSmate">
-    <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/telescope.png" alt="Logo" width="100" height="100">
+    <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/dev/media/telescope.png" alt="Logo" width="100" height="100">
   </a>
 
   <h1 align="center">SVSmate</h1>
@@ -10,9 +10,9 @@
     The Ultimate VS Code Extension for SUSTechers
     <br />
     <div style="text-align: center;">
-        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/sustech.png" alt="SUSTech" width="60" style="margin: 0 40px;" />
-        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/separator.png" alt="separator" width="60" />
-        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/vscode.png" alt="VS Code" width="60" style="margin: 0 40px;" />
+        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/dev/media/sustech.png" alt="SUSTech" width="60" style="margin: 0 40px;" />
+        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/dev/media/separator.png" alt="separator" width="60" />
+        <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/dev/media/vscode.png" alt="VS Code" width="60" style="margin: 0 40px;" />
     </div>
     <br />
     <a href="https://github.com/naivecynics/SVSmate/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
@@ -57,7 +57,7 @@ Or download `.vsix` manually in [Release »](https://github.com/naivecynics/SVSm
 > [!TIP]
 > To ensure this feature works correctly, please configure your [Blackboard Settings](https://bb.sustech.edu.cn/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_1_1&forwardUrl=edit_module/_3_1/bbcourseorg?cmd%3Dedit&recallUrl=/webapps/portal/execute/tabs/tabAction?tab_tab_group_id%3D_1_1x) as shown below:  
 >
-> ![bb-setting](./media/bb-setting.png)
+> ![bb-setting](https://raw.githubusercontent.com/naivecynics/SVSmate/dev/media/bb-setting.png)
 
 You can choose to update the entire course database, a specific semester, or individual course materials manually.  
 The extension also intelligently downloads Blackboard documents directly into your workspace.  
@@ -74,7 +74,7 @@ Manage your SUSTech tasks effortlessly in VS Code. Tasks can be imported directl
 > [!TIP]
 > Click the **calendar icon** at the bottom of the [Blackboard Calendar](https://bb.sustech.edu.cn/webapps/bb-social-learning-BBLEARN/execute/mybb?cmd=display&toolId=calendar-mybb_____calendar-tool).  
 >
-> ![bb-ics](./media/bb-ics.png)
+> ![bb-ics](https://raw.githubusercontent.com/naivecynics/SVSmate/dev/media/bb-ics.png)
 
 Paste your Blackboard calendar link to import tasks.  
 Once imported, you're free to edit, organize, and schedule them as you like.
@@ -82,6 +82,8 @@ Once imported, you're free to edit, organize, and schedule them as you like.
 ### 🤖 AI-Powered Features
 
 Currently tested with the [Deepseek API](https://platform.deepseek.com/api_keys), though other APIs should also work in theory.
+
+Paste your Deepseek (or other compatible) API key in the extension settings to enable AI-powered features.
 
 After configuring your API key, you can:
 
@@ -100,14 +102,14 @@ To use this feature:
 
 1. Click the icon on the right side of the Explorer.
 
-> ![bb-ics](./media/bb-pdf-1.png)
+> ![bb-ics](https://raw.githubusercontent.com/naivecynics/SVSmate/dev/media/bb-pdf-1.png)
 
 2. Select the desired PDF file.
 
 3. Input the start and end page numbers of the PDF.
 
-> ![bb-ics](./media/bb-pdf-2.png)
-> ![bb-ics](./media/bb-pdf-3.png)
+> ![bb-ics](https://raw.githubusercontent.com/naivecynics/SVSmate/dev/media/bb-pdf-2.png)
+> ![bb-ics](https://raw.githubusercontent.com/naivecynics/SVSmate/dev/media/bb-pdf-3.png)
 
 4. Specify the type of code to generate.
 
@@ -117,7 +119,12 @@ The AI will process the selected content and generate runnable code directly int
 
 ### 🤝 Collaborate Editing
 
-🚧 *In Development*
+> [!WARNING]
+> Requires all users to be on the **same local network**
+
+1. The **server** starts the session and shares the selected file.
+2. The **client** discovers and joins the session to begin live editing.
+3. Users can communicate via the built-in chat during the session.
 
 ## 📖 Documentation
 
@@ -141,10 +148,6 @@ Don't forget to give our project a ⭐️! Thanks again!
 
 - [ ] Add last update time in BB vault
 - [ ] Add Chinese Document
-
-### 💡 Planned Features
-
-- Real-time collaboration 🚧 *In Development* 
 
 ### 👥 Contributors:
 
