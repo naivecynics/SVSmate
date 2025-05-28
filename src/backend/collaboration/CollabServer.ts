@@ -32,6 +32,7 @@ export class CollabServer extends EventEmitter {
     public documentManager: SharedDocumentManager;
     private isRunning: boolean = false;
     private serverName: string;
+    private documentChangeListeners: Map<string, vscode.Disposable> = new Map();
 
     constructor() {
         super();
@@ -276,7 +277,12 @@ export class CollabServer extends EventEmitter {
      * Register an editor with a shared document
      */
     registerEditor(fileId: string, editor: vscode.TextEditor): boolean {
-        return this.documentManager.registerEditor(fileId, editor);
+        const success = this.documentManager.registerEditor(fileId, editor);
+        if (success) {
+            // Set up document change listener for this specific file
+            this.setupDocumentListener(editor.document.uri.fsPath, fileId);
+        }
+        return success;
     }
 
     /**
@@ -468,6 +474,25 @@ export class CollabServer extends EventEmitter {
         }
     }
 
+    private setupDocumentListener(filePath: string, fileId: string) {
+        // Remove existing listener if any
+        const existingListener = this.documentChangeListeners.get(fileId);
+        if (existingListener) {
+            existingListener.dispose();
+        }
+
+        const listener = vscode.workspace.onDidChangeTextDocument((event) => {
+            if (event.document.uri.fsPath === filePath) {
+                event.contentChanges.forEach(change => {
+                    this.documentManager.applyEditorChange(fileId, change);
+                });
+            }
+        });
+
+        this.documentChangeListeners.set(fileId, listener);
+        outputChannel.info('Document Listener Setup', `Set up listener for ${fileId} at ${filePath}`);
+    }
+
     stopServer(): void {
         if (!this.isRunning) {
             return;
@@ -475,6 +500,10 @@ export class CollabServer extends EventEmitter {
 
         // Remove server host from clients
         this.removeServerAsClient();
+
+        // Clean up document listeners
+        this.documentChangeListeners.forEach(disposable => disposable.dispose());
+        this.documentChangeListeners.clear();
 
         // Close all client connections (excluding server host)
         for (const [clientId, client] of this.clients) {
