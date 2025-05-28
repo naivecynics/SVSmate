@@ -5,7 +5,7 @@ import { collaborationClient } from '../backend/collaboration/collaborationClien
 export interface SharedFilesItem {
     id: string;
     label: string;
-    type: 'server' | 'client' | 'serverFile' | 'clientFile' | 'serverStatus' | 'clientStatus' | 'discoveredServers' | 'discoveredServer' | 'messageStatus';
+    type: 'server' | 'client' | 'serverFile' | 'clientFile' | 'serverStatus' | 'clientStatus' | 'discoveredServers' | 'discoveredServer' | 'messageStatus' | 'usernameStatus';
     resourceUri?: vscode.Uri;
     description?: string;
     fileId?: string;
@@ -111,6 +111,14 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
                     arguments: []
                 };
                 break;
+            case 'usernameStatus':
+                item.iconPath = new vscode.ThemeIcon('account');
+                item.command = {
+                    command: 'svsmate.COLLAB-changeUsername',
+                    title: 'Change Username',
+                    arguments: []
+                };
+                break;
         }
 
         return item;
@@ -134,6 +142,15 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
                     type: 'client'
                 }
             ];
+
+            // Add username status
+            const username = collaborationClient.getUsername() || collaborationServer.getUsername();
+            items.push({
+                id: 'username-status',
+                label: '👤 Username',
+                type: 'usernameStatus',
+                description: username
+            });
 
             // Add message status at the bottom
             const clientMessage = collaborationClient.getLatestMessage();
@@ -166,7 +183,7 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
                 label: serverInfo.isRunning ? 'Running' : 'Stopped',
                 type: 'serverStatus',
                 description: serverInfo.isRunning
-                    ? `${serverInfo.ip}:${serverInfo.port} (${serverInfo.clientCount} clients)`
+                    ? `${serverInfo.ip}:${serverInfo.port} (${serverInfo.clientCount} clients) - ${collaborationServer.getUsername()}`
                     : 'Click to start server'
             });
 
@@ -197,7 +214,7 @@ export class SharedFilesViewProvider implements vscode.TreeDataProvider<SharedFi
                 label: clientInfo.isConnected ? 'Connected' : 'Disconnected',
                 type: 'clientStatus',
                 description: clientInfo.isConnected
-                    ? `${clientInfo.serverIP}:${clientInfo.serverPort}`
+                    ? `${clientInfo.serverIP}:${clientInfo.serverPort} - ${collaborationClient.getUsername()}`
                     : 'Click to connect to server'
             });
 

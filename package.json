@@ -35,6 +35,11 @@
                     "type": "string",
                     "default": "",
                     "description": "API key to empower the extension (deepseek api available only)."
+                },
+                "svsmate.collaboration.username": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Your username for collaboration features. If empty, system hostname will be used."
                 }
             }
         },
@@ -193,6 +198,11 @@
                 "command": "svsmate.COLLAB-showLatestMessage",
                 "title": "SVSmate: Show Latest Message",
                 "icon": "$(comment)"
+            },
+            {
+                "command": "svsmate.COLLAB-changeUsername",
+                "title": "SVSmate: Change Username",
+                "icon": "$(account)"
             }
         ],
         "chatParticipants": [
@@ -396,6 +406,12 @@
                     "when": "view == sharedFilesView",
                     "group": "navigation",
                     "title": "Send Message"
+                },
+                {
+                    "command": "svsmate.COLLAB-changeUsername",
+                    "when": "view == sharedFilesView",
+                    "group": "navigation",
+                    "title": "Change Username"
                 }
             ],
             "editor/context": [

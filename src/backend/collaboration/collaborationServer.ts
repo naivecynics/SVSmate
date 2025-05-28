@@ -38,8 +38,42 @@ export class CollaborationServer {
     private isRunning = false;
     private fileUpdateInProgress = new Set<string>(); // Prevent update loops
     private latestMessage?: ChatMessage;
+    private username: string = '';
 
-    constructor() { }
+    constructor() {
+        this.loadUsername();
+    }
+
+    /**
+     * Load username from VS Code settings
+     */
+    private loadUsername(): void {
+        const config = vscode.workspace.getConfiguration('svsmate');
+        this.username = config.get('collaboration.username', '') || require('os').hostname() || 'Server';
+    }
+
+    /**
+     * Set username and save to settings
+     */
+    async setUsername(newUsername: string): Promise<void> {
+        if (!newUsername.trim()) {
+            vscode.window.showErrorMessage('Username cannot be empty');
+            return;
+        }
+
+        this.username = newUsername.trim();
+        const config = vscode.workspace.getConfiguration('svsmate');
+        await config.update('collaboration.username', this.username, vscode.ConfigurationTarget.Global);
+
+        vscode.window.showInformationMessage(`Server username changed to: ${this.username}`);
+    }
+
+    /**
+     * Get current username
+     */
+    getUsername(): string {
+        return this.username;
+    }
 
     /**
      * Start the collaboration server
@@ -48,6 +82,9 @@ export class CollaborationServer {
         if (this.isRunning) {
             return;
         }
+
+        // Reload username before starting
+        this.loadUsername();
 
         return new Promise((resolve, reject) => {
             this.server = net.createServer();
@@ -72,7 +109,7 @@ export class CollaborationServer {
 
                 const localIP = this.getLocalIP();
                 vscode.window.showInformationMessage(
-                    `Collaboration server started on ${localIP}:${this.port}`
+                    `Collaboration server "${this.username}" started on ${localIP}:${this.port}`
                 );
                 resolve();
             });
@@ -98,7 +135,7 @@ export class CollaborationServer {
                                 port: this.port,
                                 clientCount: this.clients.size,
                                 sharedFilesCount: this.sharedFiles.size,
-                                serverName: os.hostname() || 'Unknown Server'
+                                serverName: this.username || os.hostname() || 'Unknown Server'
                             }
                         };
 
@@ -338,7 +375,7 @@ export class CollaborationServer {
         const client: ConnectedClient = {
             id: clientId,
             socket: socket,
-            name: `Client-${clientIP}`,
+            name: `Client-${clientIP}`, // Will be updated when client sends username
             ip: clientIP
         };
 
@@ -394,6 +431,22 @@ export class CollaborationServer {
                 // Handle chat message from client
                 this.handleChatMessage(clientId, message.data);
                 break;
+            case 'usernameUpdate':
+                // Handle username update from client
+                this.handleUsernameUpdate(clientId, message.data.username);
+                break;
+        }
+    }
+
+    /**
+     * Handle username update from client
+     */
+    private handleUsernameUpdate(clientId: string, username: string): void {
+        const client = this.clients.get(clientId);
+        if (client && username && username.trim()) {
+            const oldName = client.name;
+            client.name = username.trim();
+            vscode.window.showInformationMessage(`Client ${oldName} is now known as ${client.name}`);
         }
     }
 
@@ -408,7 +461,7 @@ export class CollaborationServer {
 
         const chatMessage: ChatMessage = {
             id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            sender: client.name,
+            sender: data.sender || client.name,
             content: data.content,
             timestamp: data.timestamp || Date.now()
         };
@@ -423,6 +476,34 @@ export class CollaborationServer {
 
         // Show message on server side
         vscode.window.setStatusBarMessage(`💬 ${chatMessage.sender}: ${chatMessage.content}`, 5000);
+    }
+
+    /**
+     * Send a server message to all clients
+     */
+    sendServerMessage(content: string): void {
+        if (!this.isRunning) {
+            vscode.window.showErrorMessage('Server is not running');
+            return;
+        }
+
+        const chatMessage: ChatMessage = {
+            id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            sender: this.username,
+            content: content,
+            timestamp: Date.now()
+        };
+
+        this.latestMessage = chatMessage;
+
+        // Broadcast message to all clients
+        this.broadcastToClients({
+            type: 'chatMessage',
+            data: chatMessage
+        });
+
+        // Show message on server side
+        vscode.window.setStatusBarMessage(`💬 ${this.username}: ${content}`, 3000);
     }
 
     private broadcastToClients(message: any): void {

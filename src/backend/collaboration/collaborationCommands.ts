@@ -288,21 +288,41 @@ export async function sendMessage(): Promise<void> {
     if (clientInfo.isConnected) {
         // Send as client
         collaborationClient.sendMessage(message);
-        vscode.window.setStatusBarMessage(`💬 You: ${message}`, 3000);
+        vscode.window.setStatusBarMessage(`💬 ${collaborationClient.getUsername()}: ${message}`, 3000);
     } else if (serverInfo.isRunning) {
         // Send as server (broadcast to all clients)
-        const serverMessage = {
-            id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            sender: 'Server',
-            content: message,
-            timestamp: Date.now()
-        };
-
-        // Simulate server message handling
-        vscode.window.setStatusBarMessage(`💬 Server: ${message}`, 3000);
-
-        // You could add a method to server to send server messages if needed
+        collaborationServer.sendServerMessage(message);
     }
+}
+
+/**
+ * Change username
+ */
+export async function changeUsername(): Promise<void> {
+    const currentUsername = collaborationClient.getUsername() || collaborationServer.getUsername();
+
+    const newUsername = await vscode.window.showInputBox({
+        prompt: 'Enter your new username',
+        placeHolder: 'Your username',
+        value: currentUsername,
+        validateInput: (value) => {
+            if (!value || !value.trim()) {
+                return 'Username cannot be empty';
+            }
+            if (value.trim().length > 50) {
+                return 'Username is too long (max 50 characters)';
+            }
+            return null;
+        }
+    });
+
+    if (!newUsername) {
+        return;
+    }
+
+    // Update both client and server usernames
+    await collaborationClient.setUsername(newUsername);
+    await collaborationServer.setUsername(newUsername);
 }
 
 /**

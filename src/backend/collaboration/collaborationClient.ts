@@ -47,8 +47,57 @@ export class CollaborationClient {
     private discoveryPort: number = 8889;
     private latestMessage?: ChatMessage;
     private onMessageReceivedCallback?: (message: ChatMessage) => void;
+    private username: string = '';
 
-    constructor() { }
+    constructor() {
+        this.loadUsername();
+    }
+
+    /**
+     * Load username from VS Code settings
+     */
+    private loadUsername(): void {
+        const config = vscode.workspace.getConfiguration('svsmate');
+        this.username = config.get('collaboration.username', '') || require('os').hostname() || 'Unknown User';
+    }
+
+    /**
+     * Set username and save to settings
+     */
+    async setUsername(newUsername: string): Promise<void> {
+        if (!newUsername.trim()) {
+            vscode.window.showErrorMessage('Username cannot be empty');
+            return;
+        }
+
+        this.username = newUsername.trim();
+        const config = vscode.workspace.getConfiguration('svsmate');
+        await config.update('collaboration.username', this.username, vscode.ConfigurationTarget.Global);
+
+        // If connected, notify server about username change
+        if (this.isConnected && this.socket) {
+            try {
+                const message = {
+                    type: 'usernameUpdate',
+                    data: {
+                        username: this.username
+                    }
+                };
+                this.socket.write(JSON.stringify(message));
+            } catch (error) {
+                console.error('Failed to send username update:', error);
+            }
+        }
+
+        vscode.window.showInformationMessage(`Username changed to: ${this.username}`);
+    }
+
+    /**
+     * Get current username
+     */
+    getUsername(): string {
+        return this.username;
+    }
 
     /**
      * Connect to a collaboration server
@@ -58,6 +107,9 @@ export class CollaborationClient {
             await this.disconnect();
         }
 
+        // Reload username before connecting
+        this.loadUsername();
+
         return new Promise((resolve, reject) => {
             this.socket = new net.Socket();
             this.serverIP = ip;
@@ -65,7 +117,21 @@ export class CollaborationClient {
 
             this.socket.connect(port, ip, () => {
                 this.isConnected = true;
-                vscode.window.showInformationMessage(`Connected to server ${ip}:${port}`);
+
+                // Send initial username to server
+                try {
+                    const message = {
+                        type: 'usernameUpdate',
+                        data: {
+                            username: this.username
+                        }
+                    };
+                    this.socket!.write(JSON.stringify(message));
+                } catch (error) {
+                    console.error('Failed to send initial username:', error);
+                }
+
+                vscode.window.showInformationMessage(`Connected to server ${ip}:${port} as ${this.username}`);
                 resolve();
             });
 
@@ -487,7 +553,8 @@ export class CollaborationClient {
                 type: 'chatMessage',
                 data: {
                     content: content,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    sender: this.username
                 }
             };
             this.socket.write(JSON.stringify(message));
