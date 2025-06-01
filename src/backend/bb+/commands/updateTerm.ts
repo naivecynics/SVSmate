@@ -1,0 +1,88 @@
+import * as vscode from 'vscode';
+import * as path from 'path';
+
+import { OutputChannel } from '../../utils/OutputChannel';
+import * as PathManager from '../../utils/pathManager';
+import { safeEnsureDir } from '../../utils/pathUtils';
+
+import { CookieStore } from '../auth/CookieStore';
+import { BbFetch } from '../http/BbFetch';
+import { CredentialManager } from '../auth/CredentialManager';
+import { CasClient } from '../auth/CasClient';
+import { CourseService } from '../services/CourseService';
+import { Course } from '../models/Course';
+
+import { crawlCourse } from './crawlCourse';
+
+const log = new OutputChannel('updateTerm');
+
+/**
+ * Downloads or refreshes **every course** under a given term.
+ * If no tree-item is supplied, the user is prompted for a term ID.
+ *
+ * @param context VS Code extension context.
+ * @param item    Optional tree item representing the term folder.
+ */
+export async function updateTerm(
+  context: vscode.ExtensionContext,
+  item?: vscode.TreeItem,
+): Promise<void> {
+  const bbRoot = PathManager.getDir('bb');
+
+  /* determine term ID */
+  let termId: string;
+  if (item) {
+    termId = path.basename(item.resourceUri!.fsPath);
+  } else {
+    const input = await vscode.window.showInputBox({
+      prompt: 'Term ID (e.g. 25spring)',
+      validateInput: (v) => (v.trim() ? undefined : 'Term ID is required'),
+    });
+    if (!input) return;
+    termId = input.trim();
+  }
+
+  /* init services */
+  const cookieStore = new CookieStore(PathManager.getFile('bbCookies'));
+  const fetch       = new BbFetch(cookieStore);
+  const credMgr     = new CredentialManager(context);
+  const casClient   = new CasClient(fetch, credMgr);
+  const courseSvc   = new CourseService(fetch);
+
+  if (!(await casClient.ensureLogin())) {
+    vscode.window.showErrorMessage('Blackboard login failed.');
+    return;
+  }
+
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: `Blackboard • ${termId}`,
+      cancellable: true,
+    },
+    async (progress, token) => {
+      progress.report({ message: 'Fetching course list…' });
+
+      const all = await courseSvc.listCourses();
+      const courses: Course[] | undefined = all[termId];
+
+      if (!courses?.length) {
+        vscode.window.showErrorMessage(`No courses found for term “${termId}”.`);
+        return;
+      }
+
+      const termDir = safeEnsureDir(bbRoot, termId);
+
+      for (const course of courses) {
+        if (token.isCancellationRequested) {
+          log.info('Operation cancelled by user.');
+          return;
+        }
+        await crawlCourse(context, course, termDir, progress, token);
+      }
+
+      vscode.window.showInformationMessage(`Term “${termId}” downloaded successfully.`);
+      log.info(`Finished term ${termId}`);
+    },
+  );
+}
