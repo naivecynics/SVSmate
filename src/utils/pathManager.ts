@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 
-type FolderKey = 'bb' | 'todo' | 'notes' | 'debug' | 'cache';
+type FolderKey = 'bb' | 'todo' | 'cache';
 type FileKey = 'bbCookies' | 'todoList';
 
 let rootPath = '';
@@ -11,8 +11,6 @@ let rootPath = '';
 const folders: Record<FolderKey, string> = {
   bb: '',
   todo: '',
-  notes: '',
-  debug: '',
   cache: '',
 };
 
@@ -34,8 +32,6 @@ export function initPathManager(context: vscode.ExtensionContext) {
 
   folders.bb = path.join(root, 'bb-vault');
   folders.todo = path.join(root, 'todo');
-  folders.notes = path.join(root, 'notes');
-  folders.debug = path.join(root, 'debug');
   folders.cache = path.join(root, '.cache');
 
   files.bbCookies = path.join(folders.cache, 'cookies.json');

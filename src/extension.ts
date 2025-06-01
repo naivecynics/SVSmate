@@ -17,7 +17,6 @@ export async function activate(context: vscode.ExtensionContext) {
     PathManager.initPathManager(context);
 
     outputChannel.info('SVSmate Main!', 'SVSmate activated!');
-    console.log('SVSmate activated!');
 
     // ------------------------------------------------
     //                      file
@@ -35,10 +34,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
         bbMaterialViewProvider,
 
-        vscode.commands.registerCommand('svsmate.BB-updateAll', async () => {
-            await updateAll(context);
-        }),
-
         vscode.commands.registerCommand('svsmate.BB-updateTerm', async (item: BBMaterialItem) => {
             await updateTerm(context, item);
         }),
@@ -49,10 +44,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
         vscode.commands.registerCommand('svsmate.BB-downloadToWorkspace', async (item: BBMaterialItem) => {
             await downloadToWorkspace(context, item);
-        }),
-
-        vscode.commands.registerCommand('svsmate.BB-downloadToAiSpace', async (item: BBMaterialItem) => {
-            await downloadToWorkspace(context, item, true);
         }),
 
     );

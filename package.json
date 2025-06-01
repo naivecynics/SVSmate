@@ -4,7 +4,7 @@
     "description": "The Ultimate VS Code Extension for SUSTechers!",
     "publisher": "naivecynics",
     "icon": "media/telescope.png",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/naivecynics/SVSmate.git"
@@ -40,11 +40,6 @@
             }
         },
         "commands": [
-            {
-                "command": "svsmate.BB-updateAll",
-                "title": "SVSmate: Update All Materials",
-                "icon": "$(sync)"
-            },
             {
                 "command": "svsmate.BB-updateTerm",
                 "title": "SVSmate: Update One Term",
@@ -120,23 +115,7 @@
                 "title": "SVSmate: Generate AI Subtasks",
                 "icon": "$(sparkle)"
             }
-        ],
-        "chatParticipants": [
-            {
-                "id": "svsmate.ChatBot-API",
-                "fullName": "svsmate-ChatBot-API",
-                "name": "mate-API",
-                "description": "What can I assist you?",
-                "isSticky": true
-            },
-            {
-                "id": "svsmate.ChatBot",
-                "fullName": "svsmate-ChatBot",
-                "name": "mate",
-                "description": "What can I assist you?",
-                "isSticky": true
-            }
-        ],
+        ]
         "viewsContainers": {
             "activitybar": [
                 {
@@ -177,16 +156,6 @@
                 {
                     "command": "todoListView.addSubTask",
                     "when": "view == todoListView && viewItem == task",
-                    "group": "inline"
-                },
-                {
-                    "command": "todoList.generateAISubtasks",
-                    "when": "view == todoListView && viewItem == task",
-                    "group": "inline"
-                },
-                {
-                    "command": "svsmate.BB-downloadToAiSpace",
-                    "when": "view == bbMaterialView && viewItem == file",
                     "group": "inline"
                 },
                 {
@@ -383,7 +352,6 @@
     "scripts": {
         "lint": "eslint src --fix",
         "dev:compile": "npx rimraf out && npx tsc -p ./ && npm run lint",
-        "test": "vscode-test",
         "docs": "typedoc",
         "compile": "npm run check-types && node esbuild.js",
         "check-types": "tsc --noEmit",

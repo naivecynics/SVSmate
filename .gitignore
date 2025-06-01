@@ -11,8 +11,6 @@ package-lock.json
 .DS_Store
 **/.DS_Store
 
-# vscode-test
-testWorkspace/
-
 # doc
 docs/
+typedoc/

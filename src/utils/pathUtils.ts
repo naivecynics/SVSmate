@@ -25,6 +25,7 @@ export function safe(name: string): string {
     // Limit length (255 is usually safe)
     return sanitized.substring(0, 255);
 }
+
 /**
  * Combines a base path with a raw name (with unsafe characters),
  * sanitizes the name, ensures the directory exists, and returns the full path.
