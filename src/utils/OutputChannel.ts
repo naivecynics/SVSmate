@@ -30,4 +30,4 @@ class stdOutputChannel {
 	}
 }
 
-export const outputChannel = new stdOutputChannel();
+export const log = new stdOutputChannel();

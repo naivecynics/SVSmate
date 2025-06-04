@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { PageContent } from '../models/Course';
+import { PageContent } from '../models/Models';
 
 /**
  * Extracts file-centric structure from a Blackboard content page.
@@ -13,10 +13,10 @@ export function parsePage(html: string): PageContent {
 
   $('li.clearfix.liItem.read').each((_, li) => {
     const h3 = $(li).find('h3').first();
-    if (!h3.length) return;
+    if (!h3.length) {return;}
 
     const section = h3.text().trim();
-    if (!section) return;
+    if (!section) {return;}
 
     // Extract text description
     const text = cleanText($(li).find('div.vtbegenerated_div').html() ?? '');
@@ -29,7 +29,7 @@ export function parsePage(html: string): PageContent {
       .each((__, a) => {
         const name = $(a).text().trim();
         const url = toAbsolute($(a).attr('href') ?? '');
-        if (name && url) files.push({ name, url });
+        if (name && url) {files.push({ name, url });}
       });
 
     // Fallback: single file whose link is the h3 title

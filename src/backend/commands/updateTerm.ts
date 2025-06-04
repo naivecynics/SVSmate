@@ -1,20 +1,18 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-import { OutputChannel } from '../../utils/OutputChannel';
+import { log } from '../../utils/OutputChannel';
 import * as PathManager from '../../utils/pathManager';
 import { safeEnsureDir } from '../../utils/pathUtils';
 
 import { CookieStore } from '../auth/CookieStore';
-import { BbFetch } from '../http/BbFetch';
+import { BBFetch } from '../http/BBFetch';
 import { CredentialManager } from '../auth/CredentialManager';
 import { CasClient } from '../auth/CasClient';
 import { CourseService } from '../services/CourseService';
-import { Course } from '../models/Course';
+import { Course } from '../models/Models';
 
 import { crawlCourse } from './crawlCourse';
-
-const log = new OutputChannel('updateTerm');
 
 /**
  * Downloads or refreshes **every course** under a given term.
@@ -38,13 +36,13 @@ export async function updateTerm(
       prompt: 'Term ID (e.g. 25spring)',
       validateInput: (v) => (v.trim() ? undefined : 'Term ID is required'),
     });
-    if (!input) return;
+    if (!input) {return;}
     termId = input.trim();
   }
 
   /* init services */
   const cookieStore = new CookieStore(PathManager.getFile('bbCookies'));
-  const fetch       = new BbFetch(cookieStore);
+  const fetch       = new BBFetch(cookieStore);
   const credMgr     = new CredentialManager(context);
   const casClient   = new CasClient(fetch, credMgr);
   const courseSvc   = new CourseService(fetch);
@@ -57,7 +55,6 @@ export async function updateTerm(
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: `Blackboard • ${termId}`,
       cancellable: true,
     },
     async (progress, token) => {
@@ -75,14 +72,14 @@ export async function updateTerm(
 
       for (const course of courses) {
         if (token.isCancellationRequested) {
-          log.info('Operation cancelled by user.');
+          log.info('updateTerm', 'Operation cancelled by user.');
           return;
         }
         await crawlCourse(context, course, termDir, progress, token);
       }
 
       vscode.window.showInformationMessage(`Term “${termId}” downloaded successfully.`);
-      log.info(`Finished term ${termId}`);
+      log.info('updateTerm', `Finished term ${termId}`);
     },
   );
 }

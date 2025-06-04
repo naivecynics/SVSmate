@@ -1,21 +1,20 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-import { OutputChannel } from '../../utils/OutputChannel';
+import { log } from '../../utils/OutputChannel';
 import * as PathManager from '../../utils/pathManager';
 import { safeEnsureDir, safe } from '../../utils/pathUtils';
 
 import { CookieStore } from '../auth/CookieStore';
-import { BbFetch } from '../http/BbFetch';
+import { BBFetch } from '../http/BBFetch';
 import { CredentialManager } from '../auth/CredentialManager';
 import { CasClient } from '../auth/CasClient';
 import { CourseService } from '../services/CourseService';
-import { Course } from '../models/Course';
+import { Course } from '../models/Models';
 
 import { crawlCourse } from './crawlCourse';
 import { BBMaterialItem } from '../../frontend/BBMaterialView';
 
-const log = new OutputChannel('updateCourse');
 
 /**
  * Refreshes **one** local course folder by re-downloading every page
@@ -34,7 +33,7 @@ export async function updateCourse(
 
   /* ── init services ────────────────────────────────────────── */
   const cookieStore = new CookieStore(PathManager.getFile('bbCookies'));
-  const fetch       = new BbFetch(cookieStore);
+  const fetch       = new BBFetch(cookieStore);
   const credMgr     = new CredentialManager(context);
   const casClient   = new CasClient(fetch, credMgr);
   const courseSvc   = new CourseService(fetch);
@@ -48,7 +47,6 @@ export async function updateCourse(
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: `Blackboard • ${courseName}`,
       cancellable: true,
     },
     async (progress, token) => {
@@ -61,14 +59,14 @@ export async function updateCourse(
 
       if (!course) {
         vscode.window.showErrorMessage(`Course “${courseName}” not found online.`);
-        return;
+        return; 
       }
 
       const termDir = safeEnsureDir(bbRoot, termId);
       await crawlCourse(context, course, termDir, progress, token);
 
       vscode.window.showInformationMessage(`Course “${courseName}” updated successfully.`);
-      log.info(`Finished updating ${courseName}`);
+      log.info('updateCourse', `Finished updating ${courseName}`);
     },
   );
 }

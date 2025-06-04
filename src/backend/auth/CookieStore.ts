@@ -34,7 +34,7 @@ export class CookieStore {
    */
   save(): void {
     const dir = path.dirname(this.filePath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(dir)) {fs.mkdirSync(dir, { recursive: true });}
     const json = this.jar.serializeSync();
     fs.writeFileSync(this.filePath, JSON.stringify(json));
   }
@@ -55,4 +55,4 @@ export class CookieStore {
     }
     return new CookieJar();
   }
-}
+    }

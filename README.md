@@ -33,7 +33,7 @@
 
 ## 🚀 About the Project
 
-This project originated as the final project for the Spring 2025 **CS304 - Software Engineering**.  
+This project originated as the final project for the [Spring 2025 **CS304 - Software Engineering**](https://github.com/sustech-cs304/team-project-25spring-8 >>) 
 
 Our goal is to develop a powerful and user-friendly **VS Code extension** tailored for SUSTechers, aiming to simplify their academic workflows — particularly operations related to [Blackboard](https://bb.sustech.edu.cn/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_1_1).
 
@@ -49,14 +49,14 @@ Our goal is to develop a powerful and user-friendly **VS Code extension** tailor
 
 SVSmate can be installed via the VS Code [Marketplace »](https://marketplace.visualstudio.com/items?itemName=naivecynics.svsmate)
 
-Or download `.vsix` manually in [Release »](https://github.com/naivecynics/SVSmate/releases).
+Or download `.vsix` manually in [Release »](https://github.com/naivecynics/SVSmate/releases)
 
 ## 🛠️ Usage
 
 ### 🔗 Blackboard Crawler
 
 > [!TIP]
-> To ensure this feature works correctly, please configure your [Blackboard Settings](https://bb.sustech.edu.cn/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_1_1&forwardUrl=edit_module/_3_1/bbcourseorg?cmd%3Dedit&recallUrl=/webapps/portal/execute/tabs/tabAction?tab_tab_group_id%3D_1_1x) as shown below:  
+> To ensure this feature works correctly, please configure your [Blackboard Settings >>](https://bb.sustech.edu.cn/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_1_1&forwardUrl=edit_module/_3_1/bbcourseorg?cmd%3Dedit&recallUrl=/webapps/portal/execute/tabs/tabAction?tab_tab_group_id%3D_1_1x) as shown below:  
 >
 > ![bb-setting](./media/bb-setting.png)
 
@@ -73,7 +73,7 @@ Dive in and streamline your academic workflow!
 Manage your SUSTech tasks effortlessly in VS Code. Tasks can be imported directly from Blackboard, as shown below:
 
 > [!TIP]
-> Click the **calendar icon** at the bottom of the [Blackboard Calendar](https://bb.sustech.edu.cn/webapps/bb-social-learning-BBLEARN/execute/mybb?cmd=display&toolId=calendar-mybb_____calendar-tool).  
+> Click the **calendar icon** at the bottom of the [Blackboard Calendar >>](https://bb.sustech.edu.cn/webapps/bb-social-learning-BBLEARN/execute/mybb?cmd=display&toolId=calendar-mybb_____calendar-tool).  
 >
 > ![bb-ics](./media/bb-ics.png)
 

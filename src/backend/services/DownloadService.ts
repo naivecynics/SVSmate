@@ -3,7 +3,7 @@ import { mkdirSync, existsSync } from 'fs';
 import { dirname, basename, join } from 'path';
 import { pipeline } from 'stream/promises';
 import pLimit from 'p-limit';
-import { BbFetch } from '../http/BbFetch';
+import { BBFetch } from '../http/BBFetch';
 
 /**
  * Downloads arbitrary files with concurrency control.
@@ -14,7 +14,7 @@ export class DownloadService {
    * @param concurrency    Max parallel downloads (`4` by default).
    */
   constructor(
-    private readonly fetch: BbFetch,
+    private readonly fetch: BBFetch,
     private readonly concurrency = 4,
   ) {}
 
@@ -28,7 +28,7 @@ export class DownloadService {
     ensureDir(dirname(savePath));
 
     const res = await this.fetch.get(url, { redirect: 'follow' });
-    if (!res.ok) return false;
+    if (!res.ok) {return false;}
 
     const fileStream = createWriteStream(savePath);
     await pipeline(res.body as any, fileStream);
@@ -50,7 +50,7 @@ export class DownloadService {
       items.map((item) =>
         limit(async () => {
           const ok = await this.download(item.url, item.path);
-          if (!ok && onError) onError(item);
+          if (!ok && onError) {onError(item);}
         }),
       ),
     );
@@ -58,5 +58,5 @@ export class DownloadService {
 }
 
 function ensureDir(dir: string): void {
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  if (!existsSync(dir)) {mkdirSync(dir, { recursive: true });}
 }

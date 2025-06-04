@@ -3,7 +3,6 @@ import * as path from "path";
 import * as fs from "fs";
 import * as ical from "node-ical";
 import * as PathManager from "../utils/pathManager";
-import * as aiSubtask from "../backend/ai/createSubtasks";
 
 /**
  * Represents a task or subtask item in the to-do list.

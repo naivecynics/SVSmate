@@ -4,7 +4,7 @@ import {
   Course,
   CoursesByTerm,
   Announcement,
-} from '../models/Course';
+} from '../models/Models';
 
 /**
  * Parses the XML response returned by Blackboard’s “refreshAjaxModule”
@@ -33,16 +33,16 @@ export async function parseCourseList(xml: string): Promise<CoursesByTerm> {
 
     const anchor = $(h3).find('a[id]');
     const idMatch = anchor.attr('id')?.match(/termCourses__\d+_\d+/);
-    if (!idMatch) return;
+    if (!idMatch) {return;}
     const listId = `_3_1${idMatch[0]}`;
     const listDiv = $(`div#${listId}`);
 
     listDiv.find('li').each((__, li) => {
       const a = $(li).find('a[href]').first();
-      if (!a.length || a.attr('href')?.includes('announcement')) return;
+      if (!a.length || a.attr('href')?.includes('announcement')) {return;}
 
       const name = a.text().trim();
-      const url = absolute(a.attr('href') ?? '');
+      const url = absolute((a.attr('href') ?? '').trim());;
 
       const announcement: Announcement = { content: '', url: '' };
       const block = $(li).find('div.courseDataBlock');
@@ -51,7 +51,7 @@ export async function parseCourseList(xml: string): Promise<CoursesByTerm> {
         const ann = block.find('a[href]').first();
         if (ann.length) {
           announcement.content = ann.text().trim();
-          announcement.url = absolute(ann.attr('href') ?? '');
+          announcement.url = absolute((ann.attr('href') ?? '').trim());
         }
       }
 
@@ -73,7 +73,7 @@ function absolute(href: string): string {
 /** Derives folder-style term ID, e.g. `（Spring 2025）` → `25spring`. */
 function normaliseTerm(termName: string): string {
   const m = termName.match(/（(Spring|Fall|Summer|Winter)\s+(\d{4})）/);
-  if (!m) return termName; // fallback
+  if (!m) {return termName;} // fallback
   const season = m[1].toLowerCase();
   const year = m[2].slice(-2);
   return `${year}${season}`;

@@ -5,13 +5,6 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/) and uses
 
 ---
 
-## [Unreleased]
-
-- Planned: Real-time collaboration
-- Planned: PDF code snippet extractor
-
----
-
 ## [1.0.0] - 2025-05-24
 
 ### Added

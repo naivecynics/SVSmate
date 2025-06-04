@@ -2,19 +2,16 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { writeFile } from 'fs/promises';
 
-import { OutputChannel } from '../../utils/OutputChannel';
+import { log } from '../../utils/OutputChannel';
 import { safeEnsureDir, safe } from '../../utils/pathUtils';
 import * as PathManager from '../../utils/pathManager';
 
 import { CookieStore } from '../auth/CookieStore';
-import { BbFetch } from '../http/BbFetch';
+import { BBFetch } from '../http/BBFetch';
 import { CredentialManager } from '../auth/CredentialManager';
 import { CasClient } from '../auth/CasClient';
 import { CourseService } from '../services/CourseService';
-import { DownloadService } from '../services/DownloadService';
-import { Course, Sidebar, PageContent } from '../models/Course';
-
-const log = new OutputChannel('crawlCourse');
+import { Course, Sidebar, PageContent } from '../models/Models';
 
 /**
  * Crawls **one** Blackboard course:  
@@ -37,11 +34,10 @@ export async function crawlCourse(
 ): Promise<void> {
   /* ── bootstrap backend services ───────────────────────────── */
   const cookieStore = new CookieStore(PathManager.getFile('bbCookies'));
-  const fetch       = new BbFetch(cookieStore);
+  const fetch       = new BBFetch(cookieStore);
   const credMgr     = new CredentialManager(context);
   const casClient   = new CasClient(fetch, credMgr);
   const courseSvc   = new CourseService(fetch);
-  const dlSvc       = new DownloadService(fetch);
 
   /* ── authenticate once per command invocation ─────────────── */
   if (!(await casClient.ensureLogin())) {
@@ -52,7 +48,7 @@ export async function crawlCourse(
   /* ── retrieve sidebar structure ───────────────────────────── */
   const sidebar = await courseSvc.getSidebar(course.url);
   if (!Object.keys(sidebar).length) {
-    log.warn(`Sidebar not found for course “${course.name}”.`);
+    log.warn('crawlCourse', `Sidebar not found for course “${course.name}”.`);
     return;
   }
 
@@ -60,45 +56,40 @@ export async function crawlCourse(
 
   /* ── iterate pages and download content ───────────────────── */
   for (const [category, links] of Object.entries(sidebar) as [string, Sidebar[keyof Sidebar]][]) {
-    if (token.isCancellationRequested) return;
+    if (token.isCancellationRequested) {return;}
 
-    progress.report({ message: `📂 ${course.name} › ${category}` });
+    progress.report({ message: `${course.name} › ${category}` });
     const categoryDir = safeEnsureDir(courseDir, category);
 
     for (const link of links) {
-      if (token.isCancellationRequested) return;
+      if (token.isCancellationRequested) {return;}
 
-      progress.report({ message: `📄 ${course.name} › ${category} › ${link.title}` });
+      progress.report({ message: `${course.name} › ${category} › ${link.title}` });
 
       /* fetch and parse page */
       let page: PageContent;
       try {
         page = await courseSvc.getPage(link.url);
       } catch (err) {
-        log.error(`Failed to fetch “${link.title}”: ${err}`);
+        log.error('crawlCourse', `Failed to fetch “${link.title}”: ${err}`);
         continue;
       }
-      if (!Object.keys(page).length) continue;
+      if (!Object.keys(page).length) {continue;}
 
       const pageDir = safeEnsureDir(categoryDir, link.title);
       const queue: Array<{ url: string; path: string }> = [];
 
       /* save JSON & build download list */
       for (const [section, content] of Object.entries(page)) {
-        if (!content.files.length) continue;
+        if (!content.files.length) {continue;}
 
-        const jsonPath = path.join(pageDir, `${section}.json`);
+        const jsonPath = path.join(pageDir, `${safe(section)}.json`);
         await writeFile(jsonPath, JSON.stringify(content, null, 2), 'utf8');
 
         for (const file of content.files) {
           queue.push({ url: file.url, path: path.join(pageDir, safe(file.name)) });
         }
       }
-
-      /* perform concurrent downloads */
-      await dlSvc.downloadAll(queue, (item) =>
-        log.warn(`Download failed: ${item.url}`),
-      );
     }
   }
 }

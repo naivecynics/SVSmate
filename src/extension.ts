@@ -1,22 +1,23 @@
 import * as vscode from 'vscode';
-import { updateAll, updateCourse, updateTerm } from './backend/bb/updateCommands';
-import { downloadToWorkspace } from './backend/bb/downloadCommands';
-import { addAIGeneratedSubtasks } from './backend/ai/createSubtasks';
+import { updateCourse } from './backend/commands/updateCourse';
+import { updateTerm } from './backend/commands/updateTerm';
+import { downloadItem } from './backend/commands/downloadItem';
 import { addItem, editTask, deleteTask, toggleTaskCheckbox, sortByEndTime, sortByKinds, searchTasks, clearSearch, addSubTask, loadICSFile } from './backend/todo/todoCommands';
 
 import { FolderViewProvider } from "./frontend/FolderView";
 import { TodoListViewProvider, TodoItem } from "./frontend/TodoListView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 
-import { outputChannel } from './utils/OutputChannel';
+import { log } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
+import { CredentialManager } from './backend/auth/CredentialManager';
 
 
 export async function activate(context: vscode.ExtensionContext) {
 
     PathManager.initPathManager(context);
-
-    outputChannel.info('SVSmate Main!', 'SVSmate activated!');
+    const credentialManager = new CredentialManager(context);
+    log.info('SVSmate Main', 'SVSmate activated!');
 
     // ------------------------------------------------
     //                      file
@@ -42,9 +43,13 @@ export async function activate(context: vscode.ExtensionContext) {
             await updateCourse(context, item);
         }),
 
-        vscode.commands.registerCommand('svsmate.BB-downloadToWorkspace', async (item: BBMaterialItem) => {
-            await downloadToWorkspace(context, item);
+        vscode.commands.registerCommand('svsmate.BB-downloadItem', async (item: BBMaterialItem) => {
+            await downloadItem(context, item);
         }),
+
+        vscode.commands.registerCommand('svsmate.BB-switchAccount', async () => {
+            await credentialManager.clearCredentials();
+        })
 
     );
 
@@ -92,10 +97,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
         vscode.commands.registerCommand('todoListView.addSubTask', async (item: TodoItem) => {
             await addSubTask(todoListViewProvider, item);
-        }),
-
-        vscode.commands.registerCommand('todoList.generateAISubtasks', async (item: TodoItem) => {
-            await addAIGeneratedSubtasks(todoListViewProvider, item);
         }),
 
         vscode.commands.registerCommand('todoListView.loadICSFile', async () => {

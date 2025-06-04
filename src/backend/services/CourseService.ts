@@ -1,4 +1,4 @@
-import { BbFetch } from '../http/BBFetch';
+import { BBFetch } from '../http/BBFetch';
 import { parseCourseList } from '../parser/CourseListParser';
 import { parseSidebar } from '../parser/SidebarParser';
 import { parsePage } from '../parser/PageParser';
@@ -6,7 +6,7 @@ import {
   CoursesByTerm,
   Sidebar,
   PageContent,
-} from '../models/Course';
+} from '../models/Models';
 
 /**
  * High-level façade that coordinates HTTP calls and parsers
@@ -16,7 +16,7 @@ export class CourseService {
   /**
    * @param fetch  Pre-authenticated HTTP client.
    */
-  constructor(private readonly fetch: BbFetch) {}
+  constructor(private readonly fetch: BBFetch) {}
 
   /**
    * Retrieves all courses grouped by term.
@@ -33,7 +33,7 @@ export class CourseService {
       'https://bb.sustech.edu.cn/webapps/portal/execute/tabs/tabAction',
       body,
     );
-    if (res.status !== 200) throw new Error('Failed to fetch course list');
+    if (res.status !== 200) {throw new Error('Failed to fetch course list');}
     const xml = await res.text();
     return parseCourseList(xml);
   }
@@ -45,7 +45,7 @@ export class CourseService {
    */
   async getSidebar(courseURL: string): Promise<Sidebar> {
     const res = await this.fetch.get(courseURL, { redirect: 'follow' });
-    if (res.status !== 200) throw new Error('Failed to fetch course page');
+    if (res.status !== 200) {throw new Error('Failed to fetch course page');}
     const html = await res.text();
     return parseSidebar(html);
   }
@@ -57,7 +57,7 @@ export class CourseService {
    */
   async getPage(pageURL: string): Promise<PageContent> {
     const res = await this.fetch.get(pageURL, { redirect: 'follow' });
-    if (res.status !== 200) throw new Error('Failed to fetch page');
+    if (res.status !== 200) {throw new Error('Failed to fetch page');}
     const html = await res.text();
     return parsePage(html);
   }

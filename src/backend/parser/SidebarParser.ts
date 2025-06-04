@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { Sidebar } from '../models/Course';
+import { Sidebar } from '../models/Models';
 
 /**
  * Parses the HTML of a Blackboard course page and extracts the left-hand
@@ -12,7 +12,7 @@ export function parseSidebar(html: string): Sidebar {
   const $ = cheerio.load(html);
   const sidebar: Sidebar = {};
   const menu = $('#courseMenuPalette_contents');
-  if (!menu.length) return sidebar;
+  if (!menu.length) {return sidebar;}
 
   let current: string | null = null;
 
@@ -20,19 +20,18 @@ export function parseSidebar(html: string): Sidebar {
     const h3 = $(li).find('h3');
     if (h3.length) {
       current = h3.text().trim();
-      if (current) sidebar[current] = [];
+      if (current) {sidebar[current] = [];}
       return;
     }
 
-    if (!current) return;
+    if (!current) {return;}
     const a = $(li).find('a[href]').first();
-    if (!a.length) return;
+    if (!a.length) {return;}
 
     const title = a.text().trim();
-    let url = a.attr('href') ?? '';
-    if (url && !url.startsWith('http')) {
-      url = `https://bb.sustech.edu.cn${url}`;
-    }
+    // const rawUrl = a.attr('href') ?? '';
+    // let url = rawUrl;
+    let url = new URL(a.attr('href') ?? '', 'https://bb.sustech.edu.cn').toString();
 
     sidebar[current]!.push({ title, url });
   });

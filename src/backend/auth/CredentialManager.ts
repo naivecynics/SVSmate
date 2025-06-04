@@ -20,17 +20,17 @@ export class CredentialManager {
 
     if (!username || !password) {
       username = await vscode.window.showInputBox({
-        prompt: 'SUSTech username',
+        prompt: 'Blackboard username',
         ignoreFocusOut: true,
       });
-      if (!username) return null;
+      if (!username) {return null;}
 
       password = await vscode.window.showInputBox({
-        prompt: 'SUSTech password',
+        prompt: 'Blackboard password',
         password: true,
         ignoreFocusOut: true,
       });
-      if (!password) return null;
+      if (!password) {return null;}
 
       const save = await vscode.window.showQuickPick(
         ['Yes', 'No'],
@@ -43,5 +43,13 @@ export class CredentialManager {
     }
 
     return { username, password };
+  }
+
+  async clearCredentials(): Promise<void> {
+     await Promise.all([
+       this.context.secrets.delete('bb_username'),
+       this.context.secrets.delete('bb_password'),
+     ]);
+     vscode.window.showInformationMessage('Cached Blackboard account cleared.');
   }
 }

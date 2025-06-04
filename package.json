@@ -20,9 +20,9 @@
         "Other"
     ],
     "activationEvents": [
-        "*"
+        "onStartupFinished"
     ],
-    "main": "./dist/extension",
+    "main": "./out/extension",
     "contributes": {
         "configuration": {
             "title": "svsmate",
@@ -31,11 +31,6 @@
                     "type": "string",
                     "default": "~/.svsmate",
                     "description": "Enter a directory path if you want to costomize the cache location."
-                },
-                "svsmate.apikey": {
-                    "type": "string",
-                    "default": "",
-                    "description": "API key to enpower the extension (deepseek api available only)."
                 }
             }
         },
@@ -51,14 +46,13 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "svsmate.BB-downloadToWorkspace",
-                "title": "SVSmate: Download File to Workspace",
+                "command": "svsmate.BB-downloadItem",
+                "title": "SVSmate: Download File",
                 "icon": "$(cloud-download)"
             },
             {
-                "command": "svsmate.BB-downloadToAiSpace",
-                "title": "SVSmate: Download File to AI Suggested Directory",
-                "icon": "$(symbol-file)"
+                "command": "svsmate.BB-switchAccount",
+                "title": "SVSmate: Clear Blackboard Account Cache"
             },
             {
                 "command": "todoListView.addItem",
@@ -115,7 +109,7 @@
                 "title": "SVSmate: Generate AI Subtasks",
                 "icon": "$(sparkle)"
             }
-        ]
+        ],
         "viewsContainers": {
             "activitybar": [
                 {
@@ -159,7 +153,7 @@
                     "group": "inline"
                 },
                 {
-                    "command": "svsmate.BB-downloadToWorkspace",
+                    "command": "svsmate.BB-downloadItem",
                     "when": "view == bbMaterialView && viewItem == file",
                     "group": "inline"
                 },
@@ -212,12 +206,6 @@
                     "title": "Load From .ics File"
                 },
                 {
-                    "command": "svsmate.BB-updateAll",
-                    "when": "view == bbMaterialView",
-                    "group": "navigation",
-                    "title": "Update All"
-                },
-                {
                     "command": "svsmate.BB-updateTerm",
                     "when": "view == bbMaterialView",
                     "group": "navigation",
@@ -254,7 +242,7 @@
                 "group": "inline"
             },
             {
-                "command": "svsmate.BB-downloadToWorkspace",
+                "command": "svsmate.BB-downloadItem",
                 "when": "view == bbMaterialView && viewItem == file",
                 "group": "inline"
             },
@@ -307,12 +295,6 @@
                 "title": "Load From .ics File"
             },
             {
-                "command": "svsmate.BB-updateAll",
-                "when": "view == bbMaterialView",
-                "group": "navigation",
-                "title": "Update All"
-            },
-            {
                 "command": "svsmate.BB-updateTerm",
                 "when": "view == bbMaterialView",
                 "group": "navigation",
@@ -325,22 +307,17 @@
         "fetch-cookie": "^3.1.0",
         "node-fetch": "^2.7.0",
         "node-ical": "^0.20.1",
-        "openai": "^4.87.3",
         "tough-cookie": "^5.1.2",
         "xml2js": "^0.6.2"
     },
     "devDependencies": {
         "@types/cheerio": "^0.22.35",
-        "@types/mocha": "^10.0.10",
         "@types/node": "^20.17.46",
         "@types/node-fetch": "^2.6.12",
-        "@types/sinon": "^17.0.4",
         "@types/vscode": "^1.98.0",
         "@types/xml2js": "^0.4.14",
         "@typescript-eslint/eslint-plugin": "^8.25.0",
         "@typescript-eslint/parser": "^8.25.0",
-        "@vscode/test-cli": "^0.0.10",
-        "@vscode/test-electron": "^2.5.2",
         "esbuild": "^0.25.4",
         "eslint": "^9.21.0",
         "mocha": "^11.2.2",

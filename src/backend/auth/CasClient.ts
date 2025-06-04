@@ -1,6 +1,9 @@
+import * as vscode from 'vscode';
 import { URLSearchParams } from 'url';
-import { BbFetch } from '../http/BbFetch';
-
+import { BBFetch } from '../http/BBFetch';
+import { CredentialManager } from './CredentialManager';
+import * as cheerio from 'cheerio';
+import { log } from '../../utils/OutputChannel';
 /**
  * Handles CAS authentication flow for Blackboard.
  *
@@ -23,34 +26,36 @@ export class CasClient {
    * @param credMgr  User credentials input helper.
    */
   constructor(
-    private readonly fetch: BbFetch,
+    private readonly fetch: BBFetch,
     private readonly credMgr: CredentialManager,
   ) {}
 
   /**
-   * Ensures the session is authenticated.  
-   * Returns immediately if a GET to `/ultra/course` is already `200`.
+   * Ensures the current cookie jar represents a valid Blackboard session.
+   * If a quick probe to `/ultra/course` already returns 200, the method
+   * resolves `true` immediately.
    *
-   * @param username  SUSTech student/staff ID.
-   * @param password  SUSTech password.
-   * @returns         `true` on success, `false` otherwise.
+   * All credential prompting / caching is delegated to
+   * {@link CredentialManager}.
+   *
+   * @returns `true` on successful login, `false` on failure or user cancel.
    */
-  async ensureLogin(username: string, password: string): Promise<boolean> {
+  async ensureLogin(): Promise<boolean> {
     const loggedIn = await this.quickCheck();
-    if (loggedIn) return true;
+    if (loggedIn) {return true;}
 
     const creds = await this.credMgr.getCredentials();
-    if (!creds) return false;
+    if (!creds) {return false;}
 
     const execution = await this.fetchExecution();
-    if (!execution) return false;
+    if (!execution) {return false;}
 
     const ticketURL = await this.submitCredentials(
-      username,
-      password,
+      creds.username,
+      creds.password,
       execution,
     );
-    if (!ticketURL) return false;
+    if (!ticketURL) {return false;}
 
     return this.validateServiceTicket(ticketURL);
   }
@@ -58,22 +63,33 @@ export class CasClient {
   /** Lightweight probe to see if cookies are still valid. */
   private async quickCheck(): Promise<boolean> {
     const res = await this.fetch.get(
-      'https://bb.sustech.edu.cn/ultra/course',
-      { redirect: 'manual' },
+      'https://bb.sustech.edu.cn/ultra/course', 
+      { redirect: 'manual', }
     );
-    return res.status === 200;
+    if (res.status === 200) { return true; }
+    if (res.status === 302) {
+      const location = res.headers.get('location') || '';
+      if (location.includes('cas.sustech.edu.cn')) { return false; }
+    }
+    const meRes = await this.fetch.get(
+      'https://bb.sustech.edu.cn/learn/api/public/v1/users/me',
+      { redirect: 'manual', }
+    );
+    return meRes.status === 200;
   }
 
   /** Grabs CAS login page and extracts the `execution` hidden field. */
   private async fetchExecution(): Promise<string | null> {
-    const url =
-      `${CasClient.CAS_URL}?service=${encodeURIComponent(CasClient.SERVICE_URL)}`;
+    const url = `${CasClient.CAS_URL}?service=${encodeURIComponent(CasClient.SERVICE_URL)}`;
     const res = await this.fetch.get(url, { redirect: 'follow' });
-    if (res.status !== 200) return null;
+
+    log.info('CasClient', `fetchExecution → HTTP ${res.status}`);
+    if (res.status !== 200) {return null;}
 
     const html = await res.text();
-    const match = html.match(/name="execution"\s+value="([^"]+)"/);
-    return match ? match[1] : null;
+    const $ = cheerio.load(html);
+    const exec = $('input[name="execution"]').val();
+    return exec ? String(exec) : null;
   }
 
   /**
@@ -102,8 +118,12 @@ export class CasClient {
       redirect: 'manual',
     });
 
-    if (res.status !== 302) return null;
+    if (res.status !== 302) {return null;}
     const location = res.headers.get('location') ?? '';
+    if (location.includes('authenticationFailure')) {
+      vscode.window.showErrorMessage('Credential invalid. Please try again.');
+      return null;
+    }
     return location.includes('ticket=') ? location : null;
   }
 
@@ -114,6 +134,8 @@ export class CasClient {
    */
   private async validateServiceTicket(ticketURL: string): Promise<boolean> {
     const res = await this.fetch.get(ticketURL, { redirect: 'follow' });
-    return res.status === 200 && res.url.includes('bb.sustech.edu.cn');
+    const ok  = res.status === 200 && res.url.includes('bb.sustech.edu.cn');
+    if (ok) {this.fetch.saveCookies();}
+    return ok;
   }
 }

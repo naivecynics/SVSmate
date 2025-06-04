@@ -27,15 +27,17 @@ export function safe(name: string): string {
 }
 
 /**
- * Combines a base path with a raw name (with unsafe characters),
- * sanitizes the name, ensures the directory exists, and returns the full path.
+ * Combines a base path with an optional raw name (which may contain unsafe characters),
+ * sanitizes the name if provided, ensures the directory exists, and returns the full path.
  * 
  * @param basePath Parent path
- * @param name Raw folder name (can contain unsafe characters)
+ * @param name Optional raw folder name (can contain unsafe characters)
  * @returns Full sanitized path (guaranteed to exist)
  */
-export function safeEnsureDir(basePath: string, name: string): string {
-    const dirPath = path.join(basePath, safe(name));
-    if (!fs.existsSync(dirPath)) { fs.mkdirSync(dirPath, { recursive: true }); }
+export function safeEnsureDir(basePath: string, name?: string): string {
+    const dirPath = name ? path.join(basePath, safe(name)) : basePath;
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
     return dirPath;
 }
