@@ -44,11 +44,11 @@ export async function downloadItem(
 
   /* ── let user pick destination (default = workspace root) ─── */
   const defaultDir = PathManager.getWorkspaceDir();
-  const defaultUri = vscode.Uri.file(path.join(defaultDir, fileName));
+  const defaultUri = vscode.Uri.file(path.join(defaultDir, fileName as string));
 
   const targetUri = await vscode.window.showSaveDialog({
     defaultUri,
-    saveLabel: 'Save Blackboard file',
+    saveLabel: 'Download from BB',
   });
   if (!targetUri) {return;} // user cancelled
 

@@ -4,217 +4,217 @@ import * as fs from 'fs';
 import * as PathManager from '../utils/pathManager';
 
 /**
- * Provides a tree view of parsed Blackboard course materials.
- * Watches `.json` files and course content folders for live updates.
+ * A tree data provider for parsed Blackboard course materials.
+ * Watches for live updates in `.json` files and course content folders.
  */
 export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMaterialItem>, vscode.Disposable {
-    private _onDidChangeTreeData = new vscode.EventEmitter<BBMaterialItem | undefined>();
-    readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData = new vscode.EventEmitter<BBMaterialItem | undefined>();
+  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-    private rootPath: string = '';
-    private watcher?: vscode.FileSystemWatcher;
+  private rootPath = PathManager.getDir('bb');
+  private watcher?: vscode.FileSystemWatcher;
+  private extraWatcher?: vscode.FileSystemWatcher;
 
-    private constructor() {}
+  private constructor() { }
 
-    /**
-     * Factory method to create and initialize the view provider.
-     */
-    public static create(): BBMaterialViewProvider {
-        const provider = new BBMaterialViewProvider();
-        provider.rootPath = PathManager.getDir('bb');
+  /**
+   * Factory method to initialize the view provider and file watchers.
+   * @returns Initialized BBMaterialViewProvider instance
+   */
+  public static create(): BBMaterialViewProvider {
+    const provider = new BBMaterialViewProvider();
 
-        // Watch JSON file changes
-        const pattern = new vscode.RelativePattern(provider.rootPath, '**/*.json');
-        provider.watcher = vscode.workspace.createFileSystemWatcher(pattern);
-        provider.watcher.onDidChange(() => provider.refresh());
-        provider.watcher.onDidCreate(() => provider.refresh());
-        provider.watcher.onDidDelete(() => provider.refresh());
+    const jsonPattern = new vscode.RelativePattern(provider.rootPath, '**/*.json');
+    provider.watcher = vscode.workspace.createFileSystemWatcher(jsonPattern);
+    provider.watcher.onDidChange(() => provider.refresh());
+    provider.watcher.onDidCreate(() => provider.refresh());
+    provider.watcher.onDidDelete(() => provider.refresh());
 
-        // Watch all file/folder changes (for folders and subfiles)
-        const allPattern = new vscode.RelativePattern(provider.rootPath, '**/*');
-        const allWatcher = vscode.workspace.createFileSystemWatcher(allPattern);
-        allWatcher.onDidChange(() => provider.refresh());
-        allWatcher.onDidCreate(() => provider.refresh());
-        allWatcher.onDidDelete(() => provider.refresh());
+    const allPattern = new vscode.RelativePattern(provider.rootPath, '**/*');
+    provider.extraWatcher = vscode.workspace.createFileSystemWatcher(allPattern);
+    provider.extraWatcher.onDidChange(() => provider.refresh());
+    provider.extraWatcher.onDidCreate(() => provider.refresh());
+    provider.extraWatcher.onDidDelete(() => provider.refresh());
 
-        // Attach watcher to instance to prevent GC (as a symbol-like private field)
-        (provider as any)._extraWatcher = allWatcher;
+    return provider;
+  }
 
-        return provider;
+  /**
+   * Triggers a full refresh of the view.
+   */
+  refresh(): void {
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  getTreeItem(element: BBMaterialItem): vscode.TreeItem {
+    return element;
+  }
+
+  /**
+   * Provides children for a given tree item.
+   * @param element Optional tree item. If undefined, returns root-level items.
+   * @returns List of tree items representing subfolders or JSON content.
+   */
+  async getChildren(element?: BBMaterialItem): Promise<BBMaterialItem[]> {
+    if (element?.meta && element.realPath) {
+      return element.meta.map((f) => {
+        const item = new BBMaterialItem(
+          f.name,
+          vscode.TreeItemCollapsibleState.None,
+          vscode.Uri.parse(f.url),
+          f.name,
+          element.realPath
+        );
+        item.command = {
+          command: 'vscode.open',
+          title: 'Open in Browser',
+          arguments: [vscode.Uri.parse(f.url)]
+        };
+        item.tooltip = f.url;
+        item.description = '(remote)';
+        return item;
+      });
     }
 
-    /**
-     * Triggers a refresh of the entire tree view.
-     */
-    refresh(): void {
-        this._onDidChangeTreeData.fire(undefined);
+    const dirPath = element?.realPath ?? this.rootPath;
+    try {
+      const stats = await fs.promises.stat(dirPath);
+      if (!stats.isDirectory()) { return []; }
+    } catch {
+      vscode.window.showWarningMessage(`Cannot access path: ${dirPath}`);
+      return [];
     }
 
-    getTreeItem(element: BBMaterialItem): vscode.TreeItem {
-        return element;
-    }
+    const entries = await fs.promises.readdir(dirPath);
+    const result: BBMaterialItem[] = [];
 
-    /**
-     * Gets the children for a given tree node. If the node is a JSON virtual folder,
-     * it expands its embedded metadata. Otherwise, loads the file/folder structure from disk.
-     * 
-     * @param element - Optional tree item (if undefined, returns root level).
-     */
-    async getChildren(element?: BBMaterialItem): Promise<BBMaterialItem[]> {
-        // Expand metadata if the item represents a parsed JSON node
-        if (element?.meta && element.realPath) {
-            return element.meta.map((f: any) => {
-                const item = new BBMaterialItem(
-                    f.name,
-                    vscode.TreeItemCollapsibleState.None,
-                    vscode.Uri.parse(f.url),
-                    f.name,
-                    element.realPath
-                );
-                item.command = {
-                    command: 'vscode.open',
-                    title: 'Open in Browser',
-                    arguments: [vscode.Uri.parse(f.url)]
-                };
-                item.tooltip = f.url;
-                item.description = '(remote)';
-                return item;
-            });
+    for (const name of entries) {
+      if (name.startsWith('.')) { continue; }
+      const fullPath = path.join(dirPath, name);
+      try {
+        const stat = await fs.promises.stat(fullPath);
+
+        if (stat.isDirectory()) {
+          result.push(new BBMaterialItem(
+            name,
+            vscode.TreeItemCollapsibleState.Collapsed,
+            vscode.Uri.file(fullPath),
+            name,
+            fullPath
+          ));
+        } else if (name.endsWith('.json')) {
+          const raw = await fs.promises.readFile(fullPath, 'utf-8');
+          const parsed = JSON.parse(raw);
+          const label = path.basename(name, '.json');
+
+          const virtualItem = new BBMaterialItem(
+            label,
+            vscode.TreeItemCollapsibleState.Collapsed,
+            vscode.Uri.file(fullPath),
+            name,
+            fullPath
+          );
+
+          virtualItem.tooltip = parsed.description || undefined;
+          virtualItem.contextValue = 'jsonFolder';
+          virtualItem.meta = parsed.files || [];
+
+          result.push(virtualItem);
         }
-
-        const targetPath = element?.realPath ?? this.rootPath;
-        const result: BBMaterialItem[] = [];
-
-        let stats: fs.Stats;
-        try {
-            stats = await fs.promises.stat(targetPath);
-        } catch {
-            vscode.window.showWarningMessage(`Cannot access path: ${targetPath}`);
-            return [];
-        }
-
-        if (!stats.isDirectory()) {return [];}
-
-        const entries = await fs.promises.readdir(targetPath);
-        for (const name of entries) {
-            if (name.startsWith('.')) {continue;}
-
-            const fullPath = path.join(targetPath, name);
-            let stat: fs.Stats;
-            try {
-                stat = await fs.promises.stat(fullPath);
-            } catch {
-                continue;
-            }
-
-            // Handle directories
-            if (stat.isDirectory()) {
-                result.push(new BBMaterialItem(
-                    name,
-                    vscode.TreeItemCollapsibleState.Collapsed,
-                    vscode.Uri.file(fullPath),
-                    name,
-                    fullPath
-                ));
-            }
-            // Handle JSON virtual folders
-            else if (name.endsWith('.json')) {
-                try {
-                    const raw = await fs.promises.readFile(fullPath, 'utf-8');
-                    const parsed = JSON.parse(raw);
-                    const label = path.basename(name, '.json');
-
-                    const virtualFolder = new BBMaterialItem(
-                        label,
-                        vscode.TreeItemCollapsibleState.Collapsed,
-                        vscode.Uri.file(fullPath),
-                        name,
-                        fullPath
-                    );
-
-                    if (parsed.description) {
-                        virtualFolder.tooltip = parsed.description;
-                    }
-
-                    virtualFolder.contextValue = 'jsonFolder';
-                    virtualFolder.meta = parsed.files || [];
-
-                    result.push(virtualFolder);
-                } catch {
-                    vscode.window.showWarningMessage(`Failed to read json: ${name}`);
-                }
-            }
-        }
-
-        return result;
+      } catch {
+        continue;
+      }
     }
 
-    /**
-     * Disposes all file watchers.
-     */
-    dispose(): void {
-        this.watcher?.dispose();
-        (this as any)._extraWatcher?.dispose();
-    }
+    return result;
+  }
+
+  /**
+   * Disposes file watchers to prevent memory leaks.
+   */
+  dispose(): void {
+    this.watcher?.dispose();
+    this.extraWatcher?.dispose();
+  }
 }
 
 /**
  * Represents a node in the Blackboard material tree view.
- * Can be a file, folder, or a virtual folder parsed from a JSON file.
  */
 export class BBMaterialItem extends vscode.TreeItem {
-    meta?: any[];
+  meta?: any[];
 
-    constructor(
-        public readonly label: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-        public readonly resourceUri: vscode.Uri,
-        filename?: string,
-        public readonly realPath?: string
-    ) {
-        super(label, collapsibleState);
+  constructor(
+    label: string,
+    collapsibleState: vscode.TreeItemCollapsibleState,
+    resourceUri: vscode.Uri,
+    filename: string,
+    public readonly realPath?: string
+  ) {
+    super(label, collapsibleState);
+    this.resourceUri = vscode.Uri.file(realPath ?? resourceUri.fsPath);
+    const ext = path.extname(filename || label).toLowerCase();
 
-        const ext = path.extname(filename || label).toLowerCase();
-        // Use folder icon for all items
-        this.iconPath = vscode.ThemeIcon.Folder;
-
-        const bbRoot = PathManager.getDir('bb');
-        const fsPath = realPath ?? resourceUri.fsPath;
-
-        try {
-            const relPath = path.relative(bbRoot, fsPath);
-            const depth = relPath.split(path.sep).length;
-
-            if (collapsibleState !== vscode.TreeItemCollapsibleState.None) {
-                if (depth === 1) {
-                    this.contextValue = 'termFolder';
-                } else if (depth === 2) {
-                    this.contextValue = 'courseFolder';
-                } else {
-                    this.contextValue = 'folder';
-                }
-            } else {
-                this.contextValue = 'file';
-            }
-        } catch {
-            this.contextValue = 'file';
-        }
+    if (collapsibleState === vscode.TreeItemCollapsibleState.None) {
+      this.iconPath = BBMaterialItem.getFileIconByExt(ext);
     }
 
-    /**
-     * Gets a file-specific icon name based on its extension.
-     * (Currently unused, but can be enabled for more specific visuals.)
-     */
-    private getFileIconName(ext: string): string {
-        switch (ext) {
-            case '.md': return 'markdown';
-            case '.pdf': return 'file-pdf';
-            case '.doc':
-            case '.docx': return 'file-word';
-            case '.ppt':
-            case '.pptx': return 'file-powerpoint';
-            case '.json': return 'code';
-            default: return 'file';
-        }
+    /* ── contextValue（右键菜单用）────────────────────────── */
+    try {
+      const bbRoot = PathManager.getDir('bb');
+      const rel = path.relative(bbRoot, realPath ?? resourceUri.fsPath);
+      const depth = rel.split(path.sep).length;
+
+      this.contextValue =
+        collapsibleState === vscode.TreeItemCollapsibleState.None
+          ? 'file'
+          : depth === 1
+            ? 'termFolder'
+            : depth === 2
+              ? 'courseFolder'
+              : 'folder';
+    } catch {
+      this.contextValue =
+        collapsibleState === vscode.TreeItemCollapsibleState.None ? 'file' : 'folder';
     }
+  }
+
+  /**
+  * Returns a VS Code ThemeIcon name based on file extension.
+  * Used to visually distinguish different file types in the tree view.
+  */
+  static getFileIconByExt(ext: string): vscode.ThemeIcon {
+    switch (ext) {
+      case '.md': return new vscode.ThemeIcon('markdown');
+      case '.pdf': return new vscode.ThemeIcon('file-pdf');
+      case '.doc':
+      case '.docx': return new vscode.ThemeIcon('file-word');
+      case '.xls':
+      case '.xlsx': return new vscode.ThemeIcon('file-excel');
+      case '.ppt':
+      case '.pptx': return new vscode.ThemeIcon('file-powerpoint');
+      case '.ipynb': return new vscode.ThemeIcon('notebook');
+      case '.zip':
+      case '.rar':
+      case '.7z':
+      case '.tar':
+      case '.gz': return new vscode.ThemeIcon('file-zip');
+      case '.json': return new vscode.ThemeIcon('code');
+      case '.txt':
+      case '.log': return new vscode.ThemeIcon('file-text');
+      case '.png':
+      case '.jpg':
+      case '.jpeg':
+      case '.gif':
+      case '.svg': return new vscode.ThemeIcon('file-media');
+      case '.py': return new vscode.ThemeIcon('symbol-function');
+      case '.c':
+      case '.cpp':
+      case '.h':
+      case '.hpp': return new vscode.ThemeIcon('symbol-namespace');
+      default: return new vscode.ThemeIcon('file');
+    }
+  }
 }
+
+

@@ -37,7 +37,7 @@ export function parsePage(html: string): PageContent {
       const link = h3.find('a[href]').first();
       if (link.length) {
         files.push({
-          name: section,
+          name: `${section}.pdf`,
           url: toAbsolute(link.attr('href') ?? ''),
         });
       }

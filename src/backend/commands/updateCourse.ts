@@ -28,8 +28,8 @@ export async function updateCourse(
   item: BBMaterialItem,
 ): Promise<void> {
   const bbRoot     = PathManager.getDir('bb');
-  const courseName = path.basename(item.resourceUri.fsPath);
-  const termId     = path.basename(path.dirname(item.resourceUri.fsPath));
+  const courseName = path.basename(item.resourceUri!.fsPath);
+  const termId = path.basename(path.dirname(item.resourceUri!.fsPath));
 
   /* ── init services ────────────────────────────────────────── */
   const cookieStore = new CookieStore(PathManager.getFile('bbCookies'));
