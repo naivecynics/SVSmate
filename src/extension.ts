@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { updateCourse } from './backend/commands/updateCourse';
 import { updateTerm } from './backend/commands/updateTerm';
 import { downloadItem } from './backend/commands/downloadItem';
+import { deleteItem } from './backend/commands/deleteItem';
 import { addItem, editTask, deleteTask, toggleTaskCheckbox, sortByEndTime, sortByKinds, searchTasks, clearSearch, addSubTask, loadICSFile } from './backend/todo/todoCommands';
 
 import { FolderViewProvider } from "./frontend/FolderView";
@@ -45,6 +46,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
         vscode.commands.registerCommand('svsmate.BB-downloadItem', async (item: BBMaterialItem) => {
             await downloadItem(context, item);
+        }),
+
+        vscode.commands.registerCommand('svsmate.BB-deleteItem', async (item: BBMaterialItem) => {
+            await deleteItem(item);
         }),
 
         vscode.commands.registerCommand('svsmate.BB-switchAccount', async () => {

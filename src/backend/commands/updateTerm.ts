@@ -13,6 +13,7 @@ import { CourseService } from '../services/CourseService';
 import { Course } from '../models/Models';
 
 import { crawlCourse } from './crawlCourse';
+import { deleteItem } from './deleteItem';
 
 /**
  * Downloads or refreshes **every course** under a given term.
@@ -25,6 +26,7 @@ export async function updateTerm(
   context: vscode.ExtensionContext,
   item?: vscode.TreeItem,
 ): Promise<void> {
+  item && deleteItem(item, false);
   const bbRoot = PathManager.getDir('bb');
 
   /* determine term ID */
@@ -78,7 +80,7 @@ export async function updateTerm(
         await crawlCourse(context, course, termDir, progress, token);
       }
 
-      vscode.window.showInformationMessage(`Term “${termId}” downloaded successfully.`);
+      vscode.window.showInformationMessage(`Term “${termId}” updated successfully.`);
       log.info('updateTerm', `Finished term ${termId}`);
     },
   );

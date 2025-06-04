@@ -31,6 +31,11 @@
                     "type": "string",
                     "default": "~/.svsmate",
                     "description": "Enter a directory path if you want to costomize the cache location."
+                },
+                "svsmate.ics": {
+                    "type": "string",
+                    "default": "",
+                    "description": ""
                 }
             }
         },
@@ -49,6 +54,11 @@
                 "command": "svsmate.BB-downloadItem",
                 "title": "SVSmate: Download File",
                 "icon": "$(cloud-download)"
+            },
+            {
+                "command": "svsmate.BB-deleteItem",
+                "title": "SVSmate: Remove Folder",
+                "icon": "$(trash)"
             },
             {
                 "command": "svsmate.BB-switchAccount",
@@ -153,11 +163,6 @@
                     "group": "inline"
                 },
                 {
-                    "command": "svsmate.BB-downloadItem",
-                    "when": "view == bbMaterialView && viewItem == file",
-                    "group": "inline"
-                },
-                {
                     "command": "svsmate.BB-updateTerm",
                     "when": "view == bbMaterialView && viewItem == termFolder",
                     "group": "inline"
@@ -165,6 +170,16 @@
                 {
                     "command": "svsmate.BB-updateCourse",
                     "when": "view == bbMaterialView && viewItem == courseFolder",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.BB-downloadItem",
+                    "when": "view == bbMaterialView && viewItem == file",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.BB-deleteItem",
+                    "when": "view == bbMaterialView && (viewItem == termFolder || viewItem == courseFolder)",
                     "group": "inline"
                 }
             ],
