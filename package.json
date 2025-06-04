@@ -41,29 +41,34 @@
         },
         "commands": [
             {
-                "command": "svsmate.BB-updateTerm",
+                "command": "svsmate.updateTerm",
                 "title": "SVSmate: Update One Term",
                 "icon": "$(refresh)"
             },
             {
-                "command": "svsmate.BB-updateCourse",
+                "command": "svsmate.updateCourse",
                 "title": "SVSmate: Update One Course",
                 "icon": "$(refresh)"
             },
             {
-                "command": "svsmate.BB-downloadItem",
+                "command": "svsmate.downloadItem",
                 "title": "SVSmate: Download File",
                 "icon": "$(cloud-download)"
             },
             {
-                "command": "svsmate.BB-deleteItem",
+                "command": "svsmate.deleteItem",
                 "title": "SVSmate: Remove Folder",
                 "icon": "$(trash)"
             },
             {
-                "command": "svsmate.BB-switchAccount",
+                "command": "svsmate.switchAccount",
                 "title": "SVSmate: Clear Blackboard Account Cache"
             },
+            {
+                "command": "svsmate.syncCalendar",
+                "title": "SVSmate: Sync Blackboard Calendar ICS Link"
+            },
+
             {
                 "command": "todoListView.addItem",
                 "title": "SVSmate: Add Task",
@@ -163,22 +168,22 @@
                     "group": "inline"
                 },
                 {
-                    "command": "svsmate.BB-updateTerm",
+                    "command": "svsmate.updateTerm",
                     "when": "view == bbMaterialView && viewItem == termFolder",
                     "group": "inline"
                 },
                 {
-                    "command": "svsmate.BB-updateCourse",
+                    "command": "svsmate.updateCourse",
                     "when": "view == bbMaterialView && viewItem == courseFolder",
                     "group": "inline"
                 },
                 {
-                    "command": "svsmate.BB-downloadItem",
+                    "command": "svsmate.downloadItem",
                     "when": "view == bbMaterialView && viewItem == file",
                     "group": "inline"
                 },
                 {
-                    "command": "svsmate.BB-deleteItem",
+                    "command": "svsmate.deleteItem",
                     "when": "view == bbMaterialView && (viewItem == termFolder || viewItem == courseFolder)",
                     "group": "inline"
                 }
@@ -221,7 +226,7 @@
                     "title": "Load From .ics File"
                 },
                 {
-                    "command": "svsmate.BB-updateTerm",
+                    "command": "svsmate.updateTerm",
                     "when": "view == bbMaterialView",
                     "group": "navigation",
                     "title": "Update Term"
@@ -252,22 +257,22 @@
                 "group": "inline"
             },
             {
-                "command": "svsmate.BB-downloadToAiSpace",
+                "command": "svsmate.downloadToAiSpace",
                 "when": "view == bbMaterialView && viewItem == file",
                 "group": "inline"
             },
             {
-                "command": "svsmate.BB-downloadItem",
+                "command": "svsmate.downloadItem",
                 "when": "view == bbMaterialView && viewItem == file",
                 "group": "inline"
             },
             {
-                "command": "svsmate.BB-updateTerm",
+                "command": "svsmate.updateTerm",
                 "when": "view == bbMaterialView && viewItem == termFolder",
                 "group": "inline"
             },
             {
-                "command": "svsmate.BB-updateCourse",
+                "command": "svsmate.updateCourse",
                 "when": "view == bbMaterialView && viewItem == courseFolder",
                 "group": "inline"
             }
@@ -310,7 +315,7 @@
                 "title": "Load From .ics File"
             },
             {
-                "command": "svsmate.BB-updateTerm",
+                "command": "svsmate.updateTerm",
                 "when": "view == bbMaterialView",
                 "group": "navigation",
                 "title": "Update Term"

@@ -3,6 +3,7 @@ import { updateCourse } from './backend/commands/updateCourse';
 import { updateTerm } from './backend/commands/updateTerm';
 import { downloadItem } from './backend/commands/downloadItem';
 import { deleteItem } from './backend/commands/deleteItem';
+import { syncCalendar } from './backend/commands/syncCalendar';
 import { addItem, editTask, deleteTask, toggleTaskCheckbox, sortByEndTime, sortByKinds, searchTasks, clearSearch, addSubTask, loadICSFile } from './backend/todo/todoCommands';
 
 import { FolderViewProvider } from "./frontend/FolderView";
@@ -36,27 +37,37 @@ export async function activate(context: vscode.ExtensionContext) {
 
         bbMaterialViewProvider,
 
-        vscode.commands.registerCommand('svsmate.BB-updateTerm', async (item: BBMaterialItem) => {
+        vscode.commands.registerCommand('svsmate.updateTerm', async (item: BBMaterialItem) => {
             await updateTerm(context, item);
         }),
 
-        vscode.commands.registerCommand('svsmate.BB-updateCourse', async (item: BBMaterialItem) => {
+        vscode.commands.registerCommand('svsmate.updateCourse', async (item: BBMaterialItem) => {
             await updateCourse(context, item);
         }),
 
-        vscode.commands.registerCommand('svsmate.BB-downloadItem', async (item: BBMaterialItem) => {
+        vscode.commands.registerCommand('svsmate.downloadItem', async (item: BBMaterialItem) => {
             await downloadItem(context, item);
         }),
 
-        vscode.commands.registerCommand('svsmate.BB-deleteItem', async (item: BBMaterialItem) => {
+        vscode.commands.registerCommand('svsmate.deleteItem', async (item: BBMaterialItem) => {
             await deleteItem(item);
         }),
 
-        vscode.commands.registerCommand('svsmate.BB-switchAccount', async () => {
+        vscode.commands.registerCommand('svsmate.switchAccount', async () => {
             await credentialManager.clearCredentials();
+        }),
+
+        vscode.commands.registerCommand('svsmate.syncCalendar', async () => {
+            await syncCalendar(context);
         })
 
+
     );
+
+    // ------------------------------------------------
+    //                    calendar
+    // ------------------------------------------------
+
 
     // ------------------------------------------------
     //                      todo
