@@ -7,14 +7,13 @@ import { updateTerm } from './backend/commands/updateTerm';
 import { downloadMaterial } from './backend/commands/downloadMaterial';
 import { deleteMaterial } from './backend/commands/deleteMaterial';
 
-import { syncCalendar } from './backend/commands/syncCalendar';
 import { refreshCalendar } from "./backend/commands/refreshCalendar";
 import { deleteCalendar } from "./backend/commands/deleteCalendar";
+import { toggleCalendar } from "./backend/commands/toggleCalendar";
 
 import { FolderViewProvider } from "./frontend/FolderView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 import { CalendarViewProvider, CalendarItem } from "./frontend/CalendarView";
-import { registerToggleCommand } from "./frontend/CalendarView";
 
 import { log } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
@@ -71,12 +70,6 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider('calendarView', calendarViewProvider);
     context.subscriptions.push(
 
-      calendarViewProvider,
-
-      vscode.commands.registerCommand("svsmate.syncCalendar", () => {
-        syncCalendar(context);
-      }),
-
       vscode.commands.registerCommand("svsmate.refreshCalendar", async () => {
         await refreshCalendar(context);
         calendarViewProvider.refresh();
@@ -87,10 +80,12 @@ export async function activate(context: vscode.ExtensionContext) {
         calendarViewProvider.refresh();
       }),
 
-    );
+      vscode.commands.registerCommand("svsmate.toggleCalendar", async (item: CalendarItem) => {
+        await toggleCalendar(context, item);
+        calendarViewProvider.refresh();
+      }),
 
-    /* toggle-done command */
-    registerToggleCommand(context);
+    );
 }
 
 export function deactivate() { }

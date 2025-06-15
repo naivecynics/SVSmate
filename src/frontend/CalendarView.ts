@@ -55,14 +55,14 @@ export class CalendarItem extends vscode.TreeItem {
 
     this.resourceUri = vscode.Uri.parse("calendar:" + data.uid);
     this.command = {
-      command: "svsmate.toggleCalendarDone",
+      command: "svsmate.toggleCalendar",
       title: "Toggle done",
-      arguments: [data.uid],
+      arguments: [this],
     };
 
     if (data.done) {
-      this.iconPath = new vscode.ThemeIcon("check-all", new vscode.ThemeColor("disabledForeground"));
-      this.label = `~~${data.title}~~`;
+      this.iconPath = new vscode.ThemeIcon("check-all");
+      // this.label = `~~${data.title}~~`;
     } else {
       this.iconPath = new vscode.ThemeIcon("circle-small");
     }
@@ -70,16 +70,4 @@ export class CalendarItem extends vscode.TreeItem {
   getSchedule(): Schedule {
     return this.data;
   }
-}
-
-/* Register the command right here (small helper) */
-export function registerToggleCommand(context: vscode.ExtensionContext) {
-  context.subscriptions.push(
-    vscode.commands.registerCommand("svsmate.toggleCalendarDone", async (uid: string) => {
-      const map: Record<string, Schedule> = context.workspaceState.get(STORE_KEY, {});
-      if (!map[uid]) {return;}
-      map[uid].done = !map[uid].done;
-      await context.workspaceState.update(STORE_KEY, map);
-    }),
-  );
 }

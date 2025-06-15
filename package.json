@@ -41,6 +41,10 @@
         },
         "commands": [
             {
+                "command": "svsmate.clearAccount",
+                "title": "SVSmate: Clear Blackboard Account Cache"
+            },
+            {
                 "command": "svsmate.updateTerm",
                 "title": "SVSmate: Update One Term",
                 "icon": "$(refresh)"
@@ -59,14 +63,6 @@
                 "command": "svsmate.deleteMaterial",
                 "title": "SVSmate: Remove Folder",
                 "icon": "$(trash)"
-            },
-            {
-                "command": "svsmate.clearAccount",
-                "title": "SVSmate: Clear Blackboard Account Cache"
-            },
-            {
-                "command": "svsmate.syncCalendar",
-                "title": "SVSmate: Sync Blackboard Calendar ICS Link"
             },
             {
                 "command": "svsmate.refreshCalendar",
