@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+import { clearAccount } from './backend/commands/clearAccount';
+
 import { updateCourse } from './backend/commands/updateCourse';
 import { updateTerm } from './backend/commands/updateTerm';
 import { downloadMaterial } from './backend/commands/downloadMaterial';
@@ -56,8 +58,8 @@ export async function activate(context: vscode.ExtensionContext) {
             await deleteMaterial(item);
         }),
 
-        vscode.commands.registerCommand('svsmate.switchAccount', async () => {
-            await credentialManager.clearCredentials();
+        vscode.commands.registerCommand('svsmate.clearAccount', async () => {
+            await clearAccount(context);
         }),
 
     );

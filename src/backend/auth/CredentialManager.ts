@@ -50,6 +50,5 @@ export class CredentialManager {
        this.context.secrets.delete('bb_username'),
        this.context.secrets.delete('bb_password'),
      ]);
-     vscode.window.showInformationMessage('Cached Blackboard account cleared.');
   }
 }

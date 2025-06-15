@@ -24,7 +24,7 @@ export async function deleteCalendar(
 
     delete map[schedule.uid];
     await context.workspaceState.update(STORE_KEY, map);
-    vscode.window.showInformationMessage(`Deleted: ${schedule.title}`);
+    // vscode.window.showInformationMessage(`Deleted: ${schedule.title}`);
   } else {
     const confirmed = await vscode.window.showWarningMessage(
       "Are you sure you want to delete all calendar items?",

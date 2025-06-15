@@ -55,4 +55,11 @@ export class CookieStore {
     }
     return new CookieJar();
   }
-    }
+  /**
+   * Clears all cookies from the jar and persists the empty state to disk.
+   */
+  clear(): void {
+    this.jar.removeAllCookiesSync();
+    this.save();
+  }
+}

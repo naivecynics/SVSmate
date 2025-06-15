@@ -61,7 +61,7 @@
                 "icon": "$(trash)"
             },
             {
-                "command": "svsmate.switchAccount",
+                "command": "svsmate.clearAccount",
                 "title": "SVSmate: Clear Blackboard Account Cache"
             },
             {
