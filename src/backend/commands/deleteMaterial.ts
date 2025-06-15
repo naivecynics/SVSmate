@@ -11,7 +11,7 @@ import { log } from '../../utils/OutputChannel';
  * @param item        The selected tree item (term/course folder).
  * @param deleteSelf  Whether to delete the folder itself (default: true).
  */
-export async function deleteItem(item: BBMaterialItem, deleteSelf: boolean = true): Promise<void> {
+export async function deleteMaterial(item: BBMaterialItem, deleteSelf: boolean = true): Promise<void> {
   if (!item.realPath) {
     vscode.window.showWarningMessage('This item has no valid path.');
     return;

@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { PageContent } from '../models/Models';
+import { PageContent } from '../models/CourseModels';
 
 /**
  * Extracts file-centric structure from a Blackboard content page.

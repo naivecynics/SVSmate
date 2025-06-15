@@ -6,7 +6,7 @@ import {
   CoursesByTerm,
   Sidebar,
   PageContent,
-} from '../models/Models';
+} from '../models/CourseModels';
 
 /**
  * High-level façade that coordinates HTTP calls and parsers

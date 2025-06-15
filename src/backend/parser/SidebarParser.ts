@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { Sidebar } from '../models/Models';
+import { Sidebar } from '../models/CourseModels';
 
 /**
  * Parses the HTML of a Blackboard course page and extracts the left-hand

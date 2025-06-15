@@ -11,7 +11,7 @@ import { BBFetch } from '../http/BBFetch';
 import { CredentialManager } from '../auth/CredentialManager';
 import { CasClient } from '../auth/CasClient';
 import { CourseService } from '../services/CourseService';
-import { Course, Sidebar, PageContent } from '../models/Models';
+import { Course, Sidebar, PageContent } from '../models/CourseModels';
 
 /**
  * Crawls **one** Blackboard course:  

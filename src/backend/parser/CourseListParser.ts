@@ -4,7 +4,7 @@ import {
   Course,
   CoursesByTerm,
   Announcement,
-} from '../models/Models';
+} from '../models/CourseModels';
 
 /**
  * Parses the XML response returned by Blackboard’s “refreshAjaxModule”

@@ -51,12 +51,12 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "svsmate.downloadItem",
+                "command": "svsmate.downloadMaterial",
                 "title": "SVSmate: Download File",
                 "icon": "$(cloud-download)"
             },
             {
-                "command": "svsmate.deleteItem",
+                "command": "svsmate.deleteMaterial",
                 "title": "SVSmate: Remove Folder",
                 "icon": "$(trash)"
             },
@@ -68,61 +68,15 @@
                 "command": "svsmate.syncCalendar",
                 "title": "SVSmate: Sync Blackboard Calendar ICS Link"
             },
-
             {
-                "command": "todoListView.addItem",
-                "title": "SVSmate: Add Task",
-                "icon": "$(add)"
+                "command": "svsmate.refreshCalendar",
+                "title": "SVSmate: Refresh BB Calendar",
+                "icon": "$(refresh)"
             },
             {
-                "command": "todoListView.editTask",
-                "title": "SVSmate: Edit Task",
-                "icon": "$(edit)"
-            },
-            {
-                "command": "todoListView.deleteTask",
-                "title": "SVSmate: Delete Task",
+                "command": "svsmate.deleteCalendar",
+                "title": "SVSmate: Delete a Schedule",
                 "icon": "$(trash)"
-            },
-            {
-                "command": "todoListView.toggleTaskCheckbox",
-                "title": "SVSmate: Toggle Task Checkbox",
-                "icon": "$(check)"
-            },
-            {
-                "command": "todoListView.sortByEndTime",
-                "title": "SVSmate: Sort by DDL",
-                "icon": "$(sort-precedence)"
-            },
-            {
-                "command": "todoListView.sortByKinds",
-                "title": "SVSmate: Sort by Kinds",
-                "icon": "$(group-by-ref-type)"
-            },
-            {
-                "command": "todoListView.searchTasks",
-                "title": "SVSmate: Search Tasks",
-                "icon": "$(search)"
-            },
-            {
-                "command": "todoListView.clearSearch",
-                "title": "SVSmate: Clear Search",
-                "icon": "$(clear-all)"
-            },
-            {
-                "command": "todoListView.loadICSFile",
-                "title": "SVSmate: Load from .ics File",
-                "icon": "$(file-submodule)"
-            },
-            {
-                "command": "todoListView.addSubTask",
-                "title": "SVSmate: Add Subtask",
-                "icon": "$(add)"
-            },
-            {
-                "command": "todoList.generateAISubtasks",
-                "title": "SVSmate: Generate AI Subtasks",
-                "icon": "$(sparkle)"
             }
         ],
         "viewsContainers": {
@@ -138,35 +92,20 @@
             "SVSmate": [
                 {
                     "id": "folderView",
-                    "name": "File Explorer"
+                    "name": "Explorer"
                 },
                 {
                     "id": "bbMaterialView",
                     "name": "BB Materials"
                 },
                 {
-                    "id": "todoListView",
-                    "name": "To-Do List"
+                    "id": "calendarView",
+                    "name": "BB Calendar"
                 }
             ]
         },
         "menus": {
             "view/item/context": [
-                {
-                    "command": "todoListView.editTask",
-                    "when": "view == todoListView",
-                    "group": "inline"
-                },
-                {
-                    "command": "todoListView.deleteTask",
-                    "when": "view == todoListView",
-                    "group": "inline"
-                },
-                {
-                    "command": "todoListView.addSubTask",
-                    "when": "view == todoListView && viewItem == task",
-                    "group": "inline"
-                },
                 {
                     "command": "svsmate.updateTerm",
                     "when": "view == bbMaterialView && viewItem == termFolder",
@@ -178,153 +117,43 @@
                     "group": "inline"
                 },
                 {
-                    "command": "svsmate.downloadItem",
+                    "command": "svsmate.downloadMaterial",
                     "when": "view == bbMaterialView && viewItem == file",
                     "group": "inline"
                 },
                 {
-                    "command": "svsmate.deleteItem",
+                    "command": "svsmate.deleteMaterial",
                     "when": "view == bbMaterialView && (viewItem == termFolder || viewItem == courseFolder)",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.deleteCalendar",
+                    "when": "view == calendarView && viewItem == calendarItem",
                     "group": "inline"
                 }
             ],
             "view/title": [
                 {
-                    "command": "todoListView.addItem",
-                    "when": "view == todoListView",
-                    "group": "navigation",
-                    "title": "Add Item"
-                },
-                {
-                    "command": "todoListView.sortByEndTime",
-                    "when": "view == todoListView",
-                    "group": "navigation",
-                    "title": "Sort By End Time"
-                },
-                {
-                    "command": "todoListView.sortByKinds",
-                    "when": "view == todoListView",
-                    "group": "navigation",
-                    "title": "Sort By Kinds"
-                },
-                {
-                    "command": "todoListView.searchTasks",
-                    "when": "view == todoListView",
-                    "group": "navigation",
-                    "title": "Search Tasks"
-                },
-                {
-                    "command": "todoListView.clearSearch",
-                    "when": "view == todoListView ",
-                    "group": "navigation",
-                    "title": "Clear Search"
-                },
-                {
-                    "command": "todoListView.loadICSFile",
-                    "when": "view == todoListView",
-                    "group": "navigation",
-                    "title": "Load From .ics File"
-                },
-                {
                     "command": "svsmate.updateTerm",
                     "when": "view == bbMaterialView",
                     "group": "navigation",
                     "title": "Update Term"
+                },
+                {
+                    "command": "svsmate.refreshCalendar",
+                    "when": "view == calendarView",
+                    "group": "navigation",
+                    "title": "Refresh Calendar"
                 }
             ]
         }
     },
-    "menus": {
-        "view/item/context": [
-            {
-                "command": "todoListView.editTask",
-                "when": "view == todoListView",
-                "group": "inline"
-            },
-            {
-                "command": "todoListView.deleteTask",
-                "when": "view == todoListView",
-                "group": "inline"
-            },
-            {
-                "command": "todoListView.addSubTask",
-                "when": "view == todoListView && viewItem == task",
-                "group": "inline"
-            },
-            {
-                "command": "todoList.generateAISubtasks",
-                "when": "view == todoListView && viewItem == task",
-                "group": "inline"
-            },
-            {
-                "command": "svsmate.downloadToAiSpace",
-                "when": "view == bbMaterialView && viewItem == file",
-                "group": "inline"
-            },
-            {
-                "command": "svsmate.downloadItem",
-                "when": "view == bbMaterialView && viewItem == file",
-                "group": "inline"
-            },
-            {
-                "command": "svsmate.updateTerm",
-                "when": "view == bbMaterialView && viewItem == termFolder",
-                "group": "inline"
-            },
-            {
-                "command": "svsmate.updateCourse",
-                "when": "view == bbMaterialView && viewItem == courseFolder",
-                "group": "inline"
-            }
-        ],
-        "view/title": [
-            {
-                "command": "todoListView.addItem",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Add Item"
-            },
-            {
-                "command": "todoListView.sortByEndTime",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Sort By End Time"
-            },
-            {
-                "command": "todoListView.sortByKinds",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Sort By Kinds"
-            },
-            {
-                "command": "todoListView.searchTasks",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Search Tasks"
-            },
-            {
-                "command": "todoListView.clearSearch",
-                "when": "view == todoListView ",
-                "group": "navigation",
-                "title": "Clear Search"
-            },
-            {
-                "command": "todoListView.loadICSFile",
-                "when": "view == todoListView",
-                "group": "navigation",
-                "title": "Load From .ics File"
-            },
-            {
-                "command": "svsmate.updateTerm",
-                "when": "view == bbMaterialView",
-                "group": "navigation",
-                "title": "Update Term"
-            }
-        ]
-    },
     "dependencies": {
+        "@types/ical": "^0.8.3",
         "cheerio": "^1.0.0",
+        "date-fns": "^4.1.0",
         "fetch-cookie": "^3.1.0",
+        "ical.js": "^2.1.0",
         "node-fetch": "^2.7.0",
         "node-ical": "^0.20.1",
         "tough-cookie": "^5.1.2",

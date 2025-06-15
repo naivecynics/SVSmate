@@ -10,10 +10,10 @@ import { BBFetch } from '../http/BBFetch';
 import { CredentialManager } from '../auth/CredentialManager';
 import { CasClient } from '../auth/CasClient';
 import { CourseService } from '../services/CourseService';
-import { Course } from '../models/Models';
+import { Course } from '../models/CourseModels';
 
 import { crawlCourse } from './crawlCourse';
-import { deleteItem } from './deleteItem';
+import { deleteMaterial } from './deleteMaterial';
 import { BBMaterialItem } from '../../frontend/BBMaterialView';
 
 
@@ -28,7 +28,7 @@ export async function updateCourse(
   context: vscode.ExtensionContext,
   item: BBMaterialItem,
 ): Promise<void> {
-  deleteItem(item, false);
+  deleteMaterial(item, false);
 
   const bbRoot     = PathManager.getDir('bb');
   const courseName = path.basename(item.resourceUri!.fsPath);

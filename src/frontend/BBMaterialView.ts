@@ -4,8 +4,8 @@ import * as fs from 'fs';
 import * as PathManager from '../utils/pathManager';
 
 /**
- * A tree data provider for parsed Blackboard course materials.
- * Watches for live updates in `.json` files and course content folders.
+ * Provides a tree view of parsed Blackboard course materials.
+ * Watches `.json` files and folders for live updates.
  */
 export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMaterialItem>, vscode.Disposable {
   private _onDidChangeTreeData = new vscode.EventEmitter<BBMaterialItem | undefined>();
@@ -15,11 +15,10 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
   private watcher?: vscode.FileSystemWatcher;
   private extraWatcher?: vscode.FileSystemWatcher;
 
-  private constructor() { }
+  private constructor() {}
 
   /**
-   * Factory method to initialize the view provider and file watchers.
-   * @returns Initialized BBMaterialViewProvider instance
+   * Initializes file watchers and returns the view provider instance.
    */
   public static create(): BBMaterialViewProvider {
     const provider = new BBMaterialViewProvider();
@@ -40,7 +39,7 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
   }
 
   /**
-   * Triggers a full refresh of the view.
+   * Triggers a UI refresh of the tree view.
    */
   refresh(): void {
     this._onDidChangeTreeData.fire(undefined);
@@ -51,35 +50,38 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
   }
 
   /**
-   * Provides children for a given tree item.
-   * @param element Optional tree item. If undefined, returns root-level items.
-   * @returns List of tree items representing subfolders or JSON content.
+   * Returns the children of a given node.
+   * If `element` is undefined, root-level items are returned.
    */
   async getChildren(element?: BBMaterialItem): Promise<BBMaterialItem[]> {
     if (element?.meta && element.realPath) {
+      // Leaf nodes (remote file entries in .json metadata)
       return element.meta.map((f) => {
         const item = new BBMaterialItem(
           f.name,
           vscode.TreeItemCollapsibleState.None,
-          vscode.Uri.parse(f.url),
+          vscode.Uri.parse(f.url), // used only for display, not file access
           f.name,
           element.realPath
         );
         item.command = {
           command: 'vscode.open',
           title: 'Open in Browser',
-          arguments: [vscode.Uri.parse(f.url)]
+          arguments: [vscode.Uri.parse(f.url)],
         };
         item.tooltip = f.url;
         item.description = '(remote)';
+        item.contextValue = 'file';
+        item.fileUrl = f.url;
         return item;
       });
     }
 
+    // Folder or .json file with nested data
     const dirPath = element?.realPath ?? this.rootPath;
     try {
       const stats = await fs.promises.stat(dirPath);
-      if (!stats.isDirectory()) { return []; }
+      if (!stats.isDirectory()) {return [];}
     } catch {
       vscode.window.showWarningMessage(`Cannot access path: ${dirPath}`);
       return [];
@@ -89,19 +91,22 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
     const result: BBMaterialItem[] = [];
 
     for (const name of entries) {
-      if (name.startsWith('.')) { continue; }
+      if (name.startsWith('.')) {continue;}
+
       const fullPath = path.join(dirPath, name);
       try {
         const stat = await fs.promises.stat(fullPath);
 
         if (stat.isDirectory()) {
-          result.push(new BBMaterialItem(
-            name,
-            vscode.TreeItemCollapsibleState.Collapsed,
-            vscode.Uri.file(fullPath),
-            name,
-            fullPath
-          ));
+          result.push(
+            new BBMaterialItem(
+              name,
+              vscode.TreeItemCollapsibleState.Collapsed,
+              vscode.Uri.file(fullPath),
+              name,
+              fullPath
+            )
+          );
         } else if (name.endsWith('.json')) {
           const raw = await fs.promises.readFile(fullPath, 'utf-8');
           const parsed = JSON.parse(raw);
@@ -130,7 +135,7 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
   }
 
   /**
-   * Disposes file watchers to prevent memory leaks.
+   * Cleanup method to stop file watchers.
    */
   dispose(): void {
     this.watcher?.dispose();
@@ -139,10 +144,11 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
 }
 
 /**
- * Represents a node in the Blackboard material tree view.
+ * Represents a single node (folder or file) in the Blackboard view.
  */
 export class BBMaterialItem extends vscode.TreeItem {
   meta?: any[];
+  fileUrl?: string;
 
   constructor(
     label: string,
@@ -152,14 +158,14 @@ export class BBMaterialItem extends vscode.TreeItem {
     public readonly realPath?: string
   ) {
     super(label, collapsibleState);
-    this.resourceUri = vscode.Uri.file(realPath ?? resourceUri.fsPath);
+
     const ext = path.extname(filename || label).toLowerCase();
 
     if (collapsibleState === vscode.TreeItemCollapsibleState.None) {
       this.iconPath = BBMaterialItem.getFileIconByExt(ext);
     }
 
-    /* ── contextValue（右键菜单用）────────────────────────── */
+    // Context key for right-click menu logic
     try {
       const bbRoot = PathManager.getDir('bb');
       const rel = path.relative(bbRoot, realPath ?? resourceUri.fsPath);
@@ -177,12 +183,14 @@ export class BBMaterialItem extends vscode.TreeItem {
       this.contextValue =
         collapsibleState === vscode.TreeItemCollapsibleState.None ? 'file' : 'folder';
     }
+
+    // 🆕 attach raw path for use in download
+    this.resourceUri = resourceUri;
   }
 
   /**
-  * Returns a VS Code ThemeIcon name based on file extension.
-  * Used to visually distinguish different file types in the tree view.
-  */
+   * Returns an icon based on file extension.
+   */
   static getFileIconByExt(ext: string): vscode.ThemeIcon {
     switch (ext) {
       case '.md': return new vscode.ThemeIcon('markdown');
@@ -216,5 +224,3 @@ export class BBMaterialItem extends vscode.TreeItem {
     }
   }
 }
-
-

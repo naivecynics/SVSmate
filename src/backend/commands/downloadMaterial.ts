@@ -25,7 +25,7 @@ import { DownloadService } from '../services/DownloadService';
  * @param context VS Code extension context (for secret storage).
  * @param item    Selected tree-view leaf that represents a Blackboard file.
  */
-export async function downloadItem(
+export async function downloadMaterial(
   context: vscode.ExtensionContext,
   item: BBMaterialItem,
 ): Promise<void> {
@@ -39,7 +39,7 @@ export async function downloadItem(
     return;
   }
 
-  const fileUrl  = item.resourceUri.toString();
+  const fileUrl  = item.fileUrl;
   const fileName = item.label;
 
   /* ── let user pick destination (default = workspace root) ─── */
@@ -77,7 +77,7 @@ export async function downloadItem(
     },
     async (progress) => {
       progress.report({ message: `Downloading ${fileName}…` });
-      return dlSvc.download(fileUrl, savePath);
+      return dlSvc.download(fileUrl as string, savePath);
     },
   );
 

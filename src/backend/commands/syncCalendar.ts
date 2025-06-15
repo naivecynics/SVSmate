@@ -4,14 +4,12 @@ import { BBFetch }     from '../http/BBFetch';
 import { CredentialManager } from '../auth/CredentialManager';
 import { CasClient }  from '../auth/CasClient';
 import { log }        from '../../utils/OutputChannel';
+import { STORE_KEY } from '../models/CalendarModels';
 import * as PathManager from '../../utils/pathManager';
 
 /** Blackboard endpoint that returns the personal *.ics* feed URL (text/plain). */
 const CAL_FEED_ENDPOINT =
   'https://bb.sustech.edu.cn/webapps/calendar/calendarFeed/url';
-
-/** SecretStorage key under which the ICS URL is stored. */
-const SECRET_KEY = 'bb_ics_url';
 
 /**
  * Entry‑point for the **svsmate.BB-syncCalendar** command.
@@ -22,7 +20,6 @@ export async function syncCalendar(context: vscode.ExtensionContext): Promise<vo
   /* ── bootstrap HTTP / auth helpers ─────────────────────────────── */
   const cookieStore = new CookieStore(PathManager.getFile('bbCookies'));
   const fetch       = new BBFetch(cookieStore);
-
   const credMgr   = new CredentialManager(context);
   const casClient = new CasClient(fetch, credMgr);
 
@@ -49,7 +46,7 @@ export async function syncCalendar(context: vscode.ExtensionContext): Promise<vo
   }
 
   /* ── store in SecretStorage ────────────────────────────────────── */
-  await context.secrets.store(SECRET_KEY, url);
+  await context.secrets.store(STORE_KEY, url);
   log.info('syncCalendar', 'ICS URL stored in SecretStorage');
 
   /* ── let the user decide what to do with it ────────────────────── */

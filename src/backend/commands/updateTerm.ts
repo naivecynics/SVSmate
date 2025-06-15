@@ -10,10 +10,10 @@ import { BBFetch } from '../http/BBFetch';
 import { CredentialManager } from '../auth/CredentialManager';
 import { CasClient } from '../auth/CasClient';
 import { CourseService } from '../services/CourseService';
-import { Course } from '../models/Models';
+import { Course } from '../models/CourseModels';
 
 import { crawlCourse } from './crawlCourse';
-import { deleteItem } from './deleteItem';
+import { deleteMaterial } from './deleteMaterial';
 
 /**
  * Downloads or refreshes **every course** under a given term.
@@ -26,7 +26,7 @@ export async function updateTerm(
   context: vscode.ExtensionContext,
   item?: vscode.TreeItem,
 ): Promise<void> {
-  item && deleteItem(item, false);
+  item && deleteMaterial(item, false);
   const bbRoot = PathManager.getDir('bb');
 
   /* determine term ID */
