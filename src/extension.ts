@@ -24,7 +24,17 @@ export async function activate(context: vscode.ExtensionContext) {
     PathManager.initPathManager(context);
     log.info('SVSmate Main', 'SVSmate activated!');
 
+    // ------------------------------------------------
+    //                   credential
+    // ------------------------------------------------
     initStatusBar(context);
+    context.subscriptions.push(
+
+        vscode.commands.registerCommand('svsmate.clearAccount', async () => {
+            await clearAccount(context);
+        }),
+    
+    );
 
     // ------------------------------------------------
     //                      file
@@ -54,12 +64,12 @@ export async function activate(context: vscode.ExtensionContext) {
             await downloadMaterial(context, item);
         }),
 
-        vscode.commands.registerCommand('svsmate.deleteMaterial', async (item: BBMaterialItem) => {
-            await deleteMaterial(item);
+        vscode.commands.registerCommand('svsmate.downloadMaterialToWorkspace', async (item: BBMaterialItem) => {
+            await downloadMaterial(context, item, true);
         }),
 
-        vscode.commands.registerCommand('svsmate.clearAccount', async () => {
-            await clearAccount(context);
+        vscode.commands.registerCommand('svsmate.deleteMaterial', async (item: BBMaterialItem) => {
+            await deleteMaterial(item);
         }),
 
     );

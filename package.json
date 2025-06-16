@@ -60,6 +60,11 @@
                 "icon": "$(cloud-download)"
             },
             {
+                "command": "svsmate.downloadMaterialToWorkspace",
+                "title": "SVSmate: Download File to Workspace",
+                "icon": "$(zap)"
+            },
+            {
                 "command": "svsmate.deleteMaterial",
                 "title": "SVSmate: Remove Folder",
                 "icon": "$(trash)"
@@ -128,6 +133,11 @@
                 },
                 {
                     "command": "svsmate.downloadMaterial",
+                    "when": "view == bbMaterialView && viewItem == file",
+                    "group": "inline"
+                },
+                {
+                    "command": "svsmate.downloadMaterialToWorkspace",
                     "when": "view == bbMaterialView && viewItem == file",
                     "group": "inline"
                 },

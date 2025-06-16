@@ -17,17 +17,20 @@ import { DownloadService } from '../services/DownloadService';
  *
  * Flow ：
  * 1. Validate the tree item is a file.  
- * 2. Ask user “where to save” via {@link vscode.window.showSaveDialog}.  
+ * 2. Ask user “where to save” via {@link vscode.window.showSaveDialog}, 
+ *    or to workspace directly.
  * 3. Ensure Blackboard session (CredentialManager + CasClient).  
  * 4. Stream the file to disk with progress UI.  
  * 5. Notify success / failure.
  *
- * @param context VS Code extension context (for secret storage).
- * @param item    Selected tree-view leaf that represents a Blackboard file.
+ * @param context VS Code extension context.
+ * @param item Blackboard tree item representing a file.
+ * @param saveDirectlyToWorkspace If true, skips the save dialog.
  */
 export async function downloadMaterial(
   context: vscode.ExtensionContext,
   item: BBMaterialItem,
+  saveDirectlyToWorkspace = false,
 ): Promise<void> {
   /* ── sanity check ─────────────────────────────────────────── */
   if (
@@ -41,19 +44,32 @@ export async function downloadMaterial(
 
   const fileUrl  = item.fileUrl;
   const fileName = item.label;
+  let savePath: string;
 
-  /* ── let user pick destination (default = workspace root) ─── */
-  const defaultDir = PathManager.getWorkspaceDir();
-  const defaultUri = vscode.Uri.file(path.join(defaultDir, fileName as string));
+  if (saveDirectlyToWorkspace) {
+    /* ── directly save to workspace ─── */
+    try {
+      const workspaceDir = PathManager.getWorkspaceDir();
+      savePath = path.join(workspaceDir, fileName as string);
+      safeEnsureDir(path.dirname(savePath));
+    } catch (err) {
+      vscode.window.showErrorMessage('No workspace folder is open.');
+      return;
+    }
+  } else {
+    /* ── let user pick destination (default = workspace root) ─── */
+    const defaultDir = PathManager.getWorkspaceDir();
+    const defaultUri = vscode.Uri.file(path.join(defaultDir, fileName as string));
 
-  const targetUri = await vscode.window.showSaveDialog({
-    defaultUri,
-    saveLabel: 'Download from BB',
-  });
-  if (!targetUri) {return;} // user cancelled
+    const targetUri = await vscode.window.showSaveDialog({
+      defaultUri,
+      saveLabel: 'Download from BB',
+    });
 
-  const savePath = targetUri.fsPath;
-  safeEnsureDir(path.dirname(savePath));
+    if (!targetUri) {return;} // user cancelled
+    savePath = targetUri.fsPath;
+    safeEnsureDir(path.dirname(savePath));
+  }
 
   /* ── spin up backend helpers ──────────────────────────────── */
   const cookieStore = new CookieStore(PathManager.getFile('bbCookies'));
@@ -83,9 +99,7 @@ export async function downloadMaterial(
 
   /* ── notify user ──────────────────────────────────────────── */
   if (ok) {
-    vscode.window.showInformationMessage(
-      `Saved “${fileName}” to ${savePath}.`,
-    );
+    vscode.window.showInformationMessage(`Download Successful: ${fileName} → ${savePath}`);
     log.info('downloadItem', `Downloaded: ${fileUrl} → ${savePath}`);
   } else {
     vscode.window.showErrorMessage(`Failed to download “${fileName}”.`);
