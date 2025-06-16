@@ -51,4 +51,12 @@ export class CredentialManager {
        this.context.secrets.delete('bb_password'),
      ]);
   }
+
+  /**
+   * Returns current username if logged in, or `"Not logged in"` if not stored.
+   */
+  async getCurrentUser(): Promise<string> {
+    const username = await this.context.secrets.get('bb_username');
+    return username ?? 'Not logged in';
+  }
 }

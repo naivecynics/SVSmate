@@ -4,6 +4,7 @@ import { CookieStore } from '../auth/CookieStore';
 import * as PathManager from '../../utils/pathManager';
 import { STORE_KEY } from '../models/CalendarModels';
 import { log } from '../../utils/OutputChannel';
+import { updateStatusBar } from '../../frontend/statusBarItem';
 
 /**
  * Clears all cached Blackboard session data, including:
@@ -20,9 +21,10 @@ export async function clearAccount(context: vscode.ExtensionContext): Promise<vo
   const cookieStore = new CookieStore(PathManager.getFile('bbCookies'));
 
   await credMgr.clearCredentials();
-  await cookieStore.clear();
+  cookieStore.clear();
   await context.secrets.delete(STORE_KEY);
 
+  await updateStatusBar(credMgr);
   log.info('clearBlackboardAccount', 'Credentials, cookies, and ICS URL cleared.');
   vscode.window.showInformationMessage('Blackboard credentials and calendar URL cleared.');
 }

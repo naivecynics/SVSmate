@@ -14,16 +14,17 @@ import { toggleCalendar } from "./backend/commands/toggleCalendar";
 import { FolderViewProvider } from "./frontend/FolderView";
 import { BBMaterialViewProvider, BBMaterialItem } from "./frontend/BBMaterialView";
 import { CalendarViewProvider, CalendarItem } from "./frontend/CalendarView";
+import { initStatusBar } from "./frontend/statusBarItem";
 
 import { log } from './utils/OutputChannel';
 import * as PathManager from './utils/pathManager';
-import { CredentialManager } from './backend/auth/CredentialManager';
 
 export async function activate(context: vscode.ExtensionContext) {
 
     PathManager.initPathManager(context);
-    const credentialManager = new CredentialManager(context);
     log.info('SVSmate Main', 'SVSmate activated!');
+
+    initStatusBar(context);
 
     // ------------------------------------------------
     //                      file

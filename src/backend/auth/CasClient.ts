@@ -4,6 +4,8 @@ import { BBFetch } from '../http/BBFetch';
 import { CredentialManager } from './CredentialManager';
 import * as cheerio from 'cheerio';
 import { log } from '../../utils/OutputChannel';
+import { updateStatusBar } from '../../frontend/statusBarItem';
+
 /**
  * Handles CAS authentication flow for Blackboard.
  *
@@ -57,6 +59,7 @@ export class CasClient {
     );
     if (!ticketURL) {return false;}
 
+    await updateStatusBar(this.credMgr);
     return this.validateServiceTicket(ticketURL);
   }
 

@@ -101,6 +101,20 @@
             ]
         },
         "menus": {
+            "view/title": [
+                {
+                    "command": "svsmate.updateTerm",
+                    "when": "view == bbMaterialView",
+                    "group": "navigation",
+                    "title": "Update Selected Term"
+                },
+                {
+                    "command": "svsmate.refreshCalendar",
+                    "when": "view == calendarView",
+                    "group": "navigation",
+                    "title": "Refresh Calendar"
+                }
+            ],
             "view/item/context": [
                 {
                     "command": "svsmate.updateTerm",
@@ -126,20 +140,6 @@
                     "command": "svsmate.deleteCalendar",
                     "when": "view == calendarView && viewItem == calendarItem",
                     "group": "inline"
-                }
-            ],
-            "view/title": [
-                {
-                    "command": "svsmate.updateTerm",
-                    "when": "view == bbMaterialView",
-                    "group": "navigation",
-                    "title": "Update Term"
-                },
-                {
-                    "command": "svsmate.refreshCalendar",
-                    "when": "view == calendarView",
-                    "group": "navigation",
-                    "title": "Refresh Calendar"
                 }
             ]
         }

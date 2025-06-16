@@ -74,7 +74,7 @@ export async function refreshCalendar(
 
   /* ── make sure we have a valid session before hitting the API ──── */
   if (!(await casClient.ensureLogin())) {
-    vscode.window.showErrorMessage('Blackboard login failed – unable to sync calendar.');
+    // vscode.window.showErrorMessage('Blackboard login failed – unable to sync calendar.');
     return;
   }
 
@@ -82,7 +82,7 @@ export async function refreshCalendar(
   const res = await fetch.get(CAL_FEED_ENDPOINT, { redirect: 'follow' });
   if (res.status !== 200) {
     log.error('syncCalendar', `HTTP ${res.status} while requesting feed URL`);
-    vscode.window.showErrorMessage(`Failed to fetch calendar feed (HTTP ${res.status}).`);
+    // vscode.window.showErrorMessage(`Failed to fetch calendar feed (HTTP ${res.status}).`);
     return;
   }
 
