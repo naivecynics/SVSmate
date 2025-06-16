@@ -51,7 +51,7 @@ export class CalendarItem extends vscode.TreeItem {
 
     const ddl = format(new Date(data.end), "MM-dd HH:mm");
     this.description = ddl;
-    this.tooltip = `${ddl}  •  ${data.uid}`;
+    this.tooltip = `${ddl} • ${data.title}`;
 
     this.resourceUri = vscode.Uri.parse("calendar:" + data.uid);
     this.command = {
@@ -61,10 +61,12 @@ export class CalendarItem extends vscode.TreeItem {
     };
 
     if (data.done) {
-      this.iconPath = new vscode.ThemeIcon("check-all");
-      // this.label = `~~${data.title}~~`;
+      this.iconPath = new vscode.ThemeIcon("check", new vscode.ThemeColor("testing.iconPassed")); // ✔️
+      this.label = data.title;
+      this.tooltip += ' (Done)';
     } else {
-      this.iconPath = new vscode.ThemeIcon("circle-small");
+      this.iconPath = new vscode.ThemeIcon("circle-large-outline", new vscode.ThemeColor("editorHint.foreground")); // ○
+      this.label = data.title;
     }
   }
   getSchedule(): Schedule {
