@@ -14,6 +14,6 @@ export function initStatusBar(context: vscode.ExtensionContext) {
 
 export async function updateStatusBar(credMgr: CredentialManager) {
   const user = await credMgr.getCurrentUser();
-  statusBarItem.text = `BB: ${user}`;
+  statusBarItem.text = `$(account) ${user}`;
   statusBarItem.show();
 }

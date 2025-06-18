@@ -63,6 +63,7 @@ export async function crawlCourse(
 
     for (const link of links) {
       if (token.isCancellationRequested) {return;}
+      if (link.title === '--Get Help' || link.title === '在线帮助') {return;}
 
       progress.report({ message: `${course.name} › ${category} › ${link.title}` });
 

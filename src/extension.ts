@@ -37,7 +37,7 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     // ------------------------------------------------
-    //                      file
+    //                   explorer
     // ------------------------------------------------
     const folderViewProvider = FolderViewProvider.create();
     folderViewProvider && vscode.window.registerTreeDataProvider("folderView", folderViewProvider);
