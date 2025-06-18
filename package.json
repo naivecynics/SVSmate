@@ -31,11 +31,6 @@
                     "type": "string",
                     "default": "~/.svsmate",
                     "description": "Enter a directory path if you want to costomize the cache location."
-                },
-                "svsmate.ics": {
-                    "type": "string",
-                    "default": "",
-                    "description": ""
                 }
             }
         },
