@@ -98,15 +98,18 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
         const stat = await fs.promises.stat(fullPath);
 
         if (stat.isDirectory()) {
-          result.push(
-            new BBMaterialItem(
-              name,
-              vscode.TreeItemCollapsibleState.Collapsed,
-              vscode.Uri.file(fullPath),
-              name,
-              fullPath
-            )
-          );
+          const hasJson = await containsJsonRecursive(fullPath);
+          if (hasJson) {
+            result.push(
+              new BBMaterialItem(
+                name,
+                vscode.TreeItemCollapsibleState.Collapsed,
+                vscode.Uri.file(fullPath),
+                name,
+                fullPath
+              )
+            );
+          }
         } else if (name.endsWith('.json')) {
           const raw = await fs.promises.readFile(fullPath, 'utf-8');
           const parsed = JSON.parse(raw);
@@ -133,6 +136,7 @@ export class BBMaterialViewProvider implements vscode.TreeDataProvider<BBMateria
 
     return result;
   }
+
 
   /**
    * Cleanup method to stop file watchers.
@@ -223,4 +227,22 @@ export class BBMaterialItem extends vscode.TreeItem {
       default: return new vscode.ThemeIcon('file');
     }
   }
+}
+
+async function containsJsonRecursive(dir: string): Promise<boolean> {
+  const entries = await fs.promises.readdir(dir);
+  for (const entry of entries) {
+    const full = path.join(dir, entry);
+    try {
+      const stat = await fs.promises.stat(full);
+      if (stat.isDirectory()) {
+        if (await containsJsonRecursive(full)) {return true;}
+      } else if (entry.endsWith('.json')) {
+        return true;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return false;
 }
