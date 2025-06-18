@@ -22,7 +22,7 @@
     "activationEvents": [
         "onStartupFinished"
     ],
-    "main": "./out/extension",
+    "main": "./dist/extension",
     "contributes": {
         "configuration": {
             "title": "svsmate",
@@ -85,7 +85,7 @@
                 {
                     "id": "SVSmate",
                     "title": "SVSmate",
-                    "icon": "media/telescope.png"
+                    "icon": "media/telescope-gray.png"
                 }
             ]
         },
@@ -155,15 +155,14 @@
         }
     },
     "dependencies": {
-        "vscode": "1.98.0",
         "cheerio": "^1.0.0",
         "date-fns": "^4.1.0",
         "fetch-cookie": "^3.1.0",
         "node-fetch": "^2.7.0",
         "node-ical": "^0.20.1",
+        "p-limit": "^2.3.0",
         "tough-cookie": "^5.1.2",
-        "xml2js": "^0.6.2",
-        "p-limit": "^4.0.0"
+        "xml2js": "^0.6.2"
     },
     "devDependencies": {
         "@types/cheerio": "^0.22.35",

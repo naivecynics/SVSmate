@@ -12,7 +12,10 @@ typings/**
 out/**
 node_modules/**
 src/**
+media/**
+!media/telescope-gray.png
 
+README.zh.md
 .gitignore
 .github
 tsconfig.json

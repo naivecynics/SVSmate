@@ -16,3 +16,12 @@ This project adheres to [Keep a Changelog](https://keepachangelog.com/) and uses
 - ✅ Interactive task manager (To-Do List)
 - 🛠️ Full VS Code integration with sidebar views and commands
 
+## [1.1.0] - 2025-06-18
+
+Make the extension lighter and clearer!
+
+### Remained
+- 🔗 Connect to SUSTech Blackboard
+- 📅 Sync and display course schedules and assignments
+- 🛠️ Full VS Code integration with sidebar views and commands
+
