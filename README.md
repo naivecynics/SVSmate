@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/naivecynics/SVSmate">
-    <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/telescope.png" alt="Logo" width="100" height="100">
+    <img src="https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/telescope-gray.png" alt="Logo" width="100" height="100">
   </a>
 
   <h1 align="center">SVSmate</h1>
