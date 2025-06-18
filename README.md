@@ -39,7 +39,7 @@ Our goal is to develop a powerful and user-friendly **VS Code extension** tailor
 
 ### ✨ Key Features
 
-- 🔗 Seamlessly connect VS Code with your personal **Blackboard** database  
+- 🔗 Seamlessly connect VS Code with your personal **Blackboard** database
 - 📅 **Sync your schedule and assignments**, and manage them with ease
 
 ## 📸 Run Screenshot
@@ -54,7 +54,7 @@ Or download `.vsix` manually in [Release »](https://github.com/naivecynics/SVSm
 
 ## 🛠️ Usage
 
-> [!TIPs]
+> [!TIP]
 > To ensure features work correctly, please configure your [Blackboard Settings »](https://bb.sustech.edu.cn/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_1_1&forwardUrl=edit_module/_3_1/bbcourseorg?cmd%3Dedit&recallUrl=/webapps/portal/execute/tabs/tabAction?tab_tab_group_id%3D_1_1x)  
 >
 > ![bb-setting](https://raw.githubusercontent.com/naivecynics/SVSmate/main/media/bb-setting.png)
