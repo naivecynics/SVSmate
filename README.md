@@ -19,7 +19,7 @@
     &middot;
     <a href="https://github.com/naivecynics/SVSmate/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
-    <a href="https://github.com/naivecynics/SVSmate/README.zh.md">中文文档 »</a>
+    <a href="https://github.com/naivecynics/SVSmate/blob/main/README.zh.md">中文文档 »</a>
   </p>
 </div>
 
