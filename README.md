@@ -31,6 +31,12 @@
 [![Last Commit](https://img.shields.io/github/last-commit/naivecynics/SVSmate?style=flat-square)](https://github.com/naivecynics/SVSmate/commits/main)
 [![License](https://img.shields.io/github/license/naivecynics/SVSmate?style=flat-square)](https://github.com/naivecynics/SVSmate/blob/main/LICENSE)
 
+<p align="center">
+  <a href="https://www.bilibili.com/video/BV1mobjzJEKy/">
+    ▶️ Watch on Bilibili
+  </a>
+</p>
+
 ## 🚀 About the Project
 
 > This project originated as the final project for the **25spring CS304 - Software Engineering**.  
